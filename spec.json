@@ -215,7 +215,7 @@
     {
       "id": "sprint-0-repository-foundation",
       "name": "Sprint 0 - Repository Foundation",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.0.1",
       "estimated_hours": 4,

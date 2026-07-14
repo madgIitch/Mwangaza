@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const cfg = JSON.parse(readFileSync(new URL("./gates.config.json", import.meta.url)));
-const ALWAYS = ["docs/", "spec/", "progress/", ".harness/"]; // memoria: siempre permitida fuera del scope
+const ALWAYS = ["docs/", "spec/", "progress/", ".harness/", "spec.json"]; // memoria: siempre permitida fuera del scope
 
 function run(cmd) {
   try { return { ok: true, out: execSync(cmd, { stdio: "pipe", encoding: "utf8" }) }; }

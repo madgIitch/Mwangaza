@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+import json
+from http import HTTPStatus
+from typing import Any
+
+from mwangaza._foundation import foundation_status
+
+
+async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
+    if scope["type"] != "http":
+        return
+
+    path = scope.get("path", "/")
+    if path == "/health":
+        body = json.dumps(foundation_status().as_dict()).encode("utf-8")
+        status = HTTPStatus.OK
+    else:
+        body = json.dumps(
+            {
+                "project": "Mwangaza",
+                "status": "foundation stub",
+                "detail": "Use /health for the Sprint 0 health contract.",
+            }
+        ).encode("utf-8")
+        status = HTTPStatus.NOT_FOUND
+
+    await send(
+        {
+            "type": "http.response.start",
+            "status": int(status),
+            "headers": [(b"content-type", b"application/json")],
+        }
+    )
+    await send({"type": "http.response.body", "body": body})
