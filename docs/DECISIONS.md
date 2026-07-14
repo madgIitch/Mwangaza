@@ -75,3 +75,12 @@ Contexto: se aprobó el spec `sprint-5-current-ndvi` (Sprint 5 - Current NDVI).
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-6-ndvi-climatology -->
+## 2026-07-14 · sprint-6-ndvi-climatology aprobado
+
+Contexto: se aprobó el spec `sprint-6-ndvi-climatology` (Sprint 6 - NDVI Climatology).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

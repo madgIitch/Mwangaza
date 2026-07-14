@@ -575,7 +575,7 @@
     {
       "id": "sprint-6-ndvi-climatology",
       "name": "Sprint 6 - NDVI Climatology",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.2.1",
       "estimated_hours": 5,
@@ -603,14 +603,15 @@
       ],
       "deliverable": "Baseline NDVI histórico por región y período estacional.",
       "acceptance": [
-        "AC1: La climatología usa únicamente años configurados y registra la lista efectiva.",
-        "AC2: El período actual nunca se incluye accidentalmente en el baseline.",
-        "AC3: Se calculan media, mediana, desviación y número de observaciones.",
-        "AC4: Menos del mínimo de años produce quality_flag `insufficient_history`.",
-        "AC5: Cambiar la ventana histórica crea una nueva versión.",
-        "AC6: Tests cubren cambio de año y meses con distinta duración."
+        "`compute_ndvi_climatology(...)` devuelve un `Baseline` valido para `indicator=\"ndvi\"` usando solo años dentro de la ventana histórica configurada e incluye en metadata la lista `effective_years`.",
+        "El período actual nunca se incluye en el baseline; si un año configurado coincide con el año del período actual se excluye y aparece en metadata `excluded_years`.",
+        "Con años efectivos suficientes se calculan `mean`, `median`, `stddev` poblacional y `observations` sobre valores NDVI finitos.",
+        "Si los años efectivos válidos son menos que `min_years`, el resultado usa `quality_flag=\"insufficient_history\"` y estadísticos `None` sin llamar a ese caso `no_data`.",
+        "Cambiar la ventana histórica, la temporada o la colección NDVI cambia `metadata.baseline_version` de forma determinista.",
+        "Los tests cubren temporadas que cruzan cambio de año, meses de distinta duración, ventanas históricas inclusivas y ausencia de llamadas Earth Engine reales."
       ],
       "scope": [
+        "src/mwangaza/config/**",
         "src/mwangaza/data/**",
         "src/mwangaza/gee/**",
         "src/mwangaza/contracts/**",
@@ -627,7 +628,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-14T14:54:20.182Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:b156dbea648ce3b7e7cb1a12cef1bc83614da4786e130cb907cbbfead1510428",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T14:54:25.708Z"
     },
     {
       "id": "sprint-7-ndvi-anomaly",
