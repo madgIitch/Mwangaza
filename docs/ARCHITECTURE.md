@@ -68,3 +68,28 @@ Objetivo no negociable:
 - **edge_cases:** Sprint 0 soporta Python 3.11+ y CI Linux. En Windows local se documentan comandos Python equivalentes; `make` es el contrato principal para CI y entornos Unix-like. Los entrypoints Python deben funcionar sin depender de notebooks ni datos locales.
 - **ui_states:** `streamlit run app.py` debe mostrar una pantalla placeholder de producto con nombre, tagline, estado tecnico basico y aviso visible de `foundation stub`. No debe mostrar navegacion vacia ni claims de datos reales.
 
+<!-- harness:sprint-1-configuration-and-secrets -->
+## sprint-1-configuration-and-secrets · Sprint 1 - Configuration and Secrets
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/config/**`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/ui/**`
+  - `tests/**`
+  - `.env.example`
+  - `README.md`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Define `Settings` como dataclass inmutable en `src/mwangaza/config.py`, construido por `load_settings(env: Mapping[str, str] | None = None)`, sin Pydantic. Campos, tipos, defaults y perfiles validos quedan especificados: `environment`, `log_level`, rutas, paises habilitados, periodo de climatologia, credenciales GEE opcionales y `max_remote_pixels`.
+- **external_contracts:** Todos los entrypoints publicos cargan `Settings`: API `/health`, dashboard y refresh. `/health` expone solo campos saneados: `environment`, `version`, `status`, `config_valid`, `enabled_countries`, `climatology_period` y nombres de variables faltantes, sin valores. Refresh `--dry-run` valida configuracion y no consulta servicios remotos; sin `--dry-run`, Sprint 1 sigue bloqueado con mensaje stub.
+- **edge_cases:** Quedan definidos los casos invalidos: entorno desconocido, paises vacios o fuera de ISO3 IGAD permitido, anos no enteros, rango invertido, `max_remote_pixels <= 0`, rutas vacias, log level invalido y `MWANGAZA_GEE_PRIVATE_KEY_JSON` presente pero no JSON object valido. Placeholders como `replace-me` no bloquean en `test` o `demo`, pero cuentan como ausentes en `production`.
+- **ui_states:** Dashboard muestra perfil activo, paises habilitados, periodo de climatologia y estado `configuration ok` o `configuration invalid`. Los errores son accionables y saneados, con nombres de variables o campos invalidos, sin secretos ni valores privados. En `production` invalido no continua mostrando datos ni claims operativos.
+

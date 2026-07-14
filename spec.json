@@ -274,7 +274,7 @@
     {
       "id": "sprint-1-configuration-and-secrets",
       "name": "Sprint 1 - Configuration and Secrets",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.2",
       "estimated_hours": 3,
@@ -302,30 +302,31 @@
       ],
       "deliverable": "Configuración tipada y segura para todos los entornos.",
       "acceptance": [
-        "AC1: La aplicación falla al arrancar con un mensaje accionable cuando falta una variable obligatoria en producción.",
-        "AC2: El modo test no necesita credenciales reales.",
-        "AC3: Ningún objeto Settings imprime secretos en `repr`, logs o respuestas HTTP.",
-        "AC4: Las fechas de climatología y los países habilitados son configurables sin editar código.",
-        "AC5: El perfil demo puede ejecutarse únicamente con fixtures locales.",
-        "AC6: Las variables públicas y privadas están diferenciadas en la documentación."
+        "AC1: En perfil production, crear Settings o arrancar los entrypoints publicos falla con excepcion controlada y mensaje accionable que incluye el nombre de cada variable obligatoria ausente, sin incluir valores secretos.",
+        "AC2: En perfil test, Settings se construye sin credenciales reales de servicios externos y los tests no requieren variables privadas en el entorno.",
+        "AC3: Ninguna representacion de Settings, logs capturados ni respuestas HTTP expone valores de variables marcadas como privadas; como minimo deben aparecer omitidas o enmascaradas.",
+        "AC4: Las fechas de climatologia y la lista de paises habilitados se leen desde configuracion externa documentada y pueden cambiarse sin modificar codigo Python.",
+        "AC5: En perfil demo, los entrypoints publicos pueden ejecutarse usando solo rutas de fixtures locales configuradas, sin llamadas remotas ni credenciales externas.",
+        "AC6: La documentacion y .env.example separan explicitamente variables publicas/no sensibles de variables privadas/secretas, indicando obligatoriedad por perfil.",
+        "AC7: Los nombres de variables existentes de Sprint 0 se mantienen o se documenta una migracion compatible con aviso claro.",
+        "AC8: Hay tests automatizados para production incompleto, test sin secretos, demo con fixtures, validacion de fechas/paises y sanitizacion de secretos en repr/log/HTTP."
       ],
       "scope": [
-        "src/mwangaza/config.py",
-        "tests/test_config.py",
+        "src/mwangaza/config/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/data/**",
+        "src/mwangaza/ui/**",
+        "tests/**",
         ".env.example",
-        "docs/configuration.md",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
+        "README.md",
         "docs/**",
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:74c20f18c532acb21aa08c34126515387581acf01a4a3e1099397c5df39f61cd",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T12:46:49.001Z"
     },
     {
       "id": "sprint-2-gee-authentication",
