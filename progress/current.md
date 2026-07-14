@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-0-repository-foundation · Sprint 0 - Repository Foundation** — estado: `review_pending`.
+Feature: **sprint-1-configuration-and-secrets · Sprint 1 - Configuration and Secrets** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-0-repository-foundation · Sprint 0 - Repository Foundation** 
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 0 - Repository Foundation)` y cerrar con `node .harness/spec.mjs done sprint-0-repository-foundation` tras smoke test humano.
+- Revisar el diff del commit `feat(Sprint 1 - Configuration and Secrets)` y cerrar con `node .harness/spec.mjs done sprint-1-configuration-and-secrets` tras smoke test humano.
 
 ## Último resultado
 

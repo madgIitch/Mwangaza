@@ -60,4 +60,21 @@ The dry run prints a foundation message and does not query remote services.
 
 ## Secrets
 
-Copy `.env.example` only as a local starting point. Its values are placeholders and must not be treated as real Earth Engine credentials. Full configuration and secret validation belongs to Sprint 1.
+Copy `.env.example` only as a local starting point. Its values are placeholders and must not be treated as real Earth Engine credentials.
+
+Public configuration:
+
+- `MWANGAZA_ENV`: `local`, `test`, `demo`, or `production`; defaults to `local`.
+- `MWANGAZA_LOG_LEVEL`: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`.
+- `MWANGAZA_DATA_DIR`, `MWANGAZA_CACHE_DIR`, `MWANGAZA_DEMO_FIXTURE_DIR`: local paths.
+- `MWANGAZA_ENABLED_COUNTRIES`: comma-separated IGAD ISO3 list from `KEN,ETH,SOM,SDN,SSD,UGA,DJI,ERI`.
+- `MWANGAZA_CLIMATOLOGY_START_YEAR` and `MWANGAZA_CLIMATOLOGY_END_YEAR`: four-digit year range.
+- `MWANGAZA_MAX_REMOTE_PIXELS`: positive integer guardrail.
+- `MWANGAZA_GEE_PROJECT`: non-secret project identifier, required only in production.
+
+Private configuration:
+
+- `MWANGAZA_GEE_SERVICE_ACCOUNT`: secret service account value, required only in production.
+- `MWANGAZA_GEE_PRIVATE_KEY_JSON`: secret JSON object, required only in production.
+
+`Settings` redacts private values from `repr`, API health output and user-facing error messages. The `test` and `demo` profiles do not require real credentials.

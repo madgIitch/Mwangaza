@@ -5,6 +5,7 @@ from http import HTTPStatus
 from typing import Any
 
 from mwangaza._foundation import foundation_status
+from mwangaza.config import public_config_status
 
 
 async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
@@ -13,7 +14,8 @@ async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
 
     path = scope.get("path", "/")
     if path == "/health":
-        body = json.dumps(foundation_status().as_dict()).encode("utf-8")
+        payload = foundation_status().as_dict() | public_config_status()
+        body = json.dumps(payload).encode("utf-8")
         status = HTTPStatus.OK
     else:
         body = json.dumps(
