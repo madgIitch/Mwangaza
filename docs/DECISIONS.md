@@ -57,3 +57,12 @@ Contexto: se aprobó el spec `sprint-3-igad-region-catalog` (Sprint 3 - IGAD Reg
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-4-data-contracts -->
+## 2026-07-14 · sprint-4-data-contracts aprobado
+
+Contexto: se aprobó el spec `sprint-4-data-contracts` (Sprint 4 - Data Contracts).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

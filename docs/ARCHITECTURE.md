@@ -141,3 +141,25 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-4-data-contracts -->
+## sprint-4-data-contracts · Sprint 4 - Data Contracts
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/contracts/**`
+  - `tests/contracts/**`
+  - `tests/fixtures/contracts/**`
+  - `docs/contracts.md`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
