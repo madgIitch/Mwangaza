@@ -14,9 +14,9 @@ Gestor de paquetes: `pip` con instalación editable desde `pyproject.toml`.
 Comandos locales:
 
 - Instalar: `python -m pip install -e .`
-- Lint: `make lint` (equivalente Windows: `python -m compileall -q src tests app.py`)
-- Typecheck/build: `make typecheck` (equivalente Windows: `python -m compileall -q src tests app.py`)
-- Test: `make test` (equivalente Windows: `python -m unittest discover -s tests`)
+- Lint: `make lint` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python lint`)
+- Typecheck/build: `make typecheck` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python typecheck`)
+- Test: `make test` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python test`)
 - Dev server dashboard: `streamlit run app.py`
 - Dev server API: `uvicorn mwangaza.api.app:app --reload`
 - Refresh stub: `python -m mwangaza.data.refresh --dry-run`

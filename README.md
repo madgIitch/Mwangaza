@@ -22,7 +22,7 @@ The version command prints `0.0.1`.
 
 ## Quality Gates
 
-The local commands are the same commands used by CI:
+The local commands are the same commands used by CI. On Windows, the Makefile resolves the Python managed install under `%LOCALAPPDATA%`; on Linux CI, it runs with `PYTHON=python`. The targets set `PYTHONPATH=src` so they do not depend on a prior global install:
 
 ```bash
 make lint
