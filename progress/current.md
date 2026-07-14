@@ -1,17 +1,17 @@
-# Sesión actual
+# Sesion actual
 
-Feature: **sprint-2-gee-authentication · Sprint 2 - Google Earth Engine Authentication** — estado: `review_pending`.
+Feature: **sprint-3-igad-region-catalog - Sprint 3 - IGAD Region Catalog** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
 - intentos: 1
 
-## Siguiente acción
+## Siguiente accion
 
-- Revisar el diff del commit `feat(Sprint 2 - Google Earth Engine Authentication)` y cerrar con `node .harness/spec.mjs done sprint-2-gee-authentication` tras smoke test humano.
+- Revisar el diff del commit de Sprint 3 y cerrar con `node .harness/spec.mjs done sprint-3-igad-region-catalog` tras smoke test humano.
 
-## Último resultado
+## Ultimo resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | — | — |
+| 1 | OK | - | - | - |

@@ -388,7 +388,7 @@
     {
       "id": "sprint-3-igad-region-catalog",
       "name": "Sprint 3 - IGAD Region Catalog",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.1.0",
       "estimated_hours": 5,
