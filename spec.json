@@ -274,7 +274,7 @@
     {
       "id": "sprint-1-configuration-and-secrets",
       "name": "Sprint 1 - Configuration and Secrets",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.2",
       "estimated_hours": 3,
