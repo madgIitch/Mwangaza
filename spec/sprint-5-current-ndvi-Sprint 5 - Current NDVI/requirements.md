@@ -1,0 +1,18 @@
+# sprint-5-current-ndvi · undefined — Requisitos
+
+- name: `Sprint 5 - Current NDVI` · priority: - · sdd: true
+- aprobado por: peorr · 2026-07-14T14:43:29.102Z
+
+## Contexto
+
+
+
+## Requisitos funcionales
+
+R1. `compute_current_ndvi(...)` devuelve un `IndicatorObservation` valido con `indicator="ndvi"`, `unit="index"`, `source` igual a la coleccion usada y `value` escalado dentro de `[-1.0, 1.0]` cuando hay pixeles validos.
+R2. El procesamiento excluye pixeles sin QA valida o sin valor NDVI y los tests verifican que solo los pixeles validos contribuyen al promedio.
+R3. Si una region/periodo no tiene pixeles validos, el resultado usa `quality_flag="no_data"`, `value=None` y `valid_pixel_fraction=0.0`, nunca `0` como NDVI.
+R4. La coleccion NDVI puede cambiarse mediante `NdviCollectionConfig` y por configuracion externa `MWANGAZA_NDVI_COLLECTION` sin modificar codigo de procesamiento.
+R5. El adaptador recibe exactamente la geometria de la region seleccionada y las fechas solicitadas; los tests con fake adapter verifican esos limites de consulta.
+R6. El resultado persiste en metadata `valid_pixel_fraction`, `valid_pixel_count`, `total_pixel_count`, `collection_id`, `scale_factor` y periodo real observado.
+

@@ -66,3 +66,12 @@ Contexto: se aprobó el spec `sprint-4-data-contracts` (Sprint 4 - Data Contract
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-5-current-ndvi -->
+## 2026-07-14 · sprint-5-current-ndvi aprobado
+
+Contexto: se aprobó el spec `sprint-5-current-ndvi` (Sprint 5 - Current NDVI).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

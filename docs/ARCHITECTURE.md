@@ -163,3 +163,27 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-5-current-ndvi -->
+## sprint-5-current-ndvi · Sprint 5 - Current NDVI
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/config/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

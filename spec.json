@@ -511,7 +511,7 @@
     {
       "id": "sprint-5-current-ndvi",
       "name": "Sprint 5 - Current NDVI",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.2.0",
       "estimated_hours": 5,
@@ -539,14 +539,15 @@
       ],
       "deliverable": "Observación NDVI reciente por región.",
       "acceptance": [
-        "AC1: El resultado expresa NDVI en rango esperado y conserva el período real de observación.",
-        "AC2: Píxeles inválidos o sin calidad se excluyen.",
-        "AC3: Una región sin datos devuelve estado `no_data`, no cero.",
-        "AC4: El procesamiento permite cambiar la colección desde configuración.",
-        "AC5: La consulta queda limitada a geometría y fechas solicitadas.",
-        "AC6: Se persiste la fracción de cobertura válida."
+        "`compute_current_ndvi(...)` devuelve un `IndicatorObservation` valido con `indicator=\"ndvi\"`, `unit=\"index\"`, `source` igual a la coleccion usada y `value` escalado dentro de `[-1.0, 1.0]` cuando hay pixeles validos.",
+        "El procesamiento excluye pixeles sin QA valida o sin valor NDVI y los tests verifican que solo los pixeles validos contribuyen al promedio.",
+        "Si una region/periodo no tiene pixeles validos, el resultado usa `quality_flag=\"no_data\"`, `value=None` y `valid_pixel_fraction=0.0`, nunca `0` como NDVI.",
+        "La coleccion NDVI puede cambiarse mediante `NdviCollectionConfig` y por configuracion externa `MWANGAZA_NDVI_COLLECTION` sin modificar codigo de procesamiento.",
+        "El adaptador recibe exactamente la geometria de la region seleccionada y las fechas solicitadas; los tests con fake adapter verifican esos limites de consulta.",
+        "El resultado persiste en metadata `valid_pixel_fraction`, `valid_pixel_count`, `total_pixel_count`, `collection_id`, `scale_factor` y periodo real observado."
       ],
       "scope": [
+        "src/mwangaza/config/**",
         "src/mwangaza/data/**",
         "src/mwangaza/gee/**",
         "src/mwangaza/contracts/**",
@@ -563,7 +564,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-14T14:43:23.008Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:6599251597b858030793ec8bcafdccca4dcfa0e4782c16fabbf9d69f2cffe782",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T14:43:29.102Z"
     },
     {
       "id": "sprint-6-ndvi-climatology",
