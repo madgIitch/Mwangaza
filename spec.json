@@ -331,7 +331,7 @@
     {
       "id": "sprint-2-gee-authentication",
       "name": "Sprint 2 - Google Earth Engine Authentication",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.3",
       "estimated_hours": 4,
@@ -359,29 +359,31 @@
       ],
       "deliverable": "Conexión a Earth Engine verificable sin acoplar el resto del sistema a credenciales reales.",
       "acceptance": [
-        "AC1: El health check devuelve `ok`, `auth_error`, `permission_error`, `quota_error` o `network_error` con códigos estables.",
-        "AC2: El adaptador no realiza autenticación interactiva en production.",
-        "AC3: Un secreto JSON puede cargarse desde variable segura sin escribirse a disco.",
-        "AC4: Los reintentos usan backoff y no superan el máximo configurado.",
-        "AC5: Los tests no llaman a Earth Engine.",
-        "AC6: Existe una comprobación manual documentada para confirmar acceso real."
+        "El health check GEE devuelve un JSON saneado con `gee.status` en exactamente uno de `ok`, `auth_error`, `permission_error`, `quota_error` o `network_error`, y los tests verifican que los codigos son estables.",
+        "En `production`, el adaptador GEE nunca inicia flujos interactivos ni lee credenciales de usuario locales; si faltan credenciales de servicio devuelve `auth_error` saneado.",
+        "El secreto de cuenta de servicio puede cargarse desde `MWANGAZA_GEE_PRIVATE_KEY_JSON` como JSON en memoria, sin escribirlo a disco ni exponerlo en repr, logs, HTTP responses o dashboard.",
+        "Los reintentos del adaptador usan backoff configurable, respetan el maximo configurado y los tests verifican numero de intentos y pausas mediante mocks/fakes sin dormir realmente.",
+        "La suite automatica no importa ni llama Earth Engine real salvo mediante una frontera mockeable; los tests bloquean llamadas remotas accidentales.",
+        "Existe una comprobacion manual documentada en `docs/` o `README.md` que indica variables necesarias, comando a ejecutar y resultado esperado para confirmar acceso real a Earth Engine."
       ],
       "scope": [
-        "src/mwangaza/gee/auth.py",
-        "tests/gee/test_auth.py",
-        "docs/earth-engine.md",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
+        "src/mwangaza/config/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/data/**",
+        "src/mwangaza/ui/**",
+        "tests/**",
         ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
+        "README.md",
+        "pyproject.toml",
         "docs/**",
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:719b552ffc2407bbfca241c37ce2615a3fabe43e775e86ace7084303c1bdb11a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T13:02:40.619Z"
     },
     {
       "id": "sprint-3-igad-region-catalog",

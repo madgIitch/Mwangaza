@@ -93,3 +93,30 @@ Objetivo no negociable:
 - **edge_cases:** Quedan definidos los casos invalidos: entorno desconocido, paises vacios o fuera de ISO3 IGAD permitido, anos no enteros, rango invertido, `max_remote_pixels <= 0`, rutas vacias, log level invalido y `MWANGAZA_GEE_PRIVATE_KEY_JSON` presente pero no JSON object valido. Placeholders como `replace-me` no bloquean en `test` o `demo`, pero cuentan como ausentes en `production`.
 - **ui_states:** Dashboard muestra perfil activo, paises habilitados, periodo de climatologia y estado `configuration ok` o `configuration invalid`. Los errores son accionables y saneados, con nombres de variables o campos invalidos, sin secretos ni valores privados. En `production` invalido no continua mostrando datos ni claims operativos.
 
+<!-- harness:sprint-2-gee-authentication -->
+## sprint-2-gee-authentication · Sprint 2 - Google Earth Engine Authentication
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/config/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/ui/**`
+  - `tests/**`
+  - `.env.example`
+  - `README.md`
+  - `pyproject.toml`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Contrato publico definido bajo `gee` en `/health` y en `GeeAuthResult.to_public_dict()`: `status` literal `ok|auth_error|permission_error|quota_error|network_error`; `configured` bool; `project_configured` bool; `service_account_configured` bool; `checked_at` ISO8601 UTC string; `attempts` int; `max_attempts` int; `message` string saneado; `missing_required_variables` list[str]; `error_code` string estable opcional. Nunca incluye project id, service account, private key ni payload JSON.
+- **external_contracts:** Contrato canonico: modulo `src/mwangaza/gee/auth.py`; dataclass `GeeAuthResult`; funcion `check_gee_auth(settings: Settings | None = None, *, ee_module: object | None = None, max_attempts: int | None = None, base_delay_seconds: float = 0.1, sleep: Callable[[float], None] | None = None) -> GeeAuthResult`. `max_attempts` default 3. Backoff exponencial `base_delay_seconds * 2 ** (attempt - 1)`. `settings.max_remote_pixels` solo se usa como configuracion existente, no para consultar datos. API `/health` incluye `gee` usando el mismo resultado saneado. No se anade endpoint nuevo en Sprint 2.
+- **edge_cases:** Casos cerrados: SDK `ee` no instalado devuelve `auth_error`; local/test/demo sin credenciales no autentican remotamente y devuelven `auth_error` con `configured=false` solo si se llama al health GEE; JSON malformado, JSON no objeto, campos minimos ausentes o `private_key` ausente devuelven `auth_error`; timeout devuelve `network_error`; cuota devuelve `quota_error`; permisos o proyecto incorrecto devuelven `permission_error`; credenciales revocadas devuelven `auth_error`.
+- **ui_states:** El dashboard muestra un estado GEE saneado y compacto: `gee.status`, `configured`, `attempts` y mensaje generico, sin valores de credenciales. En local/test/demo puede mostrar `auth_error/configured=false` sin bloquear el resto del placeholder. En production con configuracion invalida no muestra claims operativos.
+
