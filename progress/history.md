@@ -21,6 +21,9 @@
 ## 2026-07-14T17:20:00+02:00 - #sprint-7-ndvi-anomaly Sprint 7 - NDVI Anomaly -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-14T17:30:00+02:00 - #sprint-8-current-rainfall Sprint 8 - Current Rainfall -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-14T16:56:00+02:00 - #sprint-6-ndvi-climatology Sprint 6 - NDVI Climatology -> review_pending
 - 1 intento - agente codex
 
