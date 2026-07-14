@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-4-data-contracts - Sprint 4 - Data Contracts** - estado: `review_pending`.
+Feature: **sprint-5-current-ndvi - Sprint 5 - Current NDVI** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-4-data-contracts - Sprint 4 - Data Contracts** - estado: `revi
 
 ## Siguiente accion
 
-- Revisar el diff del commit de Sprint 4 y cerrar con `node .harness/spec.mjs done sprint-4-data-contracts` tras smoke test humano.
+- Revisar el diff del commit de Sprint 5 y cerrar con `node .harness/spec.mjs done sprint-5-current-ndvi` tras smoke test humano.
 
 ## Ultimo resultado
 

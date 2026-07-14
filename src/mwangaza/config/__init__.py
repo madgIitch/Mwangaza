@@ -23,6 +23,7 @@ PUBLIC_VARIABLES = (
     "MWANGAZA_CLIMATOLOGY_END_YEAR",
     "MWANGAZA_MAX_REMOTE_PIXELS",
     "MWANGAZA_GEE_PROJECT",
+    "MWANGAZA_NDVI_COLLECTION",
 )
 PRODUCTION_REQUIRED_VARIABLES = (
     "MWANGAZA_GEE_PROJECT",
@@ -76,6 +77,7 @@ class Settings:
     gee_service_account: str | None
     gee_private_key_json: str | None
     max_remote_pixels: int
+    ndvi_collection: str
 
     def __repr__(self) -> str:
         return (
@@ -109,6 +111,7 @@ class Settings:
             "enabled_countries": list(self.enabled_countries),
             "climatology_period": self.climatology_period,
             "max_remote_pixels": self.max_remote_pixels,
+            "ndvi_collection": self.ndvi_collection,
             "gee_project_configured": self.gee_project is not None,
             "gee_service_account_configured": self.gee_service_account is not None,
             "gee_private_key_json_configured": self.gee_private_key_json is not None,
@@ -138,11 +141,14 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     start_year = _int(source, "MWANGAZA_CLIMATOLOGY_START_YEAR", "2001", invalid_fields)
     end_year = _int(source, "MWANGAZA_CLIMATOLOGY_END_YEAR", "2020", invalid_fields)
     max_remote_pixels = _int(source, "MWANGAZA_MAX_REMOTE_PIXELS", "100000000", invalid_fields)
+    ndvi_collection = _get(source, "MWANGAZA_NDVI_COLLECTION", "MODIS/061/MOD13Q1")
 
     if start_year is not None and end_year is not None and start_year > end_year:
         invalid_fields.extend(["MWANGAZA_CLIMATOLOGY_START_YEAR", "MWANGAZA_CLIMATOLOGY_END_YEAR"])
     if max_remote_pixels is not None and max_remote_pixels <= 0:
         invalid_fields.append("MWANGAZA_MAX_REMOTE_PIXELS")
+    if not ndvi_collection:
+        invalid_fields.append("MWANGAZA_NDVI_COLLECTION")
 
     gee_project = _optional(source, "MWANGAZA_GEE_PROJECT")
     gee_service_account = _optional(source, "MWANGAZA_GEE_SERVICE_ACCOUNT")
@@ -178,6 +184,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         gee_service_account=gee_service_account,
         gee_private_key_json=gee_private_key_json,
         max_remote_pixels=max_remote_pixels if max_remote_pixels is not None else 100000000,
+        ndvi_collection=ndvi_collection,
     )
 
 

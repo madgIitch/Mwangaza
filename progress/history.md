@@ -14,3 +14,6 @@
 
 ## 2026-07-14T16:36:00+02:00 - #sprint-4-data-contracts Sprint 4 - Data Contracts -> review_pending
 - 1 intento - agente codex
+
+## 2026-07-14T16:48:00+02:00 - #sprint-5-current-ndvi Sprint 5 - Current NDVI -> review_pending
+- 1 intento - agente codex
