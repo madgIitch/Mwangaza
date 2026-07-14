@@ -1,0 +1,17 @@
+{
+  "payload_type": "forecast",
+  "schema_version": "mwangaza.contracts.v1",
+  "region_id": "ken",
+  "indicator": "ndvi",
+  "issue_time": "2026-07-10T12:00:00Z",
+  "target_period_start": "2026-07-11T00:00:00Z",
+  "target_period_end": "2026-07-20T00:00:00Z",
+  "horizon_days": 10,
+  "value": 0.39,
+  "unit": "index",
+  "uncertainty": 0.07,
+  "source": "fixture.forecast.experimental",
+  "quality_flag": "ok",
+  "is_simulated": true,
+  "metadata": {"fixture": "canonical"}
+}

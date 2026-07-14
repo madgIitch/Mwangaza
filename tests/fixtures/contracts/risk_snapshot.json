@@ -1,0 +1,14 @@
+{
+  "payload_type": "risk_snapshot",
+  "schema_version": "mwangaza.contracts.v1",
+  "region_id": "ken",
+  "period_start": "2026-07-01T00:00:00Z",
+  "period_end": "2026-07-10T00:00:00Z",
+  "composite_score": 0.67,
+  "risk_level": "warning",
+  "contributing_indicators": ["ndvi", "rainfall_mm", "lst_c"],
+  "source": "fixture.risk.composite",
+  "quality_flag": "ok",
+  "is_simulated": true,
+  "metadata": {"fixture": "canonical"}
+}

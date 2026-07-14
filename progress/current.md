@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-3-igad-region-catalog - Sprint 3 - IGAD Region Catalog** - estado: `review_pending`.
+Feature: **sprint-4-data-contracts - Sprint 4 - Data Contracts** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-3-igad-region-catalog - Sprint 3 - IGAD Region Catalog** - est
 
 ## Siguiente accion
 
-- Revisar el diff del commit de Sprint 3 y cerrar con `node .harness/spec.mjs done sprint-3-igad-region-catalog` tras smoke test humano.
+- Revisar el diff del commit de Sprint 4 y cerrar con `node .harness/spec.mjs done sprint-4-data-contracts` tras smoke test humano.
 
 ## Ultimo resultado
 

@@ -1,0 +1,19 @@
+{
+  "payload_type": "baseline",
+  "schema_version": "mwangaza.contracts.v1",
+  "region_id": "ken",
+  "indicator": "ndvi",
+  "period_start": "2001-07-01T00:00:00Z",
+  "period_end": "2020-07-10T00:00:00Z",
+  "baseline_start_year": 2001,
+  "baseline_end_year": 2020,
+  "mean": 0.51,
+  "median": 0.5,
+  "stddev": 0.08,
+  "observations": 20,
+  "unit": "index",
+  "source": "fixture.climatology.ndvi",
+  "quality_flag": "ok",
+  "is_simulated": true,
+  "metadata": {"fixture": "canonical"}
+}

@@ -1,0 +1,15 @@
+{
+  "payload_type": "alert",
+  "schema_version": "mwangaza.contracts.v1",
+  "alert_id": "alert-ken-20260710",
+  "region_id": "ken",
+  "issued_at": "2026-07-10T12:00:00Z",
+  "severity": "warning",
+  "status": "active",
+  "risk_level": "warning",
+  "message": "Simulated drought early action alert for Kenya.",
+  "source": "fixture.alerts",
+  "quality_flag": "ok",
+  "is_simulated": true,
+  "metadata": {"fixture": "canonical"}
+}

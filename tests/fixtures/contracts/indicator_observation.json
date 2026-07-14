@@ -1,0 +1,14 @@
+{
+  "payload_type": "indicator_observation",
+  "schema_version": "mwangaza.contracts.v1",
+  "region_id": "ken",
+  "indicator": "ndvi",
+  "period_start": "2026-07-01T00:00:00Z",
+  "period_end": "2026-07-10T00:00:00Z",
+  "value": 0.42,
+  "unit": "index",
+  "source": "fixture.modis.ndvi",
+  "quality_flag": "ok",
+  "is_simulated": true,
+  "metadata": {"fixture": "canonical"}
+}

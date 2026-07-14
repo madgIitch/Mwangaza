@@ -11,3 +11,6 @@
 
 ## 2026-07-14T15:54:00+02:00 - #sprint-3-igad-region-catalog Sprint 3 - IGAD Region Catalog -> review_pending
 - 1 intento - agente codex
+
+## 2026-07-14T16:36:00+02:00 - #sprint-4-data-contracts Sprint 4 - Data Contracts -> review_pending
+- 1 intento - agente codex
