@@ -639,7 +639,7 @@
     {
       "id": "sprint-7-ndvi-anomaly",
       "name": "Sprint 7 - NDVI Anomaly",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.2",
       "estimated_hours": 3,
