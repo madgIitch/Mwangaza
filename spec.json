@@ -388,7 +388,7 @@
     {
       "id": "sprint-3-igad-region-catalog",
       "name": "Sprint 3 - IGAD Region Catalog",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.1.0",
       "estimated_hours": 5,
@@ -416,12 +416,12 @@
       ],
       "deliverable": "Catálogo geográfico consultable por ID estable.",
       "acceptance": [
-        "AC1: El catálogo incluye Kenia, Etiopía, Somalia, Sudán, Sudán del Sur, Uganda, Yibuti y Eritrea.",
-        "AC2: Cada región tiene ID interno, nombre, ISO, nivel administrativo, parent_id y geometría válida.",
-        "AC3: Las geometrías inválidas o vacías bloquean el build de datos.",
-        "AC4: Las áreas piloto están marcadas explícitamente y no se presentan como cobertura subnacional completa del IGAD.",
-        "AC5: La simplificación para UI no sustituye la geometría analítica.",
-        "AC6: Tests verifican unicidad de IDs e ISO."
+        "El catalogo incluye exactamente los ocho paises IGAD requeridos para la vista regional: Kenia (`KEN`), Etiopia (`ETH`), Somalia (`SOM`), Sudan (`SDN`), Sudan del Sur (`SSD`), Uganda (`UGA`), Yibuti (`DJI`) y Eritrea (`ERI`).",
+        "Cada region expuesta por `mwangaza.regions` tiene `id`, `name`, `iso3`, `level`, `parent_id`, `is_pilot`, `coverage_type`, `source`, `source_version`, `geometry` y `ui_geometry`; ambos campos de geometria son objetos GeoJSON no vacios.",
+        "`validate_region_catalog` bloquea catalogos con IDs duplicados, ISO3 duplicado entre paises, geometria vacia o estructuralmente invalida, `parent_id` inexistente o pais IGAD obligatorio ausente.",
+        "El catalogo incluye al menos dos areas piloto marcadas explicitamente con `is_pilot=true` y `coverage_type=pilot_subnational`: Somalia y norte de Kenia; las areas piloto no se presentan como cobertura subnacional completa del IGAD.",
+        "La geometria simplificada para UI se almacena por separado como `ui_geometry` y no sustituye la geometria analitica `geometry`; los tests verifican que ambas existen y son objetos distintos.",
+        "Hay tests automatizados para unicidad de IDs, unicidad de ISO3 en paises, presencia de los ocho paises, validez estructural de geometria, parent_id de pilotos y errores de validacion; la suite no llama red ni Earth Engine."
       ],
       "scope": [
         "src/mwangaza/regions/**",
@@ -438,7 +438,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-14T13:51:15.511Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:0eda1e7b6541cb6081aa0894dc6059866648285f888c7bdf2a5359e070a0141c",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T13:51:21.103Z"
     },
     {
       "id": "sprint-4-data-contracts",

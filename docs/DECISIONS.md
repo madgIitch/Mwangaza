@@ -48,3 +48,12 @@ Decisiones registradas:
 - **tests:** Tests unitarios con fakes para credenciales ausentes, JSON secreto en memoria, JSON invalido, SDK ausente, auth error, permission error, quota error, network timeout, exito, reintentos/backoff sin dormir y `/health` saneado. Ningun test importa ni llama Earth Engine real. La comprobacion manual vive en `docs/earth-engine.md` e indica variables, comando `python -m mwangaza.gee.auth --check`, resultado esperado y advertencia de no commitear secretos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-3-igad-region-catalog -->
+## 2026-07-14 · sprint-3-igad-region-catalog aprobado
+
+Contexto: se aprobó el spec `sprint-3-igad-region-catalog` (Sprint 3 - IGAD Region Catalog).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

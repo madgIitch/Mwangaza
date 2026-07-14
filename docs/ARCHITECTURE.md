@@ -120,3 +120,24 @@ Objetivo no negociable:
 - **edge_cases:** Casos cerrados: SDK `ee` no instalado devuelve `auth_error`; local/test/demo sin credenciales no autentican remotamente y devuelven `auth_error` con `configured=false` solo si se llama al health GEE; JSON malformado, JSON no objeto, campos minimos ausentes o `private_key` ausente devuelven `auth_error`; timeout devuelve `network_error`; cuota devuelve `quota_error`; permisos o proyecto incorrecto devuelven `permission_error`; credenciales revocadas devuelven `auth_error`.
 - **ui_states:** El dashboard muestra un estado GEE saneado y compacto: `gee.status`, `configured`, `attempts` y mensaje generico, sin valores de credenciales. En local/test/demo puede mostrar `auth_error/configured=false` sin bloquear el resto del placeholder. En production con configuracion invalida no muestra claims operativos.
 
+<!-- harness:sprint-3-igad-region-catalog -->
+## sprint-3-igad-region-catalog · Sprint 3 - IGAD Region Catalog
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/regions/**`
+  - `data/regions/**`
+  - `tests/regions/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
