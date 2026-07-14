@@ -575,7 +575,7 @@
     {
       "id": "sprint-6-ndvi-climatology",
       "name": "Sprint 6 - NDVI Climatology",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.1",
       "estimated_hours": 5,
