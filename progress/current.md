@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-1-configuration-and-secrets · Sprint 1 - Configuration and Secrets** — estado: `review_pending`.
+Feature: **sprint-2-gee-authentication · Sprint 2 - Google Earth Engine Authentication** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-1-configuration-and-secrets · Sprint 1 - Configuration and Se
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 1 - Configuration and Secrets)` y cerrar con `node .harness/spec.mjs done sprint-1-configuration-and-secrets` tras smoke test humano.
+- Revisar el diff del commit `feat(Sprint 2 - Google Earth Engine Authentication)` y cerrar con `node .harness/spec.mjs done sprint-2-gee-authentication` tras smoke test humano.
 
 ## Último resultado
 

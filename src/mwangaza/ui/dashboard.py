@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from mwangaza._foundation import foundation_status
 from mwangaza.config import ConfigurationError, load_settings
+from mwangaza.gee.auth import check_gee_auth
 
 
 def render_dashboard() -> None:
@@ -12,6 +13,7 @@ def render_dashboard() -> None:
         settings = load_settings()
     except ConfigurationError as exc:
         config_error = exc
+    gee = check_gee_auth(settings) if settings is not None else None
 
     try:
         import streamlit as st
@@ -27,6 +29,8 @@ def render_dashboard() -> None:
             )
         if config_error is not None:
             print(f"Configuration: invalid ({config_error})")
+        if gee is not None:
+            print(f"GEE: {gee.status} configured={gee.configured} attempts={gee.attempts}")
         print("No real or simulated production data is displayed in Sprint 0.")
         return
 
@@ -40,6 +44,15 @@ def render_dashboard() -> None:
     if config_error is not None:
         st.error("configuration invalid")
         st.write(config_error.to_public_dict())
+    if gee is not None:
+        st.write(
+            {
+                "gee.status": gee.status,
+                "configured": gee.configured,
+                "attempts": gee.attempts,
+                "message": gee.message,
+            }
+        )
     st.write(
         {
             "version": status.version,
