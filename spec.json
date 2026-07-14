@@ -1,0 +1,3517 @@
+{
+  "project": "Mwangaza",
+  "description": "Satellite-powered drought early warning and early action platform for the IGAD region.",
+  "vision": "Mwangaza transforma observaciones satelitales de vegetacion, precipitacion y temperatura superficial en indicadores comprensibles, alertas explicables y acciones anticipatorias. La version 1.0 ofrece una vista regional para ocho paises IGAD y pilotos subnacionales en Somalia y el norte de Kenia, priorizando transparencia, bajo coste, capacidad de demo offline y una arquitectura que una sola persona puede desarrollar y mantener.",
+  "tagline": "Bringing Light to Early Action",
+  "release_target": "1.0.0",
+  "hackathon_window_days": 29,
+  "architecture": {
+    "dashboard": "Python + Streamlit + Plotly",
+    "api": "Python + FastAPI",
+    "geospatial_engine": "Google Earth Engine through an isolated adapter",
+    "analytics": "Pandas, GeoPandas and NumPy; optional statsmodels forecasting",
+    "cache": "Versioned Parquet analytical cache",
+    "operational_database": "SQLite for alerts, audit events, configuration versions and notification outbox",
+    "reports": "HTML templates rendered to PDF",
+    "deployment": "Docker; Cloud Run or equivalent container platform",
+    "automation": "CLI refresh pipeline plus scheduled job",
+    "testing": "Pytest, contract tests, mocked Earth Engine and Streamlit smoke tests"
+  },
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "require_approved_spec_to_implement": true,
+    "require_previous_dependencies_done": true,
+    "preserve_previous_acceptance_contracts": true,
+    "valid_status": [
+      "pending",
+      "spec_ready",
+      "in_progress",
+      "review_pending",
+      "done",
+      "blocked"
+    ],
+    "sdd_required_when": "feature tiene \"sdd\": true",
+    "max_attempts": 3,
+    "default_quality_gates": [
+      "ruff check .",
+      "ruff format --check .",
+      "mypy src",
+      "pytest -q",
+      "python -m compileall src"
+    ],
+    "scientific_integrity_invariants": [
+      "Una region sin datos nunca se representa como riesgo verde.",
+      "Los datos simulados, cacheados, observados y previstos se etiquetan de forma distinta.",
+      "Una estimacion de exposicion nunca se denomina numero de personas afectadas.",
+      "Los umbrales del prototipo no se presentan como umbrales oficiales de IGAD.",
+      "Una alerta con calidad critica no puede publicarse como concluyente.",
+      "Toda cifra visible conserva fuente, periodo, unidad y version de transformacion."
+    ],
+    "security_invariants": [
+      "Ninguna credencial de Google Earth Engine se incluye en Git, imagen Docker, logs o respuestas.",
+      "El dashboard publico no ejecuta consultas remotas costosas bajo input arbitrario.",
+      "No se recopilan datos personales ni ubicaciones individuales de comunidades en la version 1.0.",
+      "Los adapters de notificacion reales permanecen deshabilitados por defecto.",
+      "Production nunca cambia silenciosamente al modo demo."
+    ]
+  },
+  "scope_1_0": {
+    "included": [
+      "Cobertura nacional configurable para los ocho paises IGAD indicados en el proyecto.",
+      "Pilotos subnacionales en Somalia y norte de Kenia.",
+      "NDVI, precipitacion, temperatura superficial y anomalias historicas.",
+      "Score compuesto explicable, semaforo y recomendaciones de accion temprana.",
+      "Dashboard regional, drilldown, tendencias, alertas activas y reportes PDF.",
+      "API de lectura, exportacion, auditoria y simulacion de notificaciones.",
+      "Forecast experimental con incertidumbre y gate de calidad.",
+      "Interfaz en ingles, suajili y somali.",
+      "Modo de bajo ancho de banda, PWA y demo offline.",
+      "Despliegue en contenedores, refresco programado y documentacion publica."
+    ],
+    "excluded": [
+      "Declarar Mwangaza como sistema oficial de alerta de IGAD.",
+      "Predicciones meteorologicas operativas propias.",
+      "Modelos de conflicto, desplazamiento o epidemiologia.",
+      "Sensores IoT desplegados en campo.",
+      "Envio masivo real de SMS o activacion real de fondos.",
+      "Datos personales o reportes comunitarios geolocalizados.",
+      "Seguro parametrico, pagos o decisiones financieras.",
+      "Cobertura subnacional completa y validada para todos los paises.",
+      "Garantias de precision para decisiones de vida o muerte sin validacion institucional."
+    ]
+  },
+  "pilot_strategy": {
+    "regional_view": "National-level overview for the configured IGAD countries.",
+    "deep_dive_1": "Somalia drought scenario.",
+    "deep_dive_2": "Northern Kenya pastoral-area scenario.",
+    "reason": "Maximizar profundidad, credibilidad y estabilidad de la demo manteniendo una arquitectura escalable."
+  },
+  "calendar_plan": [
+    {
+      "days": "1-2",
+      "focus": "Base y acceso a datos",
+      "sprints": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "days": "3-6",
+      "focus": "Contratos y señales satelitales",
+      "sprints": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "days": "7-9",
+      "focus": "Agregación, cache y pipeline",
+      "sprints": [
+        13,
+        14,
+        15,
+        16,
+        17
+      ]
+    },
+    {
+      "days": "10-12",
+      "focus": "Riesgo, acciones y alertas",
+      "sprints": [
+        18,
+        19,
+        20,
+        21
+      ]
+    },
+    {
+      "days": "13-17",
+      "focus": "Dashboard y análisis interactivo",
+      "sprints": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ]
+    },
+    {
+      "days": "18-20",
+      "focus": "Impacto, informes, API y comunicación",
+      "sprints": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ]
+    },
+    {
+      "days": "21-23",
+      "focus": "Predicción, idiomas y experiencia móvil",
+      "sprints": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "days": "24-25",
+      "focus": "Administración, observabilidad, seguridad y QA",
+      "sprints": [
+        41,
+        42,
+        43,
+        44
+      ]
+    },
+    {
+      "days": "26-27",
+      "focus": "Escenarios de demo y fallback",
+      "sprints": [
+        45,
+        46,
+        47
+      ]
+    },
+    {
+      "days": "28",
+      "focus": "Documentación y materiales públicos",
+      "sprints": [
+        48,
+        49,
+        50,
+        51,
+        52
+      ]
+    },
+    {
+      "days": "29",
+      "focus": "Despliegue, automatización y release",
+      "sprints": [
+        53,
+        54,
+        55
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "sprint-0-repository-foundation",
+      "name": "Sprint 0 - Repository Foundation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.1",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [],
+      "objective": "Crear una base reproducible para desarrollar Mwangaza con Streamlit, FastAPI, Google Earth Engine y pruebas automatizadas.",
+      "user_stories": [
+        {
+          "id": "HU0.1",
+          "story": "Como desarrollador individual quiero una estructura modular para que la IA pueda implementar funcionalidades sin mezclar datos, interfaz, API y despliegue."
+        },
+        {
+          "id": "HU0.2",
+          "story": "Como participante quiero poder reconstruir el proyecto desde cero con comandos documentados."
+        }
+      ],
+      "tasks": [
+        "Crear paquete Python `src/mwangaza` con módulos data, gee, alerts, forecasts, reports, api, ui y db.",
+        "Configurar Python 3.11+, Ruff, MyPy, Pytest y pre-commit.",
+        "Crear entrypoints para Streamlit, FastAPI, refresco de datos y pruebas.",
+        "Añadir CI inicial y gates de calidad.",
+        "Definir estrategia de versionado y convenciones de commits."
+      ],
+      "deliverable": "Repositorio instalable que inicia esqueletos vacíos de dashboard y API y supera los gates iniciales.",
+      "acceptance": [
+        "AC1: `python -m pip install -e .` funciona en un entorno limpio.",
+        "AC2: `make lint`, `make typecheck` y `make test` terminan con código 0 en CI.",
+        "AC3: Existen entrypoints documentados para `streamlit run app.py`, API y actualización de datos.",
+        "AC4: El código de dominio vive bajo `src/mwangaza` y no dentro de notebooks.",
+        "AC5: `.env.example` no contiene claves, tokens, emails ni rutas privadas reales.",
+        "AC6: La versión inicial es `0.0.1` y el repositorio contiene una licencia compatible con la entrega."
+      ],
+      "scope": [
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/**",
+        "tests/**",
+        "app.py",
+        "README.md",
+        "LICENSE"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-1-configuration-and-secrets",
+      "name": "Sprint 1 - Configuration and Secrets",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.2",
+      "estimated_hours": 3,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-0-repository-foundation"
+      ],
+      "objective": "Centralizar la configuración y evitar que credenciales de Earth Engine o servicios externos aparezcan en el código.",
+      "user_stories": [
+        {
+          "id": "HU1.1",
+          "story": "Como mantenedor quiero validar la configuración al arrancar para detectar errores antes de ejecutar consultas costosas."
+        },
+        {
+          "id": "HU1.2",
+          "story": "Como usuario de despliegue quiero usar variables de entorno o secretos gestionados."
+        }
+      ],
+      "tasks": [
+        "Crear Settings tipado.",
+        "Definir perfiles local, test, demo y production.",
+        "Validar rutas, fechas base, países habilitados y límites.",
+        "Redactar secretos en logs.",
+        "Documentar Streamlit secrets y credenciales de servicio."
+      ],
+      "deliverable": "Configuración tipada y segura para todos los entornos.",
+      "acceptance": [
+        "AC1: La aplicación falla al arrancar con un mensaje accionable cuando falta una variable obligatoria en producción.",
+        "AC2: El modo test no necesita credenciales reales.",
+        "AC3: Ningún objeto Settings imprime secretos en `repr`, logs o respuestas HTTP.",
+        "AC4: Las fechas de climatología y los países habilitados son configurables sin editar código.",
+        "AC5: El perfil demo puede ejecutarse únicamente con fixtures locales.",
+        "AC6: Las variables públicas y privadas están diferenciadas en la documentación."
+      ],
+      "scope": [
+        "src/mwangaza/config.py",
+        "tests/test_config.py",
+        ".env.example",
+        "docs/configuration.md",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-2-gee-authentication",
+      "name": "Sprint 2 - Google Earth Engine Authentication",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.3",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-1-configuration-and-secrets"
+      ],
+      "objective": "Conectar Mwangaza con Google Earth Engine mediante credenciales locales o cuenta de servicio.",
+      "user_stories": [
+        {
+          "id": "HU2.1",
+          "story": "Como motor de datos quiero autenticarme en Earth Engine antes de consultar imágenes."
+        },
+        {
+          "id": "HU2.2",
+          "story": "Como desarrollador quiero diagnosticar permisos o proyecto mal configurado."
+        }
+      ],
+      "tasks": [
+        "Crear adaptador de autenticación.",
+        "Soportar login interactivo local y service account en despliegue.",
+        "Implementar health check liviano.",
+        "Añadir reintentos limitados y timeouts.",
+        "Crear fake adapter para tests."
+      ],
+      "deliverable": "Conexión a Earth Engine verificable sin acoplar el resto del sistema a credenciales reales.",
+      "acceptance": [
+        "AC1: El health check devuelve `ok`, `auth_error`, `permission_error`, `quota_error` o `network_error` con códigos estables.",
+        "AC2: El adaptador no realiza autenticación interactiva en production.",
+        "AC3: Un secreto JSON puede cargarse desde variable segura sin escribirse a disco.",
+        "AC4: Los reintentos usan backoff y no superan el máximo configurado.",
+        "AC5: Los tests no llaman a Earth Engine.",
+        "AC6: Existe una comprobación manual documentada para confirmar acceso real."
+      ],
+      "scope": [
+        "src/mwangaza/gee/auth.py",
+        "tests/gee/test_auth.py",
+        "docs/earth-engine.md",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-3-igad-region-catalog",
+      "name": "Sprint 3 - IGAD Region Catalog",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.1.0",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-2-gee-authentication"
+      ],
+      "objective": "Definir de forma versionada los países IGAD y las áreas piloto utilizadas por la aplicación.",
+      "user_stories": [
+        {
+          "id": "HU3.1",
+          "story": "Como analista quiero seleccionar una región válida sin dibujar geometrías manualmente."
+        },
+        {
+          "id": "HU3.2",
+          "story": "Como jurado quiero distinguir cobertura regional de pilotos subnacionales."
+        }
+      ],
+      "tasks": [
+        "Crear catálogo de países y códigos ISO.",
+        "Incluir geometrías simplificadas para visualización.",
+        "Definir pilotos Somalia y norte de Kenia.",
+        "Añadir metadatos de fuente y versión.",
+        "Validar geometrías."
+      ],
+      "deliverable": "Catálogo geográfico consultable por ID estable.",
+      "acceptance": [
+        "AC1: El catálogo incluye Kenia, Etiopía, Somalia, Sudán, Sudán del Sur, Uganda, Yibuti y Eritrea.",
+        "AC2: Cada región tiene ID interno, nombre, ISO, nivel administrativo, parent_id y geometría válida.",
+        "AC3: Las geometrías inválidas o vacías bloquean el build de datos.",
+        "AC4: Las áreas piloto están marcadas explícitamente y no se presentan como cobertura subnacional completa del IGAD.",
+        "AC5: La simplificación para UI no sustituye la geometría analítica.",
+        "AC6: Tests verifican unicidad de IDs e ISO."
+      ],
+      "scope": [
+        "src/mwangaza/regions/**",
+        "data/regions/**",
+        "tests/regions/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-4-data-contracts",
+      "name": "Sprint 4 - Data Contracts",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.1.1",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-3-igad-region-catalog"
+      ],
+      "objective": "Definir contratos únicos para indicadores, anomalías, riesgos, alertas y previsiones.",
+      "user_stories": [
+        {
+          "id": "HU4.1",
+          "story": "Como desarrollador quiero que ETL, API y dashboard interpreten los datos de la misma manera."
+        },
+        {
+          "id": "HU4.2",
+          "story": "Como auditor quiero distinguir valores observados, derivados y simulados."
+        }
+      ],
+      "tasks": [
+        "Crear modelos IndicatorObservation, Baseline, Anomaly, RiskSnapshot, Alert y Forecast.",
+        "Definir unidades y valores nulos.",
+        "Versionar schemas JSON.",
+        "Añadir validación temporal y espacial.",
+        "Crear fixtures canónicas."
+      ],
+      "deliverable": "Contratos validados que atraviesan datos, API y UI sin conversiones ambiguas.",
+      "acceptance": [
+        "AC1: Cada observación incluye region_id, indicator, period_start, period_end, value, unit, source y quality_flag.",
+        "AC2: Los tipos de indicador distinguen `ndvi`, `rainfall_mm`, `lst_c`, `composite_score` y `exposure`.",
+        "AC3: Valores no finitos se rechazan antes de persistir.",
+        "AC4: Datos simulados incluyen `is_simulated=true` y no pueden aparecer como observados.",
+        "AC5: Las fixtures serializan y deserializan sin pérdida.",
+        "AC6: Todo payload incluye `schema_version`."
+      ],
+      "scope": [
+        "src/mwangaza/contracts/**",
+        "tests/contracts/**",
+        "docs/contracts.md",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-5-current-ndvi",
+      "name": "Sprint 5 - Current NDVI",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.0",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-4-data-contracts"
+      ],
+      "objective": "Calcular NDVI reciente para una región y período configurados.",
+      "user_stories": [
+        {
+          "id": "HU5.1",
+          "story": "Como analista quiero medir el estado actual de la vegetación."
+        },
+        {
+          "id": "HU5.2",
+          "story": "Como sistema quiero conservar la fecha y calidad del producto consultado."
+        }
+      ],
+      "tasks": [
+        "Crear adaptador de colección NDVI.",
+        "Aplicar escalado y máscara de calidad.",
+        "Componer el período reciente.",
+        "Agregar estadísticos regionales.",
+        "Añadir tests con Earth Engine simulado."
+      ],
+      "deliverable": "Observación NDVI reciente por región.",
+      "acceptance": [
+        "AC1: El resultado expresa NDVI en rango esperado y conserva el período real de observación.",
+        "AC2: Píxeles inválidos o sin calidad se excluyen.",
+        "AC3: Una región sin datos devuelve estado `no_data`, no cero.",
+        "AC4: El procesamiento permite cambiar la colección desde configuración.",
+        "AC5: La consulta queda limitada a geometría y fechas solicitadas.",
+        "AC6: Se persiste la fracción de cobertura válida."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-6-ndvi-climatology",
+      "name": "Sprint 6 - NDVI Climatology",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.1",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-5-current-ndvi"
+      ],
+      "objective": "Calcular una línea base histórica comparable para el mismo período estacional.",
+      "user_stories": [
+        {
+          "id": "HU6.1",
+          "story": "Como analista quiero comparar la vegetación actual con lo normal para esa época."
+        },
+        {
+          "id": "HU6.2",
+          "story": "Como mantenedor quiero una climatología reproducible y versionada."
+        }
+      ],
+      "tasks": [
+        "Definir ventana histórica configurable.",
+        "Agrupar por mes o dekad.",
+        "Calcular media, mediana y dispersión.",
+        "Persistir versión de baseline.",
+        "Excluir años incompletos."
+      ],
+      "deliverable": "Baseline NDVI histórico por región y período estacional.",
+      "acceptance": [
+        "AC1: La climatología usa únicamente años configurados y registra la lista efectiva.",
+        "AC2: El período actual nunca se incluye accidentalmente en el baseline.",
+        "AC3: Se calculan media, mediana, desviación y número de observaciones.",
+        "AC4: Menos del mínimo de años produce quality_flag `insufficient_history`.",
+        "AC5: Cambiar la ventana histórica crea una nueva versión.",
+        "AC6: Tests cubren cambio de año y meses con distinta duración."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-7-ndvi-anomaly",
+      "name": "Sprint 7 - NDVI Anomaly",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.2",
+      "estimated_hours": 3,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-6-ndvi-climatology"
+      ],
+      "objective": "Calcular desviación absoluta y porcentual respecto a la climatología NDVI.",
+      "user_stories": [
+        {
+          "id": "HU7.1",
+          "story": "Como gestor quiero identificar vegetación peor de lo habitual."
+        },
+        {
+          "id": "HU7.2",
+          "story": "Como sistema quiero evitar porcentajes inválidos cuando el baseline es cercano a cero."
+        }
+      ],
+      "tasks": [
+        "Implementar anomalía absoluta.",
+        "Implementar anomalía porcentual segura.",
+        "Calcular z-score opcional.",
+        "Propagar flags de calidad.",
+        "Definir redondeo de presentación."
+      ],
+      "deliverable": "Anomalía NDVI explicable y validada.",
+      "acceptance": [
+        "AC1: La anomalía absoluta es `current - baseline`.",
+        "AC2: La anomalía porcentual no se calcula cuando el denominador no supera el epsilon configurado.",
+        "AC3: El signo negativo representa condiciones vegetativas inferiores al baseline.",
+        "AC4: El cálculo conserva current_id y baseline_id para trazabilidad.",
+        "AC5: Los flags de calidad más restrictivos se propagan.",
+        "AC6: Los umbrales de alerta no se codifican dentro de esta función."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-8-current-rainfall",
+      "name": "Sprint 8 - Current Rainfall",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.3",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-7-ndvi-anomaly"
+      ],
+      "objective": "Calcular precipitación acumulada reciente para cada región.",
+      "user_stories": [
+        {
+          "id": "HU8.1",
+          "story": "Como analista quiero medir déficit o exceso reciente de lluvia."
+        },
+        {
+          "id": "HU8.2",
+          "story": "Como sistema quiero expresar la precipitación en milímetros comparables."
+        }
+      ],
+      "tasks": [
+        "Crear adaptador CHIRPS configurable.",
+        "Acumular precipitación del período.",
+        "Agregar por región.",
+        "Registrar cobertura temporal.",
+        "Manejar días faltantes."
+      ],
+      "deliverable": "Precipitación reciente acumulada por región.",
+      "acceptance": [
+        "AC1: El valor se expresa en milímetros acumulados.",
+        "AC2: El resultado indica número de días esperados y disponibles.",
+        "AC3: Días faltantes por encima del umbral marcan `incomplete_period`.",
+        "AC4: Una región sin píxeles válidos devuelve `no_data`.",
+        "AC5: Las fechas se interpretan en UTC.",
+        "AC6: La consulta no mezcla acumulados de períodos diferentes."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-9-rainfall-climatology",
+      "name": "Sprint 9 - Rainfall Climatology",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.4",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-8-current-rainfall"
+      ],
+      "objective": "Construir la línea base histórica de precipitación para períodos equivalentes.",
+      "user_stories": [
+        {
+          "id": "HU9.1",
+          "story": "Como analista quiero conocer la lluvia normal para la misma estación."
+        },
+        {
+          "id": "HU9.2",
+          "story": "Como sistema quiero medir variabilidad histórica."
+        }
+      ],
+      "tasks": [
+        "Agrupar acumulados históricos equivalentes.",
+        "Calcular percentiles.",
+        "Persistir años y estadísticas.",
+        "Detectar historia insuficiente.",
+        "Crear fixtures secas y húmedas."
+      ],
+      "deliverable": "Baseline de lluvia con distribución histórica.",
+      "acceptance": [
+        "AC1: El baseline incluye media, mediana, percentiles 20/50/80 y desviación.",
+        "AC2: Los años con cobertura insuficiente se excluyen y quedan registrados.",
+        "AC3: El mínimo de años es configurable.",
+        "AC4: La unidad coincide con Current Rainfall.",
+        "AC5: La versión del baseline cambia si cambia fuente o ventana.",
+        "AC6: Tests cubren distribución sesgada y valores extremos."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-10-rainfall-anomaly",
+      "name": "Sprint 10 - Rainfall Anomaly",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.5",
+      "estimated_hours": 3,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-9-rainfall-climatology"
+      ],
+      "objective": "Calcular déficit o exceso de lluvia respecto a la climatología.",
+      "user_stories": [
+        {
+          "id": "HU10.1",
+          "story": "Como gestor quiero saber cuánto se desvía la lluvia de lo normal."
+        },
+        {
+          "id": "HU10.2",
+          "story": "Como analista quiero combinar porcentaje y percentil histórico."
+        }
+      ],
+      "tasks": [
+        "Calcular anomalía absoluta y porcentual.",
+        "Calcular percentil empírico.",
+        "Clasificar déficit técnico sin generar alerta final.",
+        "Propagar calidad.",
+        "Añadir tests de frontera."
+      ],
+      "deliverable": "Anomalía pluviométrica comparable entre regiones.",
+      "acceptance": [
+        "AC1: Un valor negativo representa déficit frente a la media.",
+        "AC2: El percentil queda entre 0 y 100.",
+        "AC3: El cálculo no inventa percentil con menos del mínimo de observaciones.",
+        "AC4: Se conserva referencia a current y baseline.",
+        "AC5: El módulo no decide acciones ni severidad final.",
+        "AC6: Tests cubren exactamente los umbrales internos documentados."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-11-current-land-surface-temperature",
+      "name": "Sprint 11 - Current Land Surface Temperature",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.6",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-10-rainfall-anomaly"
+      ],
+      "objective": "Calcular temperatura superficial reciente como señal complementaria de estrés.",
+      "user_stories": [
+        {
+          "id": "HU11.1",
+          "story": "Como analista quiero observar calor superficial anómalo."
+        },
+        {
+          "id": "HU11.2",
+          "story": "Como sistema quiero convertir correctamente la escala del producto."
+        }
+      ],
+      "tasks": [
+        "Crear adaptador LST configurable.",
+        "Aplicar máscara de calidad.",
+        "Convertir a grados Celsius.",
+        "Componer período.",
+        "Agregar estadísticos regionales."
+      ],
+      "deliverable": "Temperatura superficial reciente por región.",
+      "acceptance": [
+        "AC1: La salida se expresa en grados Celsius.",
+        "AC2: El factor de escala y conversión quedan aislados en el adaptador.",
+        "AC3: Píxeles sin calidad no participan.",
+        "AC4: Se informa media, mediana y cobertura.",
+        "AC5: Valores físicamente imposibles se marcan como inválidos.",
+        "AC6: Tests verifican la conversión de unidades."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-12-temperature-anomaly",
+      "name": "Sprint 12 - Temperature Anomaly",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.7",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-11-current-land-surface-temperature"
+      ],
+      "objective": "Comparar LST reciente con su comportamiento histórico estacional.",
+      "user_stories": [
+        {
+          "id": "HU12.1",
+          "story": "Como gestor quiero detectar estrés térmico superior a lo habitual."
+        },
+        {
+          "id": "HU12.2",
+          "story": "Como sistema quiero mantener esta señal separada del score final."
+        }
+      ],
+      "tasks": [
+        "Crear climatología LST.",
+        "Calcular anomalía en °C.",
+        "Calcular z-score.",
+        "Propagar calidad.",
+        "Añadir fixtures de ola de calor."
+      ],
+      "deliverable": "Anomalía térmica estacional por región.",
+      "acceptance": [
+        "AC1: La anomalía se expresa en diferencia de grados Celsius.",
+        "AC2: Una anomalía positiva representa superficie más caliente que el baseline.",
+        "AC3: Historia insuficiente produce `insufficient_history`.",
+        "AC4: Los datos nocturnos y diurnos no se mezclan sin configuración explícita.",
+        "AC5: Se conserva la variante del producto utilizada.",
+        "AC6: El módulo no genera recomendaciones directamente."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-13-spatial-aggregation",
+      "name": "Sprint 13 - Spatial Aggregation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.0",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-12-temperature-anomaly"
+      ],
+      "objective": "Agregar indicadores de píxel a regiones administrativas de forma consistente.",
+      "user_stories": [
+        {
+          "id": "HU13.1",
+          "story": "Como usuario quiero comparar países y distritos con una métrica resumida."
+        },
+        {
+          "id": "HU13.2",
+          "story": "Como analista quiero conocer también dispersión y cobertura."
+        }
+      ],
+      "tasks": [
+        "Crear servicio de zonal statistics.",
+        "Definir reducer configurable.",
+        "Calcular cobertura válida.",
+        "Soportar país y piloto subnacional.",
+        "Añadir límites de complejidad."
+      ],
+      "deliverable": "Estadísticos zonales consistentes para todas las señales.",
+      "acceptance": [
+        "AC1: Cada agregado incluye media, mediana, percentiles y área válida cuando la fuente lo permite.",
+        "AC2: Regiones con cobertura menor al umbral quedan marcadas.",
+        "AC3: La geometría analítica se usa sin la simplificación visual.",
+        "AC4: El servicio impone límite de regiones y escala para evitar consultas accidentales masivas.",
+        "AC5: Los resultados se ordenan por region_id.",
+        "AC6: La misma entrada produce resultados estables dentro de tolerancia documentada."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-14-indicator-snapshot",
+      "name": "Sprint 14 - Indicator Snapshot",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.1",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-13-spatial-aggregation"
+      ],
+      "objective": "Unificar NDVI, lluvia y temperatura de un mismo período en un snapshot regional.",
+      "user_stories": [
+        {
+          "id": "HU14.1",
+          "story": "Como motor de riesgo quiero recibir señales alineadas temporalmente."
+        },
+        {
+          "id": "HU14.2",
+          "story": "Como auditor quiero saber qué indicadores faltaban al calcular un snapshot."
+        }
+      ],
+      "tasks": [
+        "Crear ensamblador temporal.",
+        "Definir tolerancias entre períodos.",
+        "Relacionar observaciones y anomalías.",
+        "Calcular completitud.",
+        "Persistir snapshot inmutable."
+      ],
+      "deliverable": "Snapshot regional listo para clasificación.",
+      "acceptance": [
+        "AC1: Un snapshot corresponde a una única región y ventana de análisis.",
+        "AC2: No se combinan observaciones con ventanas incompatibles.",
+        "AC3: El snapshot enumera indicadores presentes, ausentes y degradados.",
+        "AC4: Actualizar una fuente crea un snapshot nuevo, no modifica el anterior.",
+        "AC5: El snapshot tiene hash reproducible del contenido.",
+        "AC6: La UI y API pueden mostrar la fecha de actualización más antigua y más reciente de sus señales."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/db/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-15-parquet-cache",
+      "name": "Sprint 15 - Parquet Cache",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.2",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-14-indicator-snapshot"
+      ],
+      "objective": "Cachear resultados analíticos para reducir latencia y consumo de cuota de Earth Engine.",
+      "user_stories": [
+        {
+          "id": "HU15.1",
+          "story": "Como usuario quiero que el dashboard abra rápidamente."
+        },
+        {
+          "id": "HU15.2",
+          "story": "Como mantenedor quiero invalidar datos cuando cambie la versión del cálculo."
+        }
+      ],
+      "tasks": [
+        "Crear cache Parquet particionada.",
+        "Definir clave de cache.",
+        "Implementar TTL.",
+        "Añadir invalidación por schema y algoritmo.",
+        "Proteger escrituras atómicas."
+      ],
+      "deliverable": "Cache local o remota segura y versionada.",
+      "acceptance": [
+        "AC1: La clave incluye región, indicador, período, fuente y versión del algoritmo.",
+        "AC2: Una entrada válida evita una consulta nueva a Earth Engine.",
+        "AC3: Archivos se escriben temporalmente y se renombran de forma atómica.",
+        "AC4: Un Parquet corrupto se ignora y se regenera.",
+        "AC5: El TTL es configurable por tipo de dato.",
+        "AC6: La cache no contiene credenciales."
+      ],
+      "scope": [
+        "src/mwangaza/cache/**",
+        "data/cache/.gitkeep",
+        "tests/cache/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-16-refresh-pipeline",
+      "name": "Sprint 16 - Refresh Pipeline",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.3",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-15-parquet-cache"
+      ],
+      "objective": "Ejecutar la actualización de indicadores como un trabajo reproducible y reanudable.",
+      "user_stories": [
+        {
+          "id": "HU16.1",
+          "story": "Como operador quiero actualizar todas las regiones mediante un único comando."
+        },
+        {
+          "id": "HU16.2",
+          "story": "Como desarrollador quiero reintentar solo las regiones fallidas."
+        }
+      ],
+      "tasks": [
+        "Crear CLI `mwangaza refresh`.",
+        "Definir fases y checkpoint.",
+        "Añadir concurrencia limitada.",
+        "Registrar run_id.",
+        "Generar resumen final."
+      ],
+      "deliverable": "Pipeline de actualización por lotes con estado observable.",
+      "acceptance": [
+        "AC1: Cada ejecución tiene run_id, inicio, fin, configuración efectiva y resultado por región.",
+        "AC2: Un fallo regional no elimina resultados válidos de otras regiones.",
+        "AC3: La opción `--resume` procesa únicamente unidades pendientes o fallidas.",
+        "AC4: La concurrencia máxima es configurable y conservadora.",
+        "AC5: El comando devuelve código distinto de cero si supera el umbral de fallos.",
+        "AC6: El resumen distingue cache hit, consulta remota, no_data y error."
+      ],
+      "scope": [
+        "src/mwangaza/pipeline/**",
+        "src/mwangaza/cli.py",
+        "tests/pipeline/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-17-data-quality",
+      "name": "Sprint 17 - Data Quality",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.4",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-16-refresh-pipeline"
+      ],
+      "objective": "Evaluar frescura, cobertura, consistencia y completitud antes de publicar resultados.",
+      "user_stories": [
+        {
+          "id": "HU17.1",
+          "story": "Como usuario quiero saber si una alerta se basa en datos incompletos."
+        },
+        {
+          "id": "HU17.2",
+          "story": "Como sistema quiero impedir alertas confiadas con calidad insuficiente."
+        }
+      ],
+      "tasks": [
+        "Definir reglas de calidad.",
+        "Calcular quality score.",
+        "Añadir flags por fuente.",
+        "Bloquear publicación según severidad.",
+        "Mostrar avisos."
+      ],
+      "deliverable": "Evaluación de calidad adjunta a cada snapshot.",
+      "acceptance": [
+        "AC1: La calidad considera frescura, cobertura espacial, cobertura temporal e historia suficiente.",
+        "AC2: El score queda entre 0 y 100 con desglose de contribuciones.",
+        "AC3: Calidad crítica impide alertas automáticas y produce estado `data_review_required`.",
+        "AC4: La UI muestra avisos sin ocultar datos disponibles.",
+        "AC5: Las reglas están versionadas y configurables.",
+        "AC6: Tests cubren snapshot completo, degradado y bloqueado."
+      ],
+      "scope": [
+        "src/mwangaza/quality/**",
+        "tests/quality/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-18-alert-thresholds",
+      "name": "Sprint 18 - Alert Thresholds",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.0",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-17-data-quality"
+      ],
+      "objective": "Definir umbrales configurables de semáforo sin mezclarlos con la obtención de datos.",
+      "user_stories": [
+        {
+          "id": "HU18.1",
+          "story": "Como administrador quiero ajustar umbrales de verde, amarillo, naranja y rojo."
+        },
+        {
+          "id": "HU18.2",
+          "story": "Como auditor quiero saber qué versión de umbrales produjo una alerta."
+        }
+      ],
+      "tasks": [
+        "Crear configuración versionada.",
+        "Validar rangos no solapados.",
+        "Implementar clasificador por indicador.",
+        "Añadir presets de demo.",
+        "Documentar límites científicos."
+      ],
+      "deliverable": "Clasificación de severidad técnica por indicador.",
+      "acceptance": [
+        "AC1: Los niveles permitidos son `green`, `yellow`, `orange`, `red` y `unknown`.",
+        "AC2: Los rangos deben cubrir el dominio configurado sin solaparse.",
+        "AC3: Calidad bloqueada fuerza `unknown` independientemente del valor.",
+        "AC4: Cada clasificación conserva threshold_version.",
+        "AC5: Cambiar umbrales no modifica alertas históricas.",
+        "AC6: Los presets se presentan como configuración de prototipo, no como estándar oficial del IGAD."
+      ],
+      "scope": [
+        "src/mwangaza/alerts/thresholds.py",
+        "config/thresholds/**",
+        "tests/alerts/test_thresholds.py",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-19-composite-drought-score",
+      "name": "Sprint 19 - Composite Drought Score",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.1",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-18-alert-thresholds"
+      ],
+      "objective": "Combinar señales en un score explicable de riesgo de sequía.",
+      "user_stories": [
+        {
+          "id": "HU19.1",
+          "story": "Como gestor quiero una señal resumida que no dependa únicamente del NDVI."
+        },
+        {
+          "id": "HU19.2",
+          "story": "Como analista quiero inspeccionar el peso de cada indicador."
+        }
+      ],
+      "tasks": [
+        "Definir normalización por señal.",
+        "Configurar pesos.",
+        "Calcular score 0-100.",
+        "Aplicar reglas de datos faltantes.",
+        "Persistir explicación."
+      ],
+      "deliverable": "Score compuesto regional con desglose auditable.",
+      "acceptance": [
+        "AC1: El score final queda entre 0 y 100.",
+        "AC2: NDVI, lluvia y LST contribuyen por separado con pesos que suman 1.",
+        "AC3: Si falta una señal opcional, los pesos se renormalizan y queda registrado.",
+        "AC4: Si faltan señales obligatorias, el score es `null` y nivel `unknown`.",
+        "AC5: El resultado incluye contribución y evidencia de cada indicador.",
+        "AC6: El mismo snapshot y versión producen el mismo score."
+      ],
+      "scope": [
+        "src/mwangaza/risk/**",
+        "config/risk_models/**",
+        "tests/risk/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-20-early-action-recommendations",
+      "name": "Sprint 20 - Early Action Recommendations",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.2",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-19-composite-drought-score"
+      ],
+      "objective": "Traducir el nivel de alerta en acciones anticipatorias concretas y prudentes.",
+      "user_stories": [
+        {
+          "id": "HU20.1",
+          "story": "Como gestor de desastres quiero recibir acciones sugeridas junto a la alerta."
+        },
+        {
+          "id": "HU20.2",
+          "story": "Como usuario quiero distinguir recomendaciones generales de instrucciones oficiales."
+        }
+      ],
+      "tasks": [
+        "Crear catálogo de acciones por severidad y contexto.",
+        "Añadir responsables y horizonte temporal.",
+        "Generar explicación.",
+        "Incluir disclaimer.",
+        "Permitir personalización."
+      ],
+      "deliverable": "Lista de acciones tempranas contextualizada por alerta.",
+      "acceptance": [
+        "AC1: Cada recomendación incluye acción, actor sugerido, urgencia y evidencia que la activó.",
+        "AC2: Las acciones no se presentan como órdenes oficiales ni asesoramiento médico.",
+        "AC3: Nivel green prioriza monitorización; yellow preparación; orange preposicionamiento; red activación urgente.",
+        "AC4: Sin score confiable se recomienda revisión de datos, no intervención automática.",
+        "AC5: El catálogo es editable sin cambiar código.",
+        "AC6: La salida conserva recommendation_version."
+      ],
+      "scope": [
+        "src/mwangaza/actions/**",
+        "config/actions/**",
+        "tests/actions/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-21-alert-persistence",
+      "name": "Sprint 21 - Alert Persistence",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.3",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-20-early-action-recommendations"
+      ],
+      "objective": "Guardar alertas y cambios de estado para que sean consultables y comparables.",
+      "user_stories": [
+        {
+          "id": "HU21.1",
+          "story": "Como manager quiero ver alertas activas e históricas."
+        },
+        {
+          "id": "HU21.2",
+          "story": "Como sistema quiero evitar duplicar la misma alerta en cada refresco."
+        }
+      ],
+      "tasks": [
+        "Crear SQLite schema.",
+        "Definir fingerprint de alerta.",
+        "Implementar create/update/resolve.",
+        "Guardar snapshot y recomendaciones.",
+        "Añadir índices."
+      ],
+      "deliverable": "Registro persistente e idempotente de alertas.",
+      "acceptance": [
+        "AC1: Una alerta se identifica por región, tipo, período y versión de modelo.",
+        "AC2: Reprocesar el mismo snapshot no crea duplicados.",
+        "AC3: Un cambio de severidad genera un evento de transición.",
+        "AC4: Una alerta resuelta conserva su historia.",
+        "AC5: El registro guarda score, nivel, calidad, evidencias y recomendaciones.",
+        "AC6: Las migraciones son idempotentes y testeadas."
+      ],
+      "scope": [
+        "src/mwangaza/db/**",
+        "src/mwangaza/alerts/repository.py",
+        "tests/db/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-22-dashboard-shell",
+      "name": "Sprint 22 - Dashboard Shell",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.0",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-21-alert-persistence"
+      ],
+      "objective": "Construir la estructura visual principal de Mwangaza en Streamlit.",
+      "user_stories": [
+        {
+          "id": "HU22.1",
+          "story": "Como usuario quiero entender el propósito y estado del sistema al abrirlo."
+        },
+        {
+          "id": "HU22.2",
+          "story": "Como jurado quiero una navegación clara durante la demo."
+        }
+      ],
+      "tasks": [
+        "Crear layout responsive.",
+        "Añadir header, sidebar y navegación.",
+        "Crear estados loading, empty, error y stale.",
+        "Definir tema visual.",
+        "Añadir footer y disclaimers."
+      ],
+      "deliverable": "Dashboard navegable con datos mock.",
+      "acceptance": [
+        "AC1: La portada muestra nombre, tagline, última actualización y estado de datos.",
+        "AC2: La navegación incluye Overview, Region, Alerts, Reports y About.",
+        "AC3: Un error de carga no rompe toda la aplicación.",
+        "AC4: La interfaz funciona en 1366x768 sin scroll horizontal.",
+        "AC5: El dashboard diferencia claramente datos live, cache y demo.",
+        "AC6: No se exponen trazas internas al usuario."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-23-regional-risk-map",
+      "name": "Sprint 23 - Regional Risk Map",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.1",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-22-dashboard-shell"
+      ],
+      "objective": "Mostrar un mapa coroplético del riesgo actual en la región IGAD.",
+      "user_stories": [
+        {
+          "id": "HU23.1",
+          "story": "Como decisor quiero identificar rápidamente las zonas con mayor severidad."
+        },
+        {
+          "id": "HU23.2",
+          "story": "Como usuario quiero ver el significado de los colores."
+        }
+      ],
+      "tasks": [
+        "Crear capa geográfica.",
+        "Colorear por nivel.",
+        "Añadir tooltip.",
+        "Añadir leyenda.",
+        "Manejar regiones unknown."
+      ],
+      "deliverable": "Mapa regional interactivo de semáforo.",
+      "acceptance": [
+        "AC1: Los colores representan green, yellow, orange, red y unknown con leyenda visible.",
+        "AC2: Cada tooltip muestra región, score, nivel, período y calidad.",
+        "AC3: Regiones sin datos aparecen como unknown, no green.",
+        "AC4: El mapa no deforma geometrías por mezclar sistemas de coordenadas.",
+        "AC5: La selección de una región actualiza el estado de navegación.",
+        "AC6: El mapa se renderiza con fixtures en tests de smoke."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/maps/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-24-country-drilldown",
+      "name": "Sprint 24 - Country Drilldown",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.2",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-23-regional-risk-map"
+      ],
+      "objective": "Permitir abrir el perfil detallado de un país.",
+      "user_stories": [
+        {
+          "id": "HU24.1",
+          "story": "Como analista quiero ver indicadores y recomendaciones de un país seleccionado."
+        },
+        {
+          "id": "HU24.2",
+          "story": "Como jurado quiero pasar del panorama regional a evidencia concreta."
+        }
+      ],
+      "tasks": [
+        "Crear selector de país.",
+        "Mostrar tarjetas de indicadores.",
+        "Mostrar score y explicación.",
+        "Mostrar recomendaciones.",
+        "Añadir enlaces internos."
+      ],
+      "deliverable": "Vista detallada de país basada en el snapshot más reciente.",
+      "acceptance": [
+        "AC1: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad y fecha.",
+        "AC2: Cada tarjeta incluye unidad y comparación histórica.",
+        "AC3: Los datos ausentes muestran `No data`, no cero.",
+        "AC4: Las recomendaciones indican severidad y versión.",
+        "AC5: Cambiar de país no dispara consultas Earth Engine desde la UI.",
+        "AC6: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-25-subnational-pilot",
+      "name": "Sprint 25 - Subnational Pilot",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.3",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-24-country-drilldown"
+      ],
+      "objective": "Añadir análisis subnacional limitado a Somalia y norte de Kenia.",
+      "user_stories": [
+        {
+          "id": "HU25.1",
+          "story": "Como gestor local quiero observar variaciones dentro del país."
+        },
+        {
+          "id": "HU25.2",
+          "story": "Como equipo pequeño quiero mantener un piloto profundo y escalable."
+        }
+      ],
+      "tasks": [
+        "Cargar regiones administrativas piloto.",
+        "Ejecutar agregación.",
+        "Crear selector.",
+        "Mostrar mapa y ranking.",
+        "Documentar limitaciones."
+      ],
+      "deliverable": "Drilldown subnacional funcional en dos pilotos.",
+      "acceptance": [
+        "AC1: Solo regiones marcadas como piloto ofrecen drilldown subnacional en 1.0.",
+        "AC2: Cada unidad muestra parent, nivel administrativo y fuente de geometría.",
+        "AC3: El ranking ordena por score y no por color textual.",
+        "AC4: Cobertura insuficiente se muestra como unknown.",
+        "AC5: La UI explica que el resto del IGAD se ofrece a nivel nacional.",
+        "AC6: La arquitectura permite añadir nuevas regiones mediante catálogo y pipeline, sin cambiar la UI."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-26-temporal-slider",
+      "name": "Sprint 26 - Temporal Slider",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.4",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-25-subnational-pilot"
+      ],
+      "objective": "Permitir explorar snapshots históricos mediante un selector temporal.",
+      "user_stories": [
+        {
+          "id": "HU26.1",
+          "story": "Como usuario quiero observar cómo evolucionó el riesgo."
+        },
+        {
+          "id": "HU26.2",
+          "story": "Como sistema quiero evitar mezclar fechas sin snapshot disponible."
+        }
+      ],
+      "tasks": [
+        "Crear índice de períodos.",
+        "Añadir slider o selector.",
+        "Actualizar mapa y paneles.",
+        "Mostrar gaps.",
+        "Persistir selección."
+      ],
+      "deliverable": "Exploración temporal coherente del mapa.",
+      "acceptance": [
+        "AC1: El selector ofrece únicamente períodos con datos disponibles.",
+        "AC2: Cambiar período actualiza mapa, tarjetas y alertas de forma consistente.",
+        "AC3: Los períodos parciales se marcan visualmente.",
+        "AC4: No se recalculan indicadores al mover el slider.",
+        "AC5: El período seleccionado aparece en título y tooltips.",
+        "AC6: La selección por defecto es el snapshot publicable más reciente."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-27-indicator-trends",
+      "name": "Sprint 27 - Indicator Trends",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.5",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-26-temporal-slider"
+      ],
+      "objective": "Visualizar series temporales de indicadores actuales frente a su baseline.",
+      "user_stories": [
+        {
+          "id": "HU27.1",
+          "story": "Como analista quiero ver si el deterioro es puntual o sostenido."
+        },
+        {
+          "id": "HU27.2",
+          "story": "Como usuario quiero comparar valores observados y normales."
+        }
+      ],
+      "tasks": [
+        "Crear consultas de series.",
+        "Dibujar NDVI, lluvia y LST.",
+        "Añadir baseline y banda histórica.",
+        "Sincronizar hover.",
+        "Manejar gaps."
+      ],
+      "deliverable": "Gráficos temporales interpretables por región.",
+      "acceptance": [
+        "AC1: Cada gráfico muestra unidad, fechas y fuente.",
+        "AC2: La serie observada y baseline se distinguen sin depender solo del color.",
+        "AC3: Los gaps no se interpolan silenciosamente.",
+        "AC4: La banda histórica representa una estadística documentada.",
+        "AC5: Hover muestra valor, anomalía y quality flag.",
+        "AC6: La visualización limita el número de puntos para mantener rendimiento."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-28-active-alerts",
+      "name": "Sprint 28 - Active Alerts",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.6",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-27-indicator-trends"
+      ],
+      "objective": "Mostrar y priorizar las alertas activas.",
+      "user_stories": [
+        {
+          "id": "HU28.1",
+          "story": "Como gestor quiero ver primero las alertas que requieren acción."
+        },
+        {
+          "id": "HU28.2",
+          "story": "Como usuario quiero filtrar por severidad y región."
+        }
+      ],
+      "tasks": [
+        "Crear consulta de alertas activas.",
+        "Diseñar tarjetas.",
+        "Añadir filtros.",
+        "Ordenar por prioridad.",
+        "Enlazar a detalle."
+      ],
+      "deliverable": "Panel operativo de alertas activas.",
+      "acceptance": [
+        "AC1: Las alertas se ordenan por severidad, calidad y fecha.",
+        "AC2: Los filtros incluyen nivel, país y tipo de región.",
+        "AC3: Cada tarjeta muestra evidencia resumida y acción principal sugerida.",
+        "AC4: Alertas resueltas no aparecen salvo filtro explícito.",
+        "AC5: Unknown no se mezcla con green.",
+        "AC6: La lista tiene estados empty, loading y error."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/db/**",
+        "tests/api/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-29-historical-comparison",
+      "name": "Sprint 29 - Historical Comparison",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.0",
+      "estimated_hours": 5,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-28-active-alerts"
+      ],
+      "objective": "Comparar el período actual con episodios históricos relevantes.",
+      "user_stories": [
+        {
+          "id": "HU29.1",
+          "story": "Como analista quiero contextualizar la severidad actual."
+        },
+        {
+          "id": "HU29.2",
+          "story": "Como comunicador quiero evitar afirmar causalidad sin evidencia."
+        }
+      ],
+      "tasks": [
+        "Crear selector de años.",
+        "Comparar anomalías.",
+        "Mostrar ranking histórico.",
+        "Añadir narrativa automática limitada.",
+        "Documentar cautelas."
+      ],
+      "deliverable": "Panel de comparación histórica por región.",
+      "acceptance": [
+        "AC1: La comparación usa exactamente la misma ventana estacional.",
+        "AC2: La UI muestra las versiones de datos comparadas.",
+        "AC3: La narrativa describe diferencias observadas y no atribuye impactos no medidos.",
+        "AC4: Años con datos insuficientes se excluyen.",
+        "AC5: El usuario puede seleccionar hasta tres períodos.",
+        "AC6: El ranking indica si el actual está entre los episodios más secos de la serie disponible."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-30-exposure-estimation",
+      "name": "Sprint 30 - Exposure Estimation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.1",
+      "estimated_hours": 6,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-29-historical-comparison"
+      ],
+      "objective": "Estimar población o medios de vida potencialmente expuestos usando datasets auxiliares o fixtures transparentes.",
+      "user_stories": [
+        {
+          "id": "HU30.1",
+          "story": "Como decisor quiero dimensionar el alcance humano aproximado de una alerta."
+        },
+        {
+          "id": "HU30.2",
+          "story": "Como auditor quiero distinguir exposición estimada de personas realmente afectadas."
+        }
+      ],
+      "tasks": [
+        "Crear adaptador de exposición.",
+        "Agregar población y ganado cuando exista.",
+        "Registrar año y fuente.",
+        "Calcular intersección espacial.",
+        "Añadir lenguaje prudente."
+      ],
+      "deliverable": "Estimación de exposición claramente etiquetada.",
+      "acceptance": [
+        "AC1: La métrica se denomina `potentially_exposed`, nunca `affected`.",
+        "AC2: Cada valor incluye fuente, año, resolución y método.",
+        "AC3: Datos demo o sintéticos se marcan explícitamente.",
+        "AC4: No se combinan poblaciones de años distintos sin aviso.",
+        "AC5: Sin dataset válido se oculta la cifra y no se inventa.",
+        "AC6: La UI muestra rango o redondeo apropiado para la precisión disponible."
+      ],
+      "scope": [
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
+        "tests/data/**",
+        "tests/fixtures/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-31-executive-pdf-report",
+      "name": "Sprint 31 - Executive PDF Report",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.2",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-30-exposure-estimation"
+      ],
+      "objective": "Generar un informe descargable para una región y período.",
+      "user_stories": [
+        {
+          "id": "HU31.1",
+          "story": "Como gestor quiero compartir la alerta fuera del dashboard."
+        },
+        {
+          "id": "HU31.2",
+          "story": "Como auditor quiero que el informe incluya fuentes, calidad y limitaciones."
+        }
+      ],
+      "tasks": [
+        "Crear plantilla HTML/PDF.",
+        "Incluir mapa y gráficos.",
+        "Añadir resumen y acciones.",
+        "Añadir provenance.",
+        "Generar QR al dashboard."
+      ],
+      "deliverable": "PDF ejecutivo reproducible y presentable.",
+      "acceptance": [
+        "AC1: El informe incluye región, período, indicadores, score, nivel, calidad y recomendaciones.",
+        "AC2: Incluye fecha de generación, versiones y fuentes.",
+        "AC3: Los gráficos corresponden al mismo snapshot del texto.",
+        "AC4: El QR usa una URL configurada y se omite si no existe.",
+        "AC5: La generación no requiere acceso Earth Engine.",
+        "AC6: El nombre del archivo es seguro y determinista."
+      ],
+      "scope": [
+        "src/mwangaza/reports/**",
+        "templates/reports/**",
+        "assets/reporting/**",
+        "tests/reports/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-32-data-export",
+      "name": "Sprint 32 - Data Export",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.3",
+      "estimated_hours": 3,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-31-executive-pdf-report"
+      ],
+      "objective": "Permitir descargar los resultados visibles en CSV y JSON.",
+      "user_stories": [
+        {
+          "id": "HU32.1",
+          "story": "Como analista quiero reutilizar datos agregados en otras herramientas."
+        },
+        {
+          "id": "HU32.2",
+          "story": "Como mantenedor quiero impedir que se exporten secretos o geometrías internas innecesarias."
+        }
+      ],
+      "tasks": [
+        "Crear serializadores.",
+        "Definir columnas.",
+        "Añadir descarga.",
+        "Incluir metadata.",
+        "Limitar tamaño."
+      ],
+      "deliverable": "Exportación segura de snapshots agregados.",
+      "acceptance": [
+        "AC1: CSV y JSON contienen los mismos valores y unidades visibles.",
+        "AC2: El JSON incluye schema_version y metadata de fuente.",
+        "AC3: No se exportan secretos, rutas internas ni credenciales.",
+        "AC4: Las geometrías solo se incluyen mediante opción explícita y simplificadas.",
+        "AC5: El endpoint o botón limita volumen y período.",
+        "AC6: Valores null se conservan como null o campo vacío, no cero."
+      ],
+      "scope": [
+        "src/mwangaza/exports/**",
+        "tests/exports/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/db/**",
+        "tests/api/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-33-public-api",
+      "name": "Sprint 33 - Public API",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.7.0",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-32-data-export"
+      ],
+      "objective": "Exponer mediante FastAPI los snapshots, regiones y alertas de solo lectura.",
+      "user_stories": [
+        {
+          "id": "HU33.1",
+          "story": "Como integrador quiero consumir el estado actual en JSON."
+        },
+        {
+          "id": "HU33.2",
+          "story": "Como mantenedor quiero contratos documentados y limitados."
+        }
+      ],
+      "tasks": [
+        "Crear endpoints v1.",
+        "Añadir OpenAPI.",
+        "Implementar paginación y filtros.",
+        "Añadir cache headers.",
+        "Crear health endpoint."
+      ],
+      "deliverable": "API de lectura documentada para integraciones.",
+      "acceptance": [
+        "AC1: Existen endpoints `/health`, `/api/v1/regions`, `/api/v1/snapshots/latest`, `/api/v1/alerts` y `/api/v1/forecasts` cuando estén disponibles.",
+        "AC2: La API nunca inicia cálculos Earth Engine bajo una petición pública.",
+        "AC3: Las respuestas cumplen los contratos versionados.",
+        "AC4: Errores usan `{error:{code,message}}` sin stack traces.",
+        "AC5: Listados tienen límite máximo y paginación.",
+        "AC6: OpenAPI se genera automáticamente y contiene ejemplos."
+      ],
+      "scope": [
+        "src/mwangaza/api/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/db/**",
+        "tests/api/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-34-audit-trail",
+      "name": "Sprint 34 - Audit Trail",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.7.1",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-33-public-api"
+      ],
+      "objective": "Registrar actualizaciones de datos, cambios de configuración y ciclo de alertas.",
+      "user_stories": [
+        {
+          "id": "HU34.1",
+          "story": "Como auditor quiero reconstruir cómo se produjo una alerta."
+        },
+        {
+          "id": "HU34.2",
+          "story": "Como operador quiero diagnosticar cambios entre ejecuciones."
+        }
+      ],
+      "tasks": [
+        "Crear tabla audit_events.",
+        "Registrar pipeline y alertas.",
+        "Registrar cambios de umbral.",
+        "Añadir consulta.",
+        "Redactar información sensible."
+      ],
+      "deliverable": "Trazabilidad append-only del sistema.",
+      "acceptance": [
+        "AC1: Los eventos incluyen actor, tipo, entidad, timestamp, run_id y metadata.",
+        "AC2: Crear, elevar, degradar y resolver una alerta produce eventos separados.",
+        "AC3: Cambiar configuración registra versión anterior y nueva sin secretos.",
+        "AC4: La aplicación no ofrece borrado de eventos.",
+        "AC5: La consulta permite filtrar por región, run y tipo.",
+        "AC6: Un evento puede enlazarse al snapshot y modelo usados."
+      ],
+      "scope": [
+        "src/mwangaza/audit/**",
+        "src/mwangaza/db/migrations/**",
+        "tests/audit/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-35-notification-simulator",
+      "name": "Sprint 35 - Notification Simulator",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.7.2",
+      "estimated_hours": 4,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-34-audit-trail"
+      ],
+      "objective": "Simular el envío multicanal de una alerta sin depender de servicios de pago.",
+      "user_stories": [
+        {
+          "id": "HU35.1",
+          "story": "Como jurado quiero ver cómo una alerta se convierte en comunicación."
+        },
+        {
+          "id": "HU35.2",
+          "story": "Como desarrollador quiero evitar envíos accidentales durante la demo."
+        }
+      ],
+      "tasks": [
+        "Crear outbox.",
+        "Generar SMS/email/Telegram simulados.",
+        "Añadir plantillas.",
+        "Mostrar estado.",
+        "Permitir adapter real opcional deshabilitado."
+      ],
+      "deliverable": "Flujo demostrable de notificación con outbox auditable.",
+      "acceptance": [
+        "AC1: Por defecto ningún mensaje sale a una red externa.",
+        "AC2: Cada envío simulado guarda canal, destinatario enmascarado, contenido, alerta y estado.",
+        "AC3: Solo niveles configurados crean notificaciones.",
+        "AC4: Reprocesar una alerta no duplica mensajes con la misma clave.",
+        "AC5: La UI permite abrir la vista previa.",
+        "AC6: Los adapters reales requieren feature flag y secretos separados."
+      ],
+      "scope": [
+        "src/mwangaza/notifications/**",
+        "templates/notifications/**",
+        "tests/notifications/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-36-forecast-model",
+      "name": "Sprint 36 - Forecast Model",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.0",
+      "estimated_hours": 7,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-35-notification-simulator"
+      ],
+      "objective": "Generar una previsión corta de NDVI o score usando series históricas agregadas.",
+      "user_stories": [
+        {
+          "id": "HU36.1",
+          "story": "Como gestor quiero una señal preventiva antes de que empeore el indicador observado."
+        },
+        {
+          "id": "HU36.2",
+          "story": "Como científico quiero un baseline simple que pueda explicarse."
+        }
+      ],
+      "tasks": [
+        "Crear interfaz de modelos.",
+        "Implementar baseline estacional.",
+        "Entrenar por región.",
+        "Hacer backtesting.",
+        "Persistir forecast."
+      ],
+      "deliverable": "Previsión de hasta tres períodos con modelo explicable.",
+      "acceptance": [
+        "AC1: El modelo por defecto es reproducible y no requiere GPU.",
+        "AC2: No se entrena si la serie no alcanza longitud mínima.",
+        "AC3: El forecast incluye fecha de entrenamiento, horizonte y versión.",
+        "AC4: El backtest calcula al menos MAE y error relativo seguro.",
+        "AC5: Una previsión no sustituye a la observación actual.",
+        "AC6: Tests fijan semilla y no dependen de red."
+      ],
+      "scope": [
+        "src/mwangaza/forecasting/**",
+        "tests/forecasting/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-37-forecast-confidence",
+      "name": "Sprint 37 - Forecast Confidence",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.1",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-36-forecast-model"
+      ],
+      "objective": "Comunicar incertidumbre y limitar alertas preventivas poco fiables.",
+      "user_stories": [
+        {
+          "id": "HU37.1",
+          "story": "Como usuario quiero saber cuánto confiar en una predicción."
+        },
+        {
+          "id": "HU37.2",
+          "story": "Como sistema quiero evitar alertas preventivas cuando el modelo rinde mal."
+        }
+      ],
+      "tasks": [
+        "Calcular intervalos.",
+        "Definir quality gate.",
+        "Comparar con baseline ingenuo.",
+        "Crear preventive alert.",
+        "Mostrar incertidumbre."
+      ],
+      "deliverable": "Previsión con intervalo y elegibilidad de alerta preventiva.",
+      "acceptance": [
+        "AC1: Cada forecast incluye intervalo inferior y superior.",
+        "AC2: El modelo debe superar el baseline ingenuo bajo la métrica configurada para ser elegible.",
+        "AC3: Una alerta preventiva requiere caída prevista y confianza mínima.",
+        "AC4: La UI muestra forecast como estimación, no hecho.",
+        "AC5: Modelos no elegibles permanecen visibles en diagnostics pero no disparan alertas.",
+        "AC6: Se persiste la razón de elegibilidad o rechazo."
+      ],
+      "scope": [
+        "src/mwangaza/forecasting/confidence.py",
+        "tests/forecasting/test_confidence.py",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-38-multilingual-interface",
+      "name": "Sprint 38 - Multilingual Interface",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.2",
+      "estimated_hours": 6,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-37-forecast-confidence"
+      ],
+      "objective": "Ofrecer la interfaz esencial en inglés, suajili y somalí.",
+      "user_stories": [
+        {
+          "id": "HU38.1",
+          "story": "Como usuario quiero recibir la información en un idioma accesible."
+        },
+        {
+          "id": "HU38.2",
+          "story": "Como mantenedor quiero detectar textos sin traducir."
+        }
+      ],
+      "tasks": [
+        "Crear catálogos i18n.",
+        "Añadir selector.",
+        "Traducir navegación y alertas.",
+        "Definir fallback.",
+        "Añadir gate de claves."
+      ],
+      "deliverable": "Dashboard multilingüe con fallback seguro.",
+      "acceptance": [
+        "AC1: Los idiomas disponibles son `en`, `sw` y `so`.",
+        "AC2: Cambiar idioma actualiza navegación, etiquetas, niveles y recomendaciones predefinidas.",
+        "AC3: Los nombres oficiales de datasets no se traducen de forma engañosa.",
+        "AC4: Una clave ausente usa inglés y registra warning.",
+        "AC5: CI falla si una clave obligatoria falta en un catálogo.",
+        "AC6: El idioma no modifica valores, fechas ISO de API ni lógica."
+      ],
+      "scope": [
+        "locales/**",
+        "src/mwangaza/i18n/**",
+        "tests/i18n/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-39-low-bandwidth-mode",
+      "name": "Sprint 39 - Low-Bandwidth Mode",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.3",
+      "estimated_hours": 4,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-38-multilingual-interface"
+      ],
+      "objective": "Reducir transferencia y complejidad visual para conexiones limitadas.",
+      "user_stories": [
+        {
+          "id": "HU39.1",
+          "story": "Como usuario con conectividad limitada quiero acceder a alertas sin cargar mapas pesados."
+        },
+        {
+          "id": "HU39.2",
+          "story": "Como sistema quiero conservar la información esencial."
+        }
+      ],
+      "tasks": [
+        "Crear modo lite.",
+        "Sustituir mapa por tabla.",
+        "Desactivar animaciones.",
+        "Reducir imágenes.",
+        "Añadir preferencia persistente."
+      ],
+      "deliverable": "Vista ligera centrada en texto y tablas.",
+      "acceptance": [
+        "AC1: El modo lite no carga tiles ni geometrías detalladas.",
+        "AC2: Muestra alertas, score, indicadores y acciones esenciales.",
+        "AC3: La preferencia se mantiene durante la sesión.",
+        "AC4: Los reportes y API siguen disponibles.",
+        "AC5: La página inicial lite tiene tamaño estático reducido respecto al modo completo.",
+        "AC6: La accesibilidad no empeora al activar el modo."
+      ],
+      "scope": [
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-40-pwa-installability",
+      "name": "Sprint 40 - PWA Installability",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.4",
+      "estimated_hours": 5,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-39-low-bandwidth-mode"
+      ],
+      "objective": "Permitir instalar la experiencia web como acceso móvil.",
+      "user_stories": [
+        {
+          "id": "HU40.1",
+          "story": "Como usuario móvil quiero añadir Mwangaza a mi pantalla de inicio."
+        },
+        {
+          "id": "HU40.2",
+          "story": "Como mantenedor quiero evitar prometer funcionalidad offline que no existe."
+        }
+      ],
+      "tasks": [
+        "Crear manifest.",
+        "Añadir iconos.",
+        "Configurar service worker limitado.",
+        "Definir pantalla offline.",
+        "Validar installability."
+      ],
+      "deliverable": "PWA instalable con shell y mensaje offline.",
+      "acceptance": [
+        "AC1: El manifest contiene nombre, short_name, iconos, start_url y display standalone.",
+        "AC2: La app puede instalarse en navegador compatible.",
+        "AC3: El service worker cachea únicamente assets seguros y shell, no datos sensibles indefinidamente.",
+        "AC4: Sin conexión se muestra el último timestamp disponible y una advertencia.",
+        "AC5: No se afirma que los datos sean live en modo offline.",
+        "AC6: Lighthouse o prueba equivalente no reporta errores críticos de manifest."
+      ],
+      "scope": [
+        "pwa/**",
+        "assets/icons/**",
+        "src/mwangaza/ui/pwa/**",
+        "tests/pwa/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-41-admin-configuration",
+      "name": "Sprint 41 - Admin Configuration",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.5",
+      "estimated_hours": 5,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-40-pwa-installability"
+      ],
+      "objective": "Permitir editar umbrales y acciones en un panel protegido de demo.",
+      "user_stories": [
+        {
+          "id": "HU41.1",
+          "story": "Como administrador quiero ajustar reglas sin modificar archivos manualmente."
+        },
+        {
+          "id": "HU41.2",
+          "story": "Como auditor quiero que los cambios sean versionados."
+        }
+      ],
+      "tasks": [
+        "Crear panel admin.",
+        "Añadir autenticación simple de demo.",
+        "Validar configuración.",
+        "Crear nueva versión.",
+        "Registrar auditoría."
+      ],
+      "deliverable": "Edición controlada de reglas no sensibles.",
+      "acceptance": [
+        "AC1: El panel no es accesible sin la credencial configurada.",
+        "AC2: Las contraseñas no se almacenan en texto plano.",
+        "AC3: Guardar crea una versión nueva y no reescribe historia.",
+        "AC4: Configuración inválida no se activa.",
+        "AC5: Los cambios no recalculan datos hasta una acción explícita.",
+        "AC6: La documentación indica que la autenticación es suficiente para demo, no despliegue institucional."
+      ],
+      "scope": [
+        "src/mwangaza/admin/**",
+        "tests/admin/**",
+        "app.py",
+        "src/mwangaza/ui/**",
+        "src/mwangaza/services/**",
+        "assets/**",
+        "tests/ui/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/db/**",
+        "tests/api/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-42-observability",
+      "name": "Sprint 42 - Observability",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.0",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-41-admin-configuration"
+      ],
+      "objective": "Añadir logs estructurados, métricas y estado operativo.",
+      "user_stories": [
+        {
+          "id": "HU42.1",
+          "story": "Como operador quiero saber si el pipeline, API y dashboard funcionan."
+        },
+        {
+          "id": "HU42.2",
+          "story": "Como desarrollador quiero correlacionar errores mediante run_id."
+        }
+      ],
+      "tasks": [
+        "Configurar logging JSON.",
+        "Añadir correlation IDs.",
+        "Crear health y readiness.",
+        "Registrar métricas.",
+        "Añadir panel técnico."
+      ],
+      "deliverable": "Observabilidad suficiente para depurar la demo y despliegue.",
+      "acceptance": [
+        "AC1: Logs contienen timestamp, level, component, run_id y event.",
+        "AC2: Credenciales y payloads sensibles se redactan.",
+        "AC3: Readiness falla si base o cache obligatoria no están disponibles.",
+        "AC4: Se miden duración, cache hit, regiones procesadas, errores y alertas activas.",
+        "AC5: El panel técnico queda separado de la narrativa principal.",
+        "AC6: Un error de Earth Engine puede localizarse por run_id."
+      ],
+      "scope": [
+        "src/mwangaza/observability/**",
+        "tests/observability/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/db/**",
+        "tests/api/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-43-security-and-privacy",
+      "name": "Sprint 43 - Security and Privacy",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.1",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-42-observability"
+      ],
+      "objective": "Aplicar controles básicos de seguridad y minimizar datos personales.",
+      "user_stories": [
+        {
+          "id": "HU43.1",
+          "story": "Como mantenedor quiero reducir el riesgo de exponer secretos."
+        },
+        {
+          "id": "HU43.2",
+          "story": "Como comunidad quiero que el prototipo no recopile datos personales innecesarios."
+        }
+      ],
+      "tasks": [
+        "Crear threat model.",
+        "Añadir secret scanning.",
+        "Configurar headers.",
+        "Limitar inputs y uploads.",
+        "Documentar privacidad."
+      ],
+      "deliverable": "Baseline de seguridad y privacidad verificable.",
+      "acceptance": [
+        "AC1: CI busca secretos conocidos y archivos de credenciales.",
+        "AC2: API limita tamaño, tipos y frecuencia básica de peticiones.",
+        "AC3: Uploads, si existen, no permiten ejecución ni traversal.",
+        "AC4: El prototipo no recopila nombres, teléfonos ni ubicación individual de comunidades.",
+        "AC5: Headers de seguridad adecuados se aplican en despliegue.",
+        "AC6: El threat model cubre credenciales GEE, manipulación de datos, disponibilidad y desinformación."
+      ],
+      "scope": [
+        "docs/security/**",
+        "src/mwangaza/security/**",
+        "tests/security/**",
+        ".github/workflows/security.yml",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-44-automated-testing",
+      "name": "Sprint 44 - Automated Testing",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.2",
+      "estimated_hours": 7,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-43-security-and-privacy"
+      ],
+      "objective": "Consolidar pruebas unitarias, integración, contratos y smoke de interfaz.",
+      "user_stories": [
+        {
+          "id": "HU44.1",
+          "story": "Como desarrollador con IA quiero detectar regresiones antes de aceptar código generado."
+        },
+        {
+          "id": "HU44.2",
+          "story": "Como jurado quiero una demo estable."
+        }
+      ],
+      "tasks": [
+        "Definir pirámide de tests.",
+        "Añadir fixtures deterministas.",
+        "Crear tests de contratos API.",
+        "Crear smoke tests Streamlit.",
+        "Configurar coverage."
+      ],
+      "deliverable": "Suite automatizada sin dependencias externas reales.",
+      "acceptance": [
+        "AC1: CI ejecuta lint, types, unit, integration y contract tests.",
+        "AC2: Earth Engine, notificaciones y reloj se mockean de forma determinista.",
+        "AC3: La cobertura mínima de módulos críticos es configurable y se cumple.",
+        "AC4: Tests cubren no_data, calidad insuficiente, cache corrupta y reintento.",
+        "AC5: El smoke test abre las páginas principales con fixtures.",
+        "AC6: Una regresión en contratos bloquea el merge."
+      ],
+      "scope": [
+        "tests/**",
+        ".github/workflows/ci.yml",
+        ".harness/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-45-somalia-end-to-end-scenario",
+      "name": "Sprint 45 - Somalia End-to-End Scenario",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.3",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-44-automated-testing"
+      ],
+      "objective": "Validar un recorrido completo de deterioro de sequía en el piloto de Somalia.",
+      "user_stories": [
+        {
+          "id": "HU45.1",
+          "story": "Como jurado quiero ver una historia concreta de datos a acción."
+        },
+        {
+          "id": "HU45.2",
+          "story": "Como desarrollador quiero un escenario repetible."
+        }
+      ],
+      "tasks": [
+        "Crear fixture o snapshot verificable.",
+        "Ejecutar score.",
+        "Generar alerta.",
+        "Generar recomendación y PDF.",
+        "Simular notificación."
+      ],
+      "deliverable": "Escenario Somalia ejecutable de extremo a extremo.",
+      "acceptance": [
+        "AC1: El escenario empieza con un snapshot identificado y termina con alerta persistida.",
+        "AC2: La demo muestra mapa, tendencia, score, calidad, acción y reporte.",
+        "AC3: Las cifras simuladas se etiquetan.",
+        "AC4: Reejecutar el escenario no duplica alertas ni notificaciones.",
+        "AC5: Existe un comando para preparar el estado.",
+        "AC6: El flujo puede completarse sin red mediante fixtures de demo."
+      ],
+      "scope": [
+        "tests/e2e/test_somalia_scenario.py",
+        "tests/fixtures/scenarios/somalia/**",
+        "scripts/demo_somalia.py",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-46-northern-kenya-end-to-end-scenario",
+      "name": "Sprint 46 - Northern Kenya End-to-End Scenario",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.4",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-45-somalia-end-to-end-scenario"
+      ],
+      "objective": "Validar un recorrido subnacional de alerta y acción anticipatoria en el norte de Kenia.",
+      "user_stories": [
+        {
+          "id": "HU46.1",
+          "story": "Como gestor local quiero comparar varios distritos del piloto."
+        },
+        {
+          "id": "HU46.2",
+          "story": "Como jurado quiero ver el valor del drilldown."
+        }
+      ],
+      "tasks": [
+        "Crear fixture regional.",
+        "Comparar distritos.",
+        "Seleccionar zona crítica.",
+        "Generar reporte.",
+        "Registrar acción."
+      ],
+      "deliverable": "Escenario norte de Kenia reproducible.",
+      "acceptance": [
+        "AC1: El escenario incluye al menos tres unidades subnacionales.",
+        "AC2: Una unidad queda en mayor severidad y se justifica con indicadores.",
+        "AC3: La selección desde el mapa abre su detalle.",
+        "AC4: El reporte corresponde a la unidad seleccionada.",
+        "AC5: La notificación simulada usa el idioma elegido cuando existe plantilla.",
+        "AC6: El flujo funciona con datos de demo sin consultas remotas."
+      ],
+      "scope": [
+        "tests/e2e/test_kenya_scenario.py",
+        "tests/fixtures/scenarios/kenya/**",
+        "scripts/demo_kenya.py",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-47-offline-demo-fallback",
+      "name": "Sprint 47 - Offline Demo Fallback",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.5",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-46-northern-kenya-end-to-end-scenario"
+      ],
+      "objective": "Garantizar una demostración estable aunque Earth Engine o Internet fallen.",
+      "user_stories": [
+        {
+          "id": "HU47.1",
+          "story": "Como participante quiero poder presentar sin depender de una conexión perfecta."
+        },
+        {
+          "id": "HU47.2",
+          "story": "Como jurado quiero saber cuándo los datos son de fallback."
+        }
+      ],
+      "tasks": [
+        "Crear paquete de snapshots demo.",
+        "Añadir modo demo.",
+        "Crear reset.",
+        "Mostrar banner.",
+        "Validar consistencia."
+      ],
+      "deliverable": "Modo demo autocontenido y claramente señalado.",
+      "acceptance": [
+        "AC1: El modo demo arranca con `MWANGAZA_MODE=demo` sin credenciales.",
+        "AC2: Todos los datos muestran `is_demo=true` y fecha de referencia.",
+        "AC3: El banner permanece visible en todas las páginas.",
+        "AC4: El reset restaura alertas, outbox y configuración demo.",
+        "AC5: Los escenarios e informes funcionan igual que en modo conectado.",
+        "AC6: No existe fallback silencioso de production a demo."
+      ],
+      "scope": [
+        "demo_data/**",
+        "scripts/reset_demo.py",
+        "tests/demo/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-48-data-provenance-documentation",
+      "name": "Sprint 48 - Data Provenance Documentation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.6",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-47-offline-demo-fallback"
+      ],
+      "objective": "Documentar origen, transformación, resolución, latencia y limitaciones de cada dato.",
+      "user_stories": [
+        {
+          "id": "HU48.1",
+          "story": "Como jurado quiero evaluar la credibilidad técnica de Mwangaza."
+        },
+        {
+          "id": "HU48.2",
+          "story": "Como usuario quiero interpretar correctamente los resultados."
+        }
+      ],
+      "tasks": [
+        "Crear fichas de datasets.",
+        "Documentar pipeline.",
+        "Explicar umbrales.",
+        "Añadir limitaciones.",
+        "Crear diagrama de linaje."
+      ],
+      "deliverable": "Documentación de procedencia y uso responsable.",
+      "acceptance": [
+        "AC1: Cada fuente tiene nombre, variable, unidad, resolución, frecuencia y licencia o términos aplicables.",
+        "AC2: Se documenta la diferencia entre observación, anomalía, score, forecast y exposición.",
+        "AC3: Los umbrales de prototipo se presentan como configurables y no oficiales.",
+        "AC4: Se explican nubes, cobertura, latencia y agregación.",
+        "AC5: El diagrama conecta fuente, transformación, cache, API, UI y reporte.",
+        "AC6: La página About enlaza a esta documentación."
+      ],
+      "scope": [
+        "docs/data-sources/**",
+        "docs/methodology/**",
+        "assets/diagrams/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-49-public-readme",
+      "name": "Sprint 49 - Public README",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.7",
+      "estimated_hours": 5,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-48-data-provenance-documentation"
+      ],
+      "objective": "Crear documentación pública suficiente para comprender y ejecutar el proyecto.",
+      "user_stories": [
+        {
+          "id": "HU49.1",
+          "story": "Como desarrollador externo quiero reproducir el proyecto."
+        },
+        {
+          "id": "HU49.2",
+          "story": "Como jurado quiero entender problema, solución y arquitectura rápidamente."
+        }
+      ],
+      "tasks": [
+        "Redactar overview.",
+        "Añadir quickstart.",
+        "Documentar configuración.",
+        "Explicar arquitectura.",
+        "Añadir screenshots y roadmap."
+      ],
+      "deliverable": "README público completo.",
+      "acceptance": [
+        "AC1: El README explica problema, usuarios, early action y alcance del piloto.",
+        "AC2: Incluye requisitos, instalación, demo offline, modo conectado y tests.",
+        "AC3: Incluye diagrama de arquitectura y lista de tecnologías.",
+        "AC4: Distingue funcionalidades implementadas de roadmap.",
+        "AC5: Incluye limitaciones y uso responsable.",
+        "AC6: Los comandos documentados se verifican en CI o prueba manual."
+      ],
+      "scope": [
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "assets/screenshots/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-50-landing-page",
+      "name": "Sprint 50 - Landing Page",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.8",
+      "estimated_hours": 5,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-49-public-readme"
+      ],
+      "objective": "Crear una presentación pública ligera de Mwangaza y su impacto.",
+      "user_stories": [
+        {
+          "id": "HU50.1",
+          "story": "Como visitante quiero entender la propuesta en menos de un minuto."
+        },
+        {
+          "id": "HU50.2",
+          "story": "Como jurado quiero acceder al dashboard, código y vídeo."
+        }
+      ],
+      "tasks": [
+        "Crear hero.",
+        "Explicar problema y solución.",
+        "Mostrar flujo.",
+        "Añadir CTAs.",
+        "Optimizar móvil."
+      ],
+      "deliverable": "Landing page pública con enlaces de entrega.",
+      "acceptance": [
+        "AC1: La página muestra `Mwangaza - Bringing Light to Early Action`.",
+        "AC2: Incluye problema, solución, tres capacidades, pilotos y limitaciones.",
+        "AC3: Los enlaces a dashboard, GitHub y demo son configurables.",
+        "AC4: La página carga sin depender de Earth Engine.",
+        "AC5: La experiencia móvil no tiene scroll horizontal.",
+        "AC6: Los claims de impacto no incluyen cifras no citadas o simuladas como reales."
+      ],
+      "scope": [
+        "landing/**",
+        "assets/brand/**",
+        "docs/branding.md",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-51-pitch-deck",
+      "name": "Sprint 51 - Pitch Deck",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.9",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-50-landing-page"
+      ],
+      "objective": "Preparar una narrativa de presentación centrada en alerta y acción temprana.",
+      "user_stories": [
+        {
+          "id": "HU51.1",
+          "story": "Como participante quiero explicar Mwangaza con claridad y evidencia."
+        },
+        {
+          "id": "HU51.2",
+          "story": "Como jurado quiero entender diferenciación, viabilidad e impacto."
+        }
+      ],
+      "tasks": [
+        "Definir estructura.",
+        "Crear slides.",
+        "Añadir arquitectura.",
+        "Añadir demo story.",
+        "Añadir roadmap y ask."
+      ],
+      "deliverable": "Presentación final coherente con la implementación.",
+      "acceptance": [
+        "AC1: La presentación cubre problema, usuario, solución, flujo de datos, acción temprana, demo, arquitectura, limitaciones y futuro.",
+        "AC2: Todas las capturas corresponden al build final.",
+        "AC3: Las cifras simuladas están etiquetadas.",
+        "AC4: La arquitectura muestra GEE, pipeline, cache, API, dashboard y reportes.",
+        "AC5: Existe una versión exportada a PDF.",
+        "AC6: El pitch puede realizarse dentro del tiempo oficial configurado."
+      ],
+      "scope": [
+        "submission/deck/**",
+        "assets/pitch/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-52-demo-video",
+      "name": "Sprint 52 - Demo Video",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.10",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-51-pitch-deck"
+      ],
+      "objective": "Grabar una demostración breve, estable y comprensible de extremo a extremo.",
+      "user_stories": [
+        {
+          "id": "HU52.1",
+          "story": "Como jurado remoto quiero ver el producto funcionando."
+        },
+        {
+          "id": "HU52.2",
+          "story": "Como participante quiero una alternativa a la demo en vivo."
+        }
+      ],
+      "tasks": [
+        "Crear guion.",
+        "Preparar datos.",
+        "Grabar recorrido.",
+        "Añadir subtítulos.",
+        "Exportar y verificar."
+      ],
+      "deliverable": "Vídeo de demo listo para entrega.",
+      "acceptance": [
+        "AC1: El vídeo muestra mapa, drilldown, tendencia, alerta, recomendación, PDF y notificación simulada.",
+        "AC2: Se explica claramente dónde termina la observación y empieza la simulación.",
+        "AC3: La demo utiliza uno de los escenarios e2e versionados.",
+        "AC4: No aparecen claves, correos privados ni consola con secretos.",
+        "AC5: El vídeo incluye subtítulos o narración clara.",
+        "AC6: El enlace final se prueba desde una sesión no autenticada cuando la plataforma lo requiera."
+      ],
+      "scope": [
+        "submission/video/**",
+        "scripts/prepare_demo.py",
+        "docs/demo-script.md",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-53-container-deployment",
+      "name": "Sprint 53 - Container Deployment",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.11",
+      "estimated_hours": 7,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-52-demo-video"
+      ],
+      "objective": "Empaquetar dashboard y API para un despliegue reproducible.",
+      "user_stories": [
+        {
+          "id": "HU53.1",
+          "story": "Como operador quiero desplegar Mwangaza sin configurar manualmente el entorno."
+        },
+        {
+          "id": "HU53.2",
+          "story": "Como desarrollador quiero mantener credenciales fuera de la imagen."
+        }
+      ],
+      "tasks": [
+        "Crear Dockerfile.",
+        "Separar procesos.",
+        "Añadir healthchecks.",
+        "Optimizar imagen.",
+        "Documentar Cloud Run o alternativa."
+      ],
+      "deliverable": "Contenedores reproducibles de dashboard y API.",
+      "acceptance": [
+        "AC1: Las imágenes se construyen en CI.",
+        "AC2: La imagen no contiene `.env`, claves GEE ni cache privada.",
+        "AC3: Los procesos se ejecutan como usuario no root cuando sea viable.",
+        "AC4: Los healthchecks reflejan readiness real.",
+        "AC5: El despliegue acepta secretos mediante el entorno o gestor externo.",
+        "AC6: El modo demo puede desplegarse sin credenciales."
+      ],
+      "scope": [
+        "Dockerfile",
+        "docker-compose.yml",
+        "infrastructure/**",
+        "scripts/**",
+        ".github/workflows/**",
+        "docs/deployment/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-54-scheduled-production-refresh",
+      "name": "Sprint 54 - Scheduled Production Refresh",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.12",
+      "estimated_hours": 5,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-53-container-deployment"
+      ],
+      "objective": "Actualizar datos automáticamente fuera de las peticiones del dashboard.",
+      "user_stories": [
+        {
+          "id": "HU54.1",
+          "story": "Como usuario quiero encontrar datos recientes al abrir la app."
+        },
+        {
+          "id": "HU54.2",
+          "story": "Como operador quiero evitar recalcular durante la navegación."
+        }
+      ],
+      "tasks": [
+        "Crear job programado.",
+        "Añadir lock.",
+        "Publicar snapshot atómicamente.",
+        "Notificar fallos.",
+        "Documentar rollback."
+      ],
+      "deliverable": "Actualización periódica segura del cache y alertas.",
+      "acceptance": [
+        "AC1: El scheduler ejecuta el mismo CLI probado del pipeline.",
+        "AC2: Dos ejecuciones concurrentes no procesan el mismo período.",
+        "AC3: Un refresh fallido no reemplaza el último snapshot válido.",
+        "AC4: La publicación del nuevo snapshot es atómica.",
+        "AC5: Se registra run_id y resumen de calidad.",
+        "AC6: El dashboard muestra la última actualización exitosa y aviso de stale."
+      ],
+      "scope": [
+        "infrastructure/scheduler/**",
+        "scripts/refresh.sh",
+        ".github/workflows/refresh.yml",
+        "Dockerfile",
+        "docker-compose.yml",
+        "infrastructure/**",
+        "scripts/**",
+        ".github/workflows/**",
+        "docs/deployment/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-55-mwangaza-1-0-release",
+      "name": "Sprint 55 - Mwangaza 1.0 Release",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.0",
+      "estimated_hours": 6,
+      "demo_critical": true,
+      "dependencies": [
+        "sprint-54-scheduled-production-refresh"
+      ],
+      "objective": "Cerrar una versión de hackathon estable, auditable y presentable.",
+      "user_stories": [
+        {
+          "id": "HU55.1",
+          "story": "Como participante quiero entregar una versión congelada y verificable."
+        },
+        {
+          "id": "HU55.2",
+          "story": "Como jurado quiero acceder a una solución que funciona y está documentada."
+        }
+      ],
+      "tasks": [
+        "Ejecutar gates.",
+        "Congelar configuración demo.",
+        "Etiquetar release.",
+        "Verificar enlaces.",
+        "Crear checklist de entrega."
+      ],
+      "deliverable": "Release pública Mwangaza 1.0.0.",
+      "acceptance": [
+        "AC1: Todos los criterios de Sprint 0-54 demo_critical pasan o la excepción queda documentada antes de release.",
+        "AC2: `make quality-gate` termina con código 0 sobre el commit etiquetado.",
+        "AC3: El repositorio tiene tag `v1.0.0` y changelog.",
+        "AC4: Dashboard, API o modo demo son accesibles mediante enlaces verificados.",
+        "AC5: README, metodología, PDF, deck y vídeo reflejan la versión entregada.",
+        "AC6: El checklist confirma ausencia de secretos, datos personales y claims engañosos.",
+        "AC7: Los escenarios Somalia y norte de Kenia pueden ejecutarse de principio a fin."
+      ],
+      "scope": [
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        ".env.example",
+        ".gitignore",
+        ".github/workflows/**",
+        ".harness/gates.config.json",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "CHANGELOG.md",
+        "submission/checklist.md",
+        "release/**"
+      ],
+      "spec_approved": false
+    }
+  ]
+}
