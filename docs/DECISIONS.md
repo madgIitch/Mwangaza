@@ -84,3 +84,16 @@ Contexto: se aprobó el spec `sprint-6-ndvi-climatology` (Sprint 6 - NDVI Climat
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-7-ndvi-anomaly -->
+## 2026-07-14 · sprint-7-ndvi-anomaly aprobado
+
+Contexto: se aprobó el spec `sprint-7-ndvi-anomaly` (Sprint 7 - NDVI Anomaly).
+
+Decisiones registradas:
+
+- **auth_secrets:** Sin secretos ni red.
+- **rollback_compat:** Mantiene Sprints 0-6.
+- **tests:** Cobertura de calculo, calidad, trazabilidad y validacion.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

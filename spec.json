@@ -639,7 +639,7 @@
     {
       "id": "sprint-7-ndvi-anomaly",
       "name": "Sprint 7 - NDVI Anomaly",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.2.2",
       "estimated_hours": 3,
@@ -667,12 +667,14 @@
       ],
       "deliverable": "Anomalía NDVI explicable y validada.",
       "acceptance": [
-        "AC1: La anomalía absoluta es `current - baseline`.",
-        "AC2: La anomalía porcentual no se calcula cuando el denominador no supera el epsilon configurado.",
-        "AC3: El signo negativo representa condiciones vegetativas inferiores al baseline.",
-        "AC4: El cálculo conserva current_id y baseline_id para trazabilidad.",
-        "AC5: Los flags de calidad más restrictivos se propagan.",
-        "AC6: Los umbrales de alerta no se codifican dentro de esta función."
+        "`compute_ndvi_anomaly(...)` devuelve un `Anomaly` valido para `indicator=\"ndvi\"` cuya anomalia absoluta es exactamente `current.value - baseline.mean`.",
+        "La anomalia porcentual se calcula como `(current.value - baseline.mean) / baseline.mean * 100` solo cuando `abs(baseline.mean)` supera `percent_epsilon`; si no, queda `None` y metadata registra el motivo.",
+        "Un resultado absoluto negativo representa condiciones vegetativas inferiores al baseline y los tests cubren explicitamente ese signo.",
+        "El resultado conserva en metadata identificadores o referencias estables `current_id` y `baseline_id` suficientes para trazabilidad.",
+        "El `quality_flag` resultante propaga el estado mas restrictivo entre observacion actual y baseline; una observacion `no_data` o baseline `insufficient_history` no produce una anomalia concluyente.",
+        "El z-score se calcula solo cuando `baseline.stddev` existe y supera `zscore_epsilon`; si no, queda `None` sin inventar variabilidad.",
+        "La funcion rechaza indicadores, unidades o regiones incompatibles mediante `NdviAnomalyError` y no llama Earth Engine ni servicios remotos.",
+        "El modulo no codifica umbrales de alerta, severidades ni recomendaciones de accion; solo devuelve valores de anomalia y trazabilidad."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -691,7 +693,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-14T17:05:20.467Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:3153a288dbf5714ec09dc6ad9b992466ab0c82d2f42166c5dace717cff4727d3",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T17:05:26.483Z"
     },
     {
       "id": "sprint-8-current-rainfall",

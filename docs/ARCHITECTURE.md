@@ -211,3 +211,33 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-7-ndvi-anomaly -->
+## sprint-7-ndvi-anomaly · Sprint 7 - NDVI Anomaly
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Retorna `Anomaly` NDVI con trazabilidad y valores derivados.
+- **external_contracts:** `mwangaza.data.anomaly` con config explicita.
+- **edge_cases:** Denominadores cercanos a cero, signo negativo y stddev insuficiente.
+- **ui_states:** Sin UI nueva; distingue no disponible de cero.
+
