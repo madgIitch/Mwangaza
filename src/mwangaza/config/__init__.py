@@ -21,6 +21,7 @@ PUBLIC_VARIABLES = (
     "MWANGAZA_ENABLED_COUNTRIES",
     "MWANGAZA_CLIMATOLOGY_START_YEAR",
     "MWANGAZA_CLIMATOLOGY_END_YEAR",
+    "MWANGAZA_CLIMATOLOGY_MIN_YEARS",
     "MWANGAZA_MAX_REMOTE_PIXELS",
     "MWANGAZA_GEE_PROJECT",
     "MWANGAZA_NDVI_COLLECTION",
@@ -73,6 +74,7 @@ class Settings:
     enabled_countries: tuple[str, ...]
     climatology_start_year: int
     climatology_end_year: int
+    climatology_min_years: int
     gee_project: str | None
     gee_service_account: str | None
     gee_private_key_json: str | None
@@ -90,6 +92,7 @@ class Settings:
             f"enabled_countries={self.enabled_countries!r}, "
             f"climatology_start_year={self.climatology_start_year!r}, "
             f"climatology_end_year={self.climatology_end_year!r}, "
+            f"climatology_min_years={self.climatology_min_years!r}, "
             f"gee_project={self.gee_project!r}, "
             f"gee_service_account={REDACTED!r}, "
             f"gee_private_key_json={REDACTED!r}, "
@@ -98,7 +101,11 @@ class Settings:
 
     @property
     def climatology_period(self) -> dict[str, int]:
-        return {"start_year": self.climatology_start_year, "end_year": self.climatology_end_year}
+        return {
+            "start_year": self.climatology_start_year,
+            "end_year": self.climatology_end_year,
+            "min_years": self.climatology_min_years,
+        }
 
     def to_public_dict(self) -> dict[str, object]:
         return {
@@ -140,6 +147,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
     enabled_countries = _countries(source, invalid_fields)
     start_year = _int(source, "MWANGAZA_CLIMATOLOGY_START_YEAR", "2001", invalid_fields)
     end_year = _int(source, "MWANGAZA_CLIMATOLOGY_END_YEAR", "2020", invalid_fields)
+    min_years = _int(source, "MWANGAZA_CLIMATOLOGY_MIN_YEARS", "10", invalid_fields)
     max_remote_pixels = _int(source, "MWANGAZA_MAX_REMOTE_PIXELS", "100000000", invalid_fields)
     ndvi_collection = _get(source, "MWANGAZA_NDVI_COLLECTION", "MODIS/061/MOD13Q1")
 
@@ -147,6 +155,8 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         invalid_fields.extend(["MWANGAZA_CLIMATOLOGY_START_YEAR", "MWANGAZA_CLIMATOLOGY_END_YEAR"])
     if max_remote_pixels is not None and max_remote_pixels <= 0:
         invalid_fields.append("MWANGAZA_MAX_REMOTE_PIXELS")
+    if min_years is not None and min_years <= 0:
+        invalid_fields.append("MWANGAZA_CLIMATOLOGY_MIN_YEARS")
     if not ndvi_collection:
         invalid_fields.append("MWANGAZA_NDVI_COLLECTION")
 
@@ -180,6 +190,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         enabled_countries=enabled_countries,
         climatology_start_year=start_year if start_year is not None else 2001,
         climatology_end_year=end_year if end_year is not None else 2020,
+        climatology_min_years=min_years if min_years is not None else 10,
         gee_project=gee_project,
         gee_service_account=gee_service_account,
         gee_private_key_json=gee_private_key_json,

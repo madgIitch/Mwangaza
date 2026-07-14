@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-5-current-ndvi - Sprint 5 - Current NDVI** - estado: `review_pending`.
+Feature: **sprint-6-ndvi-climatology - Sprint 6 - NDVI Climatology** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-5-current-ndvi - Sprint 5 - Current NDVI** - estado: `review_p
 
 ## Siguiente accion
 
-- Revisar el diff del commit de Sprint 5 y cerrar con `node .harness/spec.mjs done sprint-5-current-ndvi` tras smoke test humano.
+- Revisar el diff del commit de Sprint 6 y cerrar con `node .harness/spec.mjs done sprint-6-ndvi-climatology` tras smoke test humano.
 
 ## Ultimo resultado
 

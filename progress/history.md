@@ -17,3 +17,9 @@
 
 ## 2026-07-14T16:48:00+02:00 - #sprint-5-current-ndvi Sprint 5 - Current NDVI -> review_pending
 - 1 intento - agente codex
+
+## 2026-07-14T16:56:00+02:00 - #sprint-6-ndvi-climatology Sprint 6 - NDVI Climatology -> review_pending
+- 1 intento - agente codex
+
+## 2026-07-14T16:48:00+02:00 - #sprint-5-current-ndvi Sprint 5 - Current NDVI -> review_pending
+- 1 intento - agente codex
