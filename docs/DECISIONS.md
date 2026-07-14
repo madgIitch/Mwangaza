@@ -97,3 +97,16 @@ Decisiones registradas:
 - **tests:** Cobertura de calculo, calidad, trazabilidad y validacion.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-8-current-rainfall -->
+## 2026-07-14 · sprint-8-current-rainfall aprobado
+
+Contexto: se aprobó el spec `sprint-8-current-rainfall` (Sprint 8 - Current Rainfall).
+
+Decisiones registradas:
+
+- **auth_secrets:** Sin secretos ni red.
+- **rollback_compat:** Mantiene Sprints 0-7 y variables existentes.
+- **tests:** Cobertura de calculo, calidad, config y no red.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -241,3 +241,34 @@ Objetivo no negociable:
 - **edge_cases:** Denominadores cercanos a cero, signo negativo y stddev insuficiente.
 - **ui_states:** Sin UI nueva; distingue no disponible de cero.
 
+<!-- harness:sprint-8-current-rainfall -->
+## sprint-8-current-rainfall · Sprint 8 - Current Rainfall
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/config/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Retorna `IndicatorObservation` de lluvia acumulada en mm con cobertura temporal.
+- **external_contracts:** `mwangaza.data.rainfall` con adapter mockeable.
+- **edge_cases:** UTC, dias inclusivos y validacion de periodo efectivo.
+- **ui_states:** Sin UI nueva; estados listos para mostrar cobertura.
+

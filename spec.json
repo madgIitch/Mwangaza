@@ -704,7 +704,7 @@
     {
       "id": "sprint-8-current-rainfall",
       "name": "Sprint 8 - Current Rainfall",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.2.3",
       "estimated_hours": 4,
@@ -732,14 +732,17 @@
       ],
       "deliverable": "Precipitación reciente acumulada por región.",
       "acceptance": [
-        "AC1: El valor se expresa en milímetros acumulados.",
-        "AC2: El resultado indica número de días esperados y disponibles.",
-        "AC3: Días faltantes por encima del umbral marcan `incomplete_period`.",
-        "AC4: Una región sin píxeles válidos devuelve `no_data`.",
-        "AC5: Las fechas se interpretan en UTC.",
-        "AC6: La consulta no mezcla acumulados de períodos diferentes."
+        "`compute_current_rainfall(...)` devuelve un `IndicatorObservation` valido con `indicator=\"rainfall_mm\"`, `unit=\"mm\"` y `value` igual a la precipitacion acumulada del periodo en milimetros.",
+        "El resultado incluye en metadata `expected_days`, `available_days`, `missing_days` y `coverage_fraction`, con conteos coherentes y no negativos.",
+        "Si `missing_days` supera `max_missing_days`, el resultado conserva el acumulado disponible pero usa `quality_flag=\"degraded\"` y `metadata.incomplete_period=true`.",
+        "Una region o periodo sin datos validos devuelve `value=None`, `quality_flag=\"no_data\"` y no se representa como lluvia cero.",
+        "Las fechas se interpretan en UTC ISO8601 y los dias esperados se calculan de forma inclusiva por fecha calendario UTC.",
+        "La funcion rechaza resultados del adaptador cuyo periodo efectivo no coincide con el periodo solicitado, para no mezclar acumulados de periodos diferentes.",
+        "`MWANGAZA_RAINFALL_COLLECTION` configura la coleccion de lluvia y por defecto usa un identificador CHIRPS documentado.",
+        "Los tests usan adaptadores fake, no llaman Earth Engine ni servicios remotos, y cubren acumulado, periodo incompleto, no data, UTC y rechazo de periodos mezclados."
       ],
       "scope": [
+        "src/mwangaza/config/**",
         "src/mwangaza/data/**",
         "src/mwangaza/gee/**",
         "src/mwangaza/contracts/**",
@@ -756,7 +759,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-14T17:18:50.505Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:6ce9d6287ce551031dfc6499db3cf5cc57dfc56fdf07a9cb9a7c4f21868b9b9e",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T17:18:53.971Z"
     },
     {
       "id": "sprint-9-rainfall-climatology",
