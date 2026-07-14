@@ -215,7 +215,7 @@
     {
       "id": "sprint-0-repository-foundation",
       "name": "Sprint 0 - Repository Foundation",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.1",
       "estimated_hours": 4,
@@ -241,12 +241,13 @@
       ],
       "deliverable": "Repositorio instalable que inicia esqueletos vacíos de dashboard y API y supera los gates iniciales.",
       "acceptance": [
-        "AC1: `python -m pip install -e .` funciona en un entorno limpio.",
-        "AC2: `make lint`, `make typecheck` y `make test` terminan con código 0 en CI.",
-        "AC3: Existen entrypoints documentados para `streamlit run app.py`, API y actualización de datos.",
-        "AC4: El código de dominio vive bajo `src/mwangaza` y no dentro de notebooks.",
-        "AC5: `.env.example` no contiene claves, tokens, emails ni rutas privadas reales.",
-        "AC6: La versión inicial es `0.0.1` y el repositorio contiene una licencia compatible con la entrega."
+        "En un entorno limpio con Python 3.11, `python -m pip install -e .` instala el paquete sin errores y `python -c \"import mwangaza; print(mwangaza.__version__)\"` imprime `0.0.1`.",
+        "`make lint`, `make typecheck` y `make test` existen, se ejecutan localmente y son los mismos comandos usados por CI; todos terminan con código 0.",
+        "La CI ejecuta instalación editable, lint, typecheck y tests en cada push o pull request hacia `main`.",
+        "`README.md` documenta comandos exactos para `streamlit run app.py`, levantar la API y ejecutar la actualización de datos, incluyendo comportamiento esperado sin credenciales reales.",
+        "El código de dominio y los stubs de módulos viven bajo `src/mwangaza`; no se requiere ningún notebook para importar, ejecutar tests o arrancar entrypoints.",
+        "`.env.example` contiene solo nombres de variables y valores placeholder no sensibles; no contiene claves, tokens, emails personales, rutas privadas ni identificadores de cuentas reales.",
+        "El repositorio incluye `LICENSE` con licencia MIT y la versión declarada en metadata del paquete es `0.0.1`."
       ],
       "scope": [
         "pyproject.toml",
@@ -259,13 +260,16 @@
         "docs/**",
         "spec/**",
         "progress/**",
-        "src/**",
+        "src/mwangaza/**",
         "tests/**",
         "app.py",
         "README.md",
         "LICENSE"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:4ebf14309a05e9565a7b7adeb010797178ff97989451c23431fc3da98cf26162",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-14T11:53:06.625Z"
     },
     {
       "id": "sprint-1-configuration-and-secrets",
