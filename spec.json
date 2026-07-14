@@ -449,7 +449,7 @@
     {
       "id": "sprint-4-data-contracts",
       "name": "Sprint 4 - Data Contracts",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.1.1",
       "estimated_hours": 4,
