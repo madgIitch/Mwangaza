@@ -154,7 +154,7 @@ def check_gee_auth(
         try:
             credentials = module.ServiceAccountCredentials(
                 resolved.gee_service_account,
-                key_data=secret,
+                key_data=resolved.gee_private_key_json,
             )
             module.Initialize(credentials, project=resolved.gee_project)
             data = getattr(module, "data", None)

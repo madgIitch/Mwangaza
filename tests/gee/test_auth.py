@@ -73,7 +73,7 @@ class GeeAuthTests(unittest.TestCase):
         self.assertEqual(result.status, "ok")
         self.assertEqual(fake.initialized_project, "demo-project")
         self.assertEqual(fake.credentials_args, (SECRET_ACCOUNT,))
-        self.assertEqual(fake.credentials_kwargs, {"key_data": json.loads(SECRET_JSON)})
+        self.assertEqual(fake.credentials_kwargs, {"key_data": SECRET_JSON})
 
     def test_invalid_json_shape_returns_auth_error(self) -> None:
         settings = load_settings(
