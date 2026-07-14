@@ -159,17 +159,12 @@ def check_gee_auth(
             module.Initialize(credentials, project=resolved.gee_project)
             data = getattr(module, "data", None)
             if data is not None and hasattr(data, "getAssetRoots"):
-                data.getAssetRoots()
-            return GeeAuthResult(
-                status="ok",
-                configured=True,
-                project_configured=True,
-                service_account_configured=True,
-                checked_at=checked_at,
-                attempts=attempt,
-                max_attempts=attempts_limit,
-                message="Earth Engine authentication check succeeded.",
-            )
+                try:
+                    data.getAssetRoots()
+                except Exception as exc:
+                    if not _is_missing_project_asset_root(exc):
+                        raise
+            return _ok_result(checked_at, attempt, attempts_limit)
         except Exception as exc:
             status, code = _classify_error(exc)
             last_result = GeeAuthResult(
@@ -243,6 +238,24 @@ def _classify_error(exc: Exception) -> tuple[GeeStatus, str]:
     if any(token in text for token in ("timeout", "dns", "connection", "unavailable", "500", "502", "503", "504")):
         return "network_error", "network_error"
     return "network_error", "unknown_error"
+
+
+def _is_missing_project_asset_root(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "asset" in text and "not found" in text and "/assets" in text
+
+
+def _ok_result(checked_at: str, attempts: int, max_attempts: int) -> GeeAuthResult:
+    return GeeAuthResult(
+        status="ok",
+        configured=True,
+        project_configured=True,
+        service_account_configured=True,
+        checked_at=checked_at,
+        attempts=attempts,
+        max_attempts=max_attempts,
+        message="Earth Engine authentication check succeeded.",
+    )
 
 
 def _message_for_status(status: GeeStatus) -> str:

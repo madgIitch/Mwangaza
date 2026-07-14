@@ -88,6 +88,15 @@ class GeeAuthTests(unittest.TestCase):
         self.assertEqual(result.status, "auth_error")
         self.assertEqual(result.error_code, "invalid_service_account_json")
 
+    def test_missing_project_asset_root_still_counts_as_authenticated(self) -> None:
+        result = check_gee_auth(
+            production_settings(),
+            ee_module=FakeEe(Exception('Asset "projects/demo-project/assets" not found.')),
+            max_attempts=1,
+        )
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.attempts, 1)
+
     def test_sdk_absent_returns_auth_error(self) -> None:
         with patch("importlib.import_module", side_effect=ModuleNotFoundError("ee")):
             result = check_gee_auth(production_settings())
