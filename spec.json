@@ -331,7 +331,7 @@
     {
       "id": "sprint-2-gee-authentication",
       "name": "Sprint 2 - Google Earth Engine Authentication",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.3",
       "estimated_hours": 4,
