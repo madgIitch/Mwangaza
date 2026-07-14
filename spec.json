@@ -511,7 +511,7 @@
     {
       "id": "sprint-5-current-ndvi",
       "name": "Sprint 5 - Current NDVI",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.0",
       "estimated_hours": 5,
