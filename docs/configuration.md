@@ -2,6 +2,12 @@
 
 Sprint 1 centralizes runtime settings in `mwangaza.config`.
 
+When `load_settings()` is called without an explicit environment mapping, Mwangaza
+loads `MWANGAZA_*` values from a `.env` file in the current working directory and
+then overlays the real process environment. This lets local commands work from
+the repo root while keeping deployment behavior compatible with managed
+environment variables and secret managers.
+
 ## Profiles
 
 - `local`: default developer profile; no external credentials required.

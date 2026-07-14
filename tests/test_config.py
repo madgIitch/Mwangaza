@@ -3,7 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from mwangaza.api.app import app
@@ -90,6 +92,67 @@ class SettingsTests(unittest.TestCase):
         public = json.dumps(settings.to_public_dict())
         self.assertNotIn(SECRET_ACCOUNT, public)
         self.assertNotIn("do-not-print", public)
+
+    def test_load_settings_reads_dotenv_from_current_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, ".env").write_text(
+                "\n".join(
+                    [
+                        "MWANGAZA_ENV=production",
+                        "MWANGAZA_GEE_PROJECT=dotenv-project",
+                        f"MWANGAZA_GEE_SERVICE_ACCOUNT={SECRET_ACCOUNT}",
+                        f"MWANGAZA_GEE_PRIVATE_KEY_JSON={SECRET_JSON}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                with patch.dict(os.environ, {}, clear=True):
+                    settings = load_settings()
+            finally:
+                os.chdir(old_cwd)
+
+        self.assertEqual(settings.environment, "production")
+        self.assertEqual(settings.gee_project, "dotenv-project")
+        self.assertEqual(settings.gee_service_account, SECRET_ACCOUNT)
+        self.assertEqual(settings.gee_private_key_json, SECRET_JSON)
+
+    def test_explicit_environment_mapping_does_not_read_dotenv(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, ".env").write_text("MWANGAZA_ENV=production\n", encoding="utf-8")
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                settings = load_settings({})
+            finally:
+                os.chdir(old_cwd)
+
+        self.assertEqual(settings.environment, "local")
+
+    def test_real_environment_overrides_dotenv(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, ".env").write_text(
+                "\n".join(
+                    [
+                        "MWANGAZA_ENV=production",
+                        "MWANGAZA_GEE_PROJECT=dotenv-project",
+                        f"MWANGAZA_GEE_SERVICE_ACCOUNT={SECRET_ACCOUNT}",
+                        f"MWANGAZA_GEE_PRIVATE_KEY_JSON={SECRET_JSON}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                with patch.dict(os.environ, {"MWANGAZA_ENV": "test"}, clear=True):
+                    settings = load_settings()
+            finally:
+                os.chdir(old_cwd)
+
+        self.assertEqual(settings.environment, "test")
 
 
 class HealthConfigTests(unittest.TestCase):

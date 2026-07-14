@@ -116,7 +116,7 @@ class Settings:
 
 
 def load_settings(env: Mapping[str, str] | None = None) -> Settings:
-    source = os.environ if env is None else env
+    source = _runtime_env() if env is None else env
     environment = _get(source, "MWANGAZA_ENV", "local").lower()
     invalid_fields: list[str] = []
 
@@ -186,6 +186,37 @@ def public_config_status(env: Mapping[str, str] | None = None) -> dict[str, obje
         return load_settings(env).to_public_dict()
     except ConfigurationError as exc:
         return exc.to_public_dict()
+
+
+def _runtime_env() -> Mapping[str, str]:
+    dot_env = _read_dotenv(Path.cwd() / ".env")
+    if not dot_env:
+        return os.environ
+    merged = dict(dot_env)
+    merged.update(os.environ)
+    return merged
+
+
+def _read_dotenv(path: Path) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        if not name or not name.startswith("MWANGAZA_"):
+            continue
+        values[name] = _strip_dotenv_quotes(value.strip())
+    return values
+
+
+def _strip_dotenv_quotes(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
 
 
 def _get(source: Mapping[str, str], name: str, default: str) -> str:

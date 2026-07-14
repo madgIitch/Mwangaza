@@ -13,6 +13,10 @@ Set these only in a private shell or secret manager:
 
 `MWANGAZA_GEE_PRIVATE_KEY_JSON` must be the service account JSON object as an environment variable. Do not write it to disk and do not commit it.
 
+For local development, these variables can live in a private `.env` file in the
+repo root. Mwangaza reads that file automatically when commands are run from the
+repo root. Variables already exported in the shell override `.env`.
+
 ## Manual Check
 
 Run:
