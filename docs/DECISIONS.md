@@ -145,3 +145,12 @@ Contexto: se aprobó el spec `sprint-11-current-land-surface-temperature` (Sprin
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-12-temperature-anomaly -->
+## 2026-07-15 · sprint-12-temperature-anomaly aprobado
+
+Contexto: se aprobó el spec `sprint-12-temperature-anomaly` (Sprint 12 - Temperature Anomaly).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

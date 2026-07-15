@@ -341,3 +341,26 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-12-temperature-anomaly -->
+## sprint-12-temperature-anomaly · Sprint 12 - Temperature Anomaly
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

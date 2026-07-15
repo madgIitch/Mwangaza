@@ -965,7 +965,7 @@
     {
       "id": "sprint-12-temperature-anomaly",
       "name": "Sprint 12 - Temperature Anomaly",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.2.7",
       "estimated_hours": 4,
@@ -993,12 +993,14 @@
       ],
       "deliverable": "Anomalía térmica estacional por región.",
       "acceptance": [
-        "AC1: La anomalía se expresa en diferencia de grados Celsius.",
-        "AC2: Una anomalía positiva representa superficie más caliente que el baseline.",
-        "AC3: Historia insuficiente produce `insufficient_history`.",
-        "AC4: Los datos nocturnos y diurnos no se mezclan sin configuración explícita.",
-        "AC5: Se conserva la variante del producto utilizada.",
-        "AC6: El módulo no genera recomendaciones directamente."
+        "`compute_lst_climatology(...)` devuelve un `Baseline` con `indicator=\"lst_c\"`, `unit=\"celsius\"`, estadisticos historicos y `quality_flag=\"insufficient_history\"` cuando no alcanza `min_years`.",
+        "`compute_temperature_anomaly(...)` devuelve un `Anomaly` con `value=current.value - baseline.mean` expresado en grados Celsius.",
+        "Una anomalia positiva representa superficie mas caliente que el baseline y conserva `absolute_anomaly_c` en metadata.",
+        "`metadata.z_score` se calcula cuando `baseline.stddev > zscore_epsilon`; si no, queda `None` con motivo estable.",
+        "Los datos diurnos y nocturnos no se mezclan por defecto: `product_variant` de current y baseline debe coincidir.",
+        "El resultado conserva la variante del producto, `current_id`, `baseline_id` y `baseline_version` saneados.",
+        "`no_data` o `insufficient_history` producen valor no concluyente y propagan la calidad mas restrictiva sin convertir ausencias en cero.",
+        "El modulo no genera recomendaciones, acciones, alertas, severidad ni score final."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -1017,7 +1019,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T15:06:15.127Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:bb3b7ff785cb87928ee484ae9f27ce1fe4ca34e16e76c139261c2b3baba91134",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T15:06:19.740Z"
     },
     {
       "id": "sprint-13-spatial-aggregation",
