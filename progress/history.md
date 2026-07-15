@@ -33,6 +33,9 @@
 ## 2026-07-15T16:50:00Z - #sprint-17-data-quality Sprint 17 - Data Quality -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T17:05:00Z - #sprint-18-alert-thresholds Sprint 18 - Alert Thresholds -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 
