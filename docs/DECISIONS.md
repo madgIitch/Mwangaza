@@ -162,3 +162,12 @@ Contexto: se aprobó el spec `sprint-12-temperature-anomaly` (Sprint 12 - Temper
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-13-spatial-aggregation -->
+## 2026-07-15 · sprint-13-spatial-aggregation aprobado
+
+Contexto: se aprobó el spec `sprint-13-spatial-aggregation` (Sprint 13 - Spatial Aggregation).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

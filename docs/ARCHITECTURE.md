@@ -364,3 +364,26 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-13-spatial-aggregation -->
+## sprint-13-spatial-aggregation · Sprint 13 - Spatial Aggregation
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

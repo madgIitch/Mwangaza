@@ -1030,7 +1030,7 @@
     {
       "id": "sprint-13-spatial-aggregation",
       "name": "Sprint 13 - Spatial Aggregation",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.3.0",
       "estimated_hours": 5,
@@ -1058,12 +1058,14 @@
       ],
       "deliverable": "Estadísticos zonales consistentes para todas las señales.",
       "acceptance": [
-        "AC1: Cada agregado incluye media, mediana, percentiles y área válida cuando la fuente lo permite.",
-        "AC2: Regiones con cobertura menor al umbral quedan marcadas.",
-        "AC3: La geometría analítica se usa sin la simplificación visual.",
-        "AC4: El servicio impone límite de regiones y escala para evitar consultas accidentales masivas.",
-        "AC5: Los resultados se ordenan por region_id.",
-        "AC6: La misma entrada produce resultados estables dentro de tolerancia documentada."
+        "`aggregate_regions(...)` devuelve un resultado por cada `region_id` solicitado con `indicator`, `unit`, periodo, fuente, `quality_flag`, estadisticos y metadata de cobertura/trazabilidad.",
+        "Cada agregado incluye media, mediana, percentiles configurables y area valida cuando la fuente lo permite; si la fuente no provee area, el campo queda explicitamente no disponible sin inventar cero.",
+        "Regiones con `coverage_fraction` menor al umbral configurado quedan marcadas como no concluyentes o degradadas, preservando la cobertura observada.",
+        "La agregacion usa la geometria analitica `geometry` del catalogo regional y nunca la `ui_geometry` simplificada.",
+        "La configuracion impone limites de numero de regiones, escala y pixels remotos; excederlos falla antes de llamar al adapter.",
+        "Los resultados se ordenan siempre por `region_id` y la misma entrada produce salidas estables dentro de una tolerancia numerica documentada.",
+        "Indicadores o unidades desconocidas, regiones inexistentes, geometria vacia y valores no finitos producen errores controlados o calidad `invalid` sin respuestas parciales ambiguas.",
+        "La suite automatizada usa adapters fake/mocks sin llamadas remotas ni credenciales reales y cubre calculo, cobertura, limites, geometria analitica y orden estable."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -1082,7 +1084,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T15:23:45.362Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:e56f524516e8dd23bc6899dd52202ee1ad05fa26032163faa9824f2e207dc3dd",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T15:23:50.244Z"
     },
     {
       "id": "sprint-14-indicator-snapshot",
