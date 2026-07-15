@@ -14,6 +14,7 @@
 
 - Implementado manualmente siguiendo el spec aprobado.
 - Anade view model demo determinista en `mwangaza.services.dashboard_shell`.
+- Conecta el loader a cache local materializada y SQLite de alertas cuando existen, sin llamadas remotas desde la UI.
 - Sustituye el placeholder Streamlit por un shell operacional con sidebar, estado de datos, mapa placeholder, alertas, metricas y recomendaciones.
 - Verificacion ejecutada con `uv run python -m compileall -q src tests app.py`.
 - Verificacion ejecutada con `uv run python -m unittest discover -s tests`.
