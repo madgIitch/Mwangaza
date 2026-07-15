@@ -1408,7 +1408,7 @@
     {
       "id": "sprint-19-composite-drought-score",
       "name": "Sprint 19 - Composite Drought Score",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.4.1",
       "estimated_hours": 5,
