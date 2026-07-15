@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-12-temperature-anomaly - Sprint 12 - Temperature Anomaly** - estado: `review_pending`.
+Feature: **sprint-13-spatial-aggregation - Sprint 13 - Spatial Aggregation** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-12-temperature-anomaly - Sprint 12 - Temperature Anomaly** - e
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 12 y cerrar con `node .harness/spec.mjs done sprint-12-temperature-anomaly` tras smoke test humano.
+- Revisar el diff de Sprint 13 y cerrar con `node .harness/spec.mjs done sprint-13-spatial-aggregation` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 
