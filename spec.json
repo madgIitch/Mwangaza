@@ -1095,7 +1095,7 @@
     {
       "id": "sprint-14-indicator-snapshot",
       "name": "Sprint 14 - Indicator Snapshot",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.3.1",
       "estimated_hours": 4,
@@ -1123,12 +1123,14 @@
       ],
       "deliverable": "Snapshot regional listo para clasificación.",
       "acceptance": [
-        "AC1: Un snapshot corresponde a una única región y ventana de análisis.",
-        "AC2: No se combinan observaciones con ventanas incompatibles.",
-        "AC3: El snapshot enumera indicadores presentes, ausentes y degradados.",
-        "AC4: Actualizar una fuente crea un snapshot nuevo, no modifica el anterior.",
-        "AC5: El snapshot tiene hash reproducible del contenido.",
-        "AC6: La UI y API pueden mostrar la fecha de actualización más antigua y más reciente de sus señales."
+        "`build_indicator_snapshot(...)` devuelve un snapshot para una unica `region_id`, `period_start` y `period_end`, y rechaza senales de otra region o ventana incompatible.",
+        "El snapshot enumera indicadores presentes, ausentes y degradados usando las `quality_flag` contractuales sin convertir ausencias en cero.",
+        "El snapshot conserva las senales de entrada en una forma serializable estable y no recalcula ni consulta fuentes remotas.",
+        "Actualizar una fuente o cambiar cualquier payload crea un snapshot nuevo con `snapshot_id`/`content_hash` distinto, sin mutar snapshots previos.",
+        "`content_hash` es reproducible para el mismo contenido aunque el orden de entrada cambie.",
+        "`oldest_updated_at` y `newest_updated_at` se calculan desde `metadata.updated_at` cuando existe y usan `period_end` como fallback.",
+        "Payloads duplicados para el mismo indicador/tipo, indicadores desconocidos, unidades incompatibles, timestamps invalidos o contenido no serializable producen `IndicatorSnapshotError`.",
+        "La suite automatizada usa payloads locales/fakes sin llamadas remotas ni credenciales y cubre hash, calidad, fechas, inmutabilidad y rechazo de entradas incompatibles."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -1148,7 +1150,13 @@
         "progress/**",
         "src/mwangaza/db/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T15:50:12.207Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:37effdbcf7238c26ec50ad477bbe5bcfcbf9f6fbc64c2dda9c9ed25861bbfd2a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T15:50:16.842Z"
     },
     {
       "id": "sprint-15-parquet-cache",

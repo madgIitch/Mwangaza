@@ -171,3 +171,12 @@ Contexto: se aprobó el spec `sprint-13-spatial-aggregation` (Sprint 13 - Spatia
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14-indicator-snapshot -->
+## 2026-07-15 · sprint-14-indicator-snapshot aprobado
+
+Contexto: se aprobó el spec `sprint-14-indicator-snapshot` (Sprint 14 - Indicator Snapshot).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
