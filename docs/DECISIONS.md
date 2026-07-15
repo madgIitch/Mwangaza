@@ -198,3 +198,12 @@ Contexto: se aprobó el spec `sprint-16-refresh-pipeline` (Sprint 16 - Refresh P
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-17-data-quality -->
+## 2026-07-15 · sprint-17-data-quality aprobado
+
+Contexto: se aprobó el spec `sprint-17-data-quality` (Sprint 17 - Data Quality).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

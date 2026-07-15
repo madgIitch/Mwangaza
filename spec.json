@@ -1287,7 +1287,7 @@
     {
       "id": "sprint-17-data-quality",
       "name": "Sprint 17 - Data Quality",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.3.4",
       "estimated_hours": 4,
@@ -1315,12 +1315,12 @@
       ],
       "deliverable": "Evaluación de calidad adjunta a cada snapshot.",
       "acceptance": [
-        "AC1: La calidad considera frescura, cobertura espacial, cobertura temporal e historia suficiente.",
-        "AC2: El score queda entre 0 y 100 con desglose de contribuciones.",
-        "AC3: Calidad crítica impide alertas automáticas y produce estado `data_review_required`.",
-        "AC4: La UI muestra avisos sin ocultar datos disponibles.",
-        "AC5: Las reglas están versionadas y configurables.",
-        "AC6: Tests cubren snapshot completo, degradado y bloqueado."
+        "`evaluate_data_quality(...)` calcula frescura, cobertura espacial, cobertura temporal e historia suficiente desde un snapshot.",
+        "El score total queda entre 0 y 100 e incluye desglose de contribuciones por dimension.",
+        "Calidad critica produce estado `data_review_required` y `blocks_automatic_alerts=True`.",
+        "El reporte conserva datos disponibles y genera warnings sin ocultarlos.",
+        "Las reglas son configurables y conservan `rules_version`.",
+        "Snapshots completos, degradados y bloqueados quedan cubiertos por tests automatizados."
       ],
       "scope": [
         "src/mwangaza/quality/**",
@@ -1336,7 +1336,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:03:27.666Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:daa7a1115203ad73b64d26eec487e09cdcd4c1336a1903cf801f7ffa7b4c815c",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:03:27.783Z"
     },
     {
       "id": "sprint-18-alert-thresholds",

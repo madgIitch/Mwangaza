@@ -453,3 +453,23 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-17-data-quality -->
+## sprint-17-data-quality · Sprint 17 - Data Quality
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/quality/**`
+  - `tests/quality/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
