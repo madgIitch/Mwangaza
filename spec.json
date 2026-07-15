@@ -1469,7 +1469,7 @@
     {
       "id": "sprint-20-early-action-recommendations",
       "name": "Sprint 20 - Early Action Recommendations",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.4.2",
       "estimated_hours": 4,
