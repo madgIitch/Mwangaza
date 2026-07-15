@@ -1161,7 +1161,7 @@
     {
       "id": "sprint-15-parquet-cache",
       "name": "Sprint 15 - Parquet Cache",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.3.2",
       "estimated_hours": 5,
