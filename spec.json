@@ -1224,7 +1224,7 @@
     {
       "id": "sprint-16-refresh-pipeline",
       "name": "Sprint 16 - Refresh Pipeline",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.3.3",
       "estimated_hours": 6,

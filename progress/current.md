@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-15-parquet-cache - Sprint 15 - Parquet Cache** - estado: `review_pending`.
+Feature: **sprint-16-refresh-pipeline - Sprint 16 - Refresh Pipeline** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-15-parquet-cache - Sprint 15 - Parquet Cache** - estado: `revi
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 15 y cerrar con `node .harness/spec.mjs done sprint-15-parquet-cache` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 16 y cerrar con `node .harness/spec.mjs done sprint-16-refresh-pipeline` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 

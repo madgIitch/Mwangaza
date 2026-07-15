@@ -27,6 +27,9 @@
 ## 2026-07-15T16:20:00Z - #sprint-15-parquet-cache Sprint 15 - Parquet Cache -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T16:35:00Z - #sprint-16-refresh-pipeline Sprint 16 - Refresh Pipeline -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 
