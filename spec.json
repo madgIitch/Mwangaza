@@ -900,7 +900,7 @@
     {
       "id": "sprint-11-current-land-surface-temperature",
       "name": "Sprint 11 - Current Land Surface Temperature",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.6",
       "estimated_hours": 4,
