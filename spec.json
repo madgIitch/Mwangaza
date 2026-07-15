@@ -1678,7 +1678,8 @@
         "Colorear por nivel.",
         "Añadir tooltip.",
         "Añadir leyenda.",
-        "Manejar regiones unknown."
+        "Manejar regiones unknown.",
+        "Crear smoke test real GEE que siembre la cache del dashboard sin ejecutar GEE desde Streamlit."
       ],
       "deliverable": "Mapa regional interactivo de semáforo.",
       "acceptance": [
@@ -1687,7 +1688,8 @@
         "AC3: Regiones sin datos aparecen como unknown, no green.",
         "AC4: El mapa no deforma geometrías por mezclar sistemas de coordenadas.",
         "AC5: La selección de una región actualiza el estado de navegación.",
-        "AC6: El mapa se renderiza con fixtures en tests de smoke."
+        "AC6: El mapa se renderiza con fixtures en tests de smoke.",
+        "AC7: Existe un script en smoke_tests/ que llama a GEE real con credenciales por variable de entorno, genera payloads saneados para risk/indicadores y escribe la cache que consume el dashboard."
       ],
       "scope": [
         "app.py",
@@ -1705,7 +1707,8 @@
         "docs/**",
         "spec/**",
         "progress/**",
-        "src/mwangaza/maps/**"
+        "src/mwangaza/maps/**",
+        "smoke_tests/**"
       ],
       "spec_approved": false
     },
