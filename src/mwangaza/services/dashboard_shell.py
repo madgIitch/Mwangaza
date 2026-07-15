@@ -154,7 +154,7 @@ def _read_cached_payloads(cache_dir: Path) -> tuple[dict[str, Any], ...]:
     payloads: list[dict[str, Any]] = []
     for path in sorted(cache_dir.rglob("*.json")):
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):
             continue
         for payload in _extract_payloads(raw):

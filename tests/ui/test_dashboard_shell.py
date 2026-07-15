@@ -30,7 +30,7 @@ class FakeStreamlit:
 
 class DashboardShellTests(unittest.TestCase):
     def test_home_shell_shows_brand_update_and_data_status(self) -> None:
-        html = build_dashboard_shell_html(load_dashboard_shell_data())
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
 
         self.assertIn("Mwangaza", html)
         self.assertIn("Bringing Light to Early Action", html)
@@ -38,7 +38,7 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("Data is current", html)
 
     def test_navigation_contains_required_sections(self) -> None:
-        html = build_dashboard_shell_html(load_dashboard_shell_data())
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
 
         for label in ("Overview", "Region", "Alerts", "Reports", "About"):
             self.assertIn(f">{label}<", html)
@@ -83,6 +83,18 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.selected_region, "KEN")
         self.assertIn("0.31", {metric.value for metric in data.metrics})
         self.assertIn("Activate urgent coordination review", data.recommendations[0])
+
+    def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            body = json.dumps({"payload": _risk_snapshot(is_simulated=False).to_dict()})
+            (cache_dir / "risk.json").write_text(f"\ufeff{body}", encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        self.assertEqual(data.data_status.mode, "cache")
+        self.assertEqual(data.selected_region, "KEN")
 
     def test_alert_sqlite_overrides_demo_alert_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -129,7 +141,7 @@ class DashboardShellTests(unittest.TestCase):
         self.assertNotIn("C:\\Users", html)
 
     def test_layout_contract_prevents_horizontal_scroll(self) -> None:
-        html = build_dashboard_shell_html(load_dashboard_shell_data())
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
 
         self.assertIn("overflow-x: hidden", html)
         self.assertIn("minmax(0, 1fr)", html)
