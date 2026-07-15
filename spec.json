@@ -835,7 +835,7 @@
     {
       "id": "sprint-10-rainfall-anomaly",
       "name": "Sprint 10 - Rainfall Anomaly",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.5",
       "estimated_hours": 3,
