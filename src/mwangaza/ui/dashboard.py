@@ -428,11 +428,26 @@ def render_dashboard(
         st = imported_streamlit
 
     st.set_page_config(page_title=data.project, page_icon="M", layout="wide")
-    st.markdown(html, unsafe_allow_html=True)
+    _render_html(st, html)
 
 
 def main() -> None:
     render_dashboard()
+
+
+def _render_html(st: Any, html: str) -> None:
+    html_renderer = getattr(st, "html", None)
+    if callable(html_renderer):
+        html_renderer(html)
+        return
+
+    components = getattr(st, "components", None)
+    component_html = getattr(getattr(components, "v1", None), "html", None)
+    if callable(component_html):
+        component_html(html, height=900, scrolling=True)
+        return
+
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def _render_alerts(data: DashboardShellData) -> str:

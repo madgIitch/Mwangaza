@@ -16,12 +16,16 @@ class FakeStreamlit:
     def __init__(self) -> None:
         self.page_config: dict[str, object] | None = None
         self.markdown_calls: list[tuple[str, bool]] = []
+        self.html_calls: list[str] = []
 
     def set_page_config(self, **kwargs: object) -> None:
         self.page_config = kwargs
 
     def markdown(self, body: str, *, unsafe_allow_html: bool = False) -> None:
         self.markdown_calls.append((body, unsafe_allow_html))
+
+    def html(self, body: str) -> None:
+        self.html_calls.append(body)
 
 
 class DashboardShellTests(unittest.TestCase):
@@ -115,8 +119,8 @@ class DashboardShellTests(unittest.TestCase):
         render_dashboard(data_loader=boom, streamlit_module=fake)  # type: ignore[arg-type]
 
         self.assertEqual(fake.page_config["layout"], "wide")
-        self.assertTrue(fake.markdown_calls)
-        html = fake.markdown_calls[0][0]
+        self.assertTrue(fake.html_calls)
+        html = fake.html_calls[0]
         self.assertIn(SAFE_ERROR_MESSAGE, html)
         self.assertIn("Dashboard data could not be loaded", html)
         self.assertNotIn("Traceback", html)
