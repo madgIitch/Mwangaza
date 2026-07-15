@@ -704,7 +704,7 @@
     {
       "id": "sprint-8-current-rainfall",
       "name": "Sprint 8 - Current Rainfall",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.3",
       "estimated_hours": 4,
