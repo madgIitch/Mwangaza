@@ -1287,7 +1287,7 @@
     {
       "id": "sprint-17-data-quality",
       "name": "Sprint 17 - Data Quality",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.3.4",
       "estimated_hours": 4,

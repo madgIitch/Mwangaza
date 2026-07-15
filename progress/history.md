@@ -30,6 +30,9 @@
 ## 2026-07-15T16:35:00Z - #sprint-16-refresh-pipeline Sprint 16 - Refresh Pipeline -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T16:50:00Z - #sprint-17-data-quality Sprint 17 - Data Quality -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 

@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-16-refresh-pipeline - Sprint 16 - Refresh Pipeline** - estado: `review_pending`.
+Feature: **sprint-17-data-quality - Sprint 17 - Data Quality** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-16-refresh-pipeline - Sprint 16 - Refresh Pipeline** - estado:
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 16 y cerrar con `node .harness/spec.mjs done sprint-16-refresh-pipeline` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 17 y cerrar con `node .harness/spec.mjs done sprint-17-data-quality` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 
