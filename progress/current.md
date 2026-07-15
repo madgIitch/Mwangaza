@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-18-alert-thresholds - Sprint 18 - Alert Thresholds** - estado: `review_pending`.
+Feature: **sprint-19-composite-drought-score - Sprint 19 - Composite Drought Score** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-18-alert-thresholds - Sprint 18 - Alert Thresholds** - estado:
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 18 y cerrar con `node .harness/spec.mjs done sprint-18-alert-thresholds` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 19 y cerrar con `node .harness/spec.mjs done sprint-19-composite-drought-score` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 

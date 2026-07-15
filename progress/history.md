@@ -36,6 +36,9 @@
 ## 2026-07-15T17:05:00Z - #sprint-18-alert-thresholds Sprint 18 - Alert Thresholds -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T17:25:00Z - #sprint-19-composite-drought-score Sprint 19 - Composite Drought Score -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 
