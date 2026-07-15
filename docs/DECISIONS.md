@@ -243,3 +243,12 @@ Contexto: se aprobó el spec `sprint-21-alert-persistence` (Sprint 21 - Alert Pe
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-22-dashboard-shell -->
+## 2026-07-15 · sprint-22-dashboard-shell aprobado
+
+Contexto: se aprobó el spec `sprint-22-dashboard-shell` (Sprint 22 - Dashboard Shell).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

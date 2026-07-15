@@ -1591,7 +1591,7 @@
     {
       "id": "sprint-22-dashboard-shell",
       "name": "Sprint 22 - Dashboard Shell",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.5.0",
       "estimated_hours": 5,
@@ -1619,12 +1619,12 @@
       ],
       "deliverable": "Dashboard navegable con datos mock.",
       "acceptance": [
-        "AC1: La portada muestra nombre, tagline, última actualización y estado de datos.",
-        "AC2: La navegación incluye Overview, Region, Alerts, Reports y About.",
-        "AC3: Un error de carga no rompe toda la aplicación.",
-        "AC4: La interfaz funciona en 1366x768 sin scroll horizontal.",
-        "AC5: El dashboard diferencia claramente datos live, cache y demo.",
-        "AC6: No se exponen trazas internas al usuario."
+        "La portada muestra nombre, tagline, ultima actualizacion y estado de datos.",
+        "La navegacion incluye Overview, Region, Alerts, Reports y About.",
+        "Un error de carga no rompe toda la aplicacion.",
+        "La interfaz funciona en 1366x768 sin scroll horizontal.",
+        "El dashboard diferencia claramente datos live, cache y demo.",
+        "No se exponen trazas internas al usuario."
       ],
       "scope": [
         "app.py",
@@ -1643,7 +1643,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:23:33.187Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:716d6ebb6f11ba5bd337173cb43e9af7677f3eada0815a96b0416e75ee813863",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:23:37.499Z"
     },
     {
       "id": "sprint-23-regional-risk-map",
