@@ -16,6 +16,8 @@ APPROVED -> `review_pending`.
 - [x] spec/sprint-12-temperature-anomaly-Sprint 12 - Temperature Anomaly/design.md
 - [x] spec/sprint-12-temperature-anomaly-Sprint 12 - Temperature Anomaly/tasks.md
 
-## Pendiente
+## Smoke humano
 
-- [ ] Smoke test humano con datos reales/prod-like si aplica; despues cerrar con `node .harness/spec.mjs done sprint-12-temperature-anomaly`.
+- [x] Smoke test humano con datos reales/prod-like ejecutado por peorr en PowerShell.
+- [x] Resultado reportado: `SPRINT 12 REAL GEE SMOKE OK`.
+- [x] Payloads `current`, `baseline` y `anomaly` con `is_simulated=false` y `quality_flag="ok"`.
