@@ -18,6 +18,14 @@ Decisión: en los sprints que implementen o consuman datos externos reales, espe
 
 Consecuencia: al entregar esos sprints, además de los tests unitarios, se debe proporcionar o ejecutar un smoke real que consulte la fuente externa, valide el contrato resultante y compruebe que no se filtran secretos en payloads, logs o salidas.
 
+## 2026-07-15 · smoke tests reales versionados
+
+Contexto: los smoke tests reales no deben depender de snippets pegados en el chat, porque los siguientes sprints necesitan una forma repetible y homogenea de validar integraciones externas.
+
+Decisión: todo sprint que implemente o consuma datos externos reales debe incluir un script homologo en `smoke_tests/` cuando aplique. El agente debe crearlo o actualizarlo durante el sprint sin que el usuario lo pida explicitamente. Estos scripts deben usar variables de entorno para credenciales/rutas, no rutas locales fijas, y deben validar saneamiento de secretos en payloads.
+
+Consecuencia: los cierres `review_pending` de sprints con datos reales deben apuntar a un smoke script versionado, además de los tests automatizados con fakes/mocks.
+
 <!-- harness:sprint-0-repository-foundation -->
 ## 2026-07-14 · sprint-0-repository-foundation aprobado
 
