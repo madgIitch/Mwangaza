@@ -119,3 +119,12 @@ Contexto: se aprobó el spec `sprint-9-rainfall-climatology` (Sprint 9 - Rainfal
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-10-rainfall-anomaly -->
+## 2026-07-15 · sprint-10-rainfall-anomaly aprobado
+
+Contexto: se aprobó el spec `sprint-10-rainfall-anomaly` (Sprint 10 - Rainfall Anomaly).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -56,3 +56,27 @@ Configuration is explicit through `RainfallClimatologyConfig`:
 If history is insufficient, statistics are `None` and
 `quality_flag="insufficient_history"`; rainfall climatology is never represented
 as zero unless the included historical accumulation is actually zero.
+
+## Rainfall Anomaly
+
+Sprint 10 computes rainfall deviation with
+`mwangaza.data.rainfall_anomaly.compute_rainfall_anomaly(...)`. It consumes a
+current rainfall `IndicatorObservation` and a rainfall climatology baseline, then
+returns an `Anomaly` with:
+
+- `value`: absolute anomaly in mm, calculated as current rainfall minus
+  baseline mean.
+- `metadata.percent_anomaly`: percent deviation when the baseline mean is above
+  epsilon.
+- `metadata.empirical_percentile`: deterministic percentile over included
+  historical values when enough observations exist.
+- `metadata.classification`: technical `deficit`, `normal`, `excess`, or
+  `not_conclusive`.
+
+The default internal classification thresholds are documented and inclusive:
+
+- `deficit_threshold_percent=-20.0`
+- `excess_threshold_percent=20.0`
+
+This module does not create alerts, actions, or final severity. Those decisions
+belong to later alert and recommendation sprints.

@@ -295,3 +295,26 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-10-rainfall-anomaly -->
+## sprint-10-rainfall-anomaly · Sprint 10 - Rainfall Anomaly
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

@@ -835,7 +835,7 @@
     {
       "id": "sprint-10-rainfall-anomaly",
       "name": "Sprint 10 - Rainfall Anomaly",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.2.5",
       "estimated_hours": 3,
@@ -863,12 +863,14 @@
       ],
       "deliverable": "Anomalía pluviométrica comparable entre regiones.",
       "acceptance": [
-        "AC1: Un valor negativo representa déficit frente a la media.",
-        "AC2: El percentil queda entre 0 y 100.",
-        "AC3: El cálculo no inventa percentil con menos del mínimo de observaciones.",
-        "AC4: Se conserva referencia a current y baseline.",
-        "AC5: El módulo no decide acciones ni severidad final.",
-        "AC6: Tests cubren exactamente los umbrales internos documentados."
+        "`compute_rainfall_anomaly(...)` devuelve un `Anomaly` con `indicator=\"rainfall_mm\"`, `unit=\"mm\"` y `value=current.value - baseline.mean`; un valor negativo representa deficit frente a la media.",
+        "`metadata.percent_anomaly` se calcula como porcentaje respecto a `baseline.mean` cuando la media supera `percent_epsilon`; si no, queda `None` con motivo estable.",
+        "`metadata.empirical_percentile` queda entre 0 y 100 y se calcula de forma determinista sobre valores historicos incluidos.",
+        "El calculo no inventa percentil cuando hay menos de `min_percentile_observations`; registra un motivo estable.",
+        "El resultado conserva referencia saneada a current y baseline mediante `current_id`, `baseline_id` y el campo contractual `baseline_id`.",
+        "La clasificacion tecnica usa exactamente `deficit_threshold_percent=-20.0` y `excess_threshold_percent=20.0` por defecto, pero no genera acciones, alertas ni severidad final.",
+        "La calidad mas restrictiva de current y baseline se propaga; `no_data` o `insufficient_history` producen valor no concluyente sin convertir ausencias en cero.",
+        "Tests cubren deficit, exceso, percentiles frontera, minimo de observaciones, trazabilidad, propagacion de calidad, umbrales internos documentados y ausencia de severidad/acciones."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -887,7 +889,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T12:55:44.649Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:4b951291b79c5d712569dc691d9adc657846de2738598c689b7006c34abe746a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T12:55:50.118Z"
     },
     {
       "id": "sprint-11-current-land-surface-temperature",
