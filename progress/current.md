@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-8-current-rainfall - Sprint 8 - Current Rainfall** - estado: `review_pending`.
+Feature: **sprint-9-rainfall-climatology - Sprint 9 - Rainfall Climatology** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-8-current-rainfall - Sprint 8 - Current Rainfall** - estado: `
 
 ## Siguiente accion
 
-- Revisar el diff del commit de Sprint 8 y cerrar con `node .harness/spec.mjs done sprint-8-current-rainfall` tras smoke test humano.
+- Revisar el diff de Sprint 9 y cerrar con `node .harness/spec.mjs done sprint-9-rainfall-climatology` tras smoke test humano.
 
 ## Ultimo resultado
 

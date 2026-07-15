@@ -770,7 +770,7 @@
     {
       "id": "sprint-9-rainfall-climatology",
       "name": "Sprint 9 - Rainfall Climatology",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.2.4",
       "estimated_hours": 4,
@@ -798,12 +798,14 @@
       ],
       "deliverable": "Baseline de lluvia con distribución histórica.",
       "acceptance": [
-        "AC1: El baseline incluye media, mediana, percentiles 20/50/80 y desviación.",
-        "AC2: Los años con cobertura insuficiente se excluyen y quedan registrados.",
-        "AC3: El mínimo de años es configurable.",
-        "AC4: La unidad coincide con Current Rainfall.",
-        "AC5: La versión del baseline cambia si cambia fuente o ventana.",
-        "AC6: Tests cubren distribución sesgada y valores extremos."
+        "`compute_rainfall_climatology(...)` devuelve un baseline de lluvia en `mm` con `mean`, `median`, `percentile_20`, `percentile_50`, `percentile_80` y `stddev` calculados sobre anos historicos incluidos.",
+        "Los anos cuya cobertura efectiva no alcanza `min_coverage_fraction` se excluyen, quedan en `excluded_years` con motivo estable y no participan en las estadisticas.",
+        "`min_years` es configurable; si los anos incluidos son menos que ese minimo, el baseline queda con calidad `insufficient_history`, estadisticas `None` y los motivos de exclusion preservados.",
+        "La unidad, indicador y acumulados historicos coinciden con `compute_current_rainfall(...)`: `indicator=\"rainfall_mm\"` y `unit=\"mm\"`.",
+        "`baseline_version` cambia de forma determinista cuando cambia la fuente de lluvia, la ventana objetivo, los anos incluidos o la configuracion de climatologia.",
+        "Los percentiles son deterministas y los tests cubren distribucion sesgada, valores extremos y muestras pequenas.",
+        "La ventana equivalente por ano usa fechas UTC inclusivas y no mezcla acumulados de periodos efectivos diferentes.",
+        "Los tests usan adaptadores fake, no llaman Earth Engine ni servicios remotos, y cubren estadisticas, exclusiones, historia insuficiente, versionado y edge cases temporales."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -822,7 +824,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T12:10:48.318Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:8c3ee5a2935ff1830ba583466ab23a0d43e2f63c3b45cbacb07bfc4ccb9b6318",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T12:10:51.796Z"
     },
     {
       "id": "sprint-10-rainfall-anomaly",

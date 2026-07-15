@@ -272,3 +272,26 @@ Objetivo no negociable:
 - **edge_cases:** UTC, dias inclusivos y validacion de periodo efectivo.
 - **ui_states:** Sin UI nueva; estados listos para mostrar cobertura.
 
+<!-- harness:sprint-9-rainfall-climatology -->
+## sprint-9-rainfall-climatology · Sprint 9 - Rainfall Climatology
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

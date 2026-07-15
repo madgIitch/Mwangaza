@@ -110,3 +110,12 @@ Decisiones registradas:
 - **tests:** Cobertura de calculo, calidad, config y no red.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-9-rainfall-climatology -->
+## 2026-07-15 · sprint-9-rainfall-climatology aprobado
+
+Contexto: se aprobó el spec `sprint-9-rainfall-climatology` (Sprint 9 - Rainfall Climatology).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
