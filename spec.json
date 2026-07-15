@@ -965,7 +965,7 @@
     {
       "id": "sprint-12-temperature-anomaly",
       "name": "Sprint 12 - Temperature Anomaly",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.7",
       "estimated_hours": 4,
