@@ -254,16 +254,34 @@ def _season_period(year: int, season_start: str, season_end: str) -> tuple[str, 
 
 def _assert_sanitized(payload: dict[str, Any]) -> None:
     text = json.dumps(payload, sort_keys=True).lower()
-    forbidden = [
+    sensitive_tokens = [
         "private_key",
         "service_account",
         "client_email",
-        "recommendation",
-        "severity",
-        "action",
     ]
-    for token in forbidden:
+    for token in sensitive_tokens:
         assert token not in text, f"payload leaked forbidden token: {token}"
+
+    forbidden_fields = {"recommendation", "recommendations", "severity", "action", "actions", "alert", "alerts"}
+    for field_path in _field_paths(payload):
+        field_name = field_path.rsplit(".", 1)[-1].lower()
+        assert field_name not in forbidden_fields, f"payload included forbidden decision field: {field_path}"
+
+
+def _field_paths(value: Any, prefix: str = "") -> list[str]:
+    if isinstance(value, dict):
+        paths: list[str] = []
+        for key, item in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            paths.append(path)
+            paths.extend(_field_paths(item, path))
+        return paths
+    if isinstance(value, list):
+        paths = []
+        for index, item in enumerate(value):
+            paths.extend(_field_paths(item, f"{prefix}[{index}]"))
+        return paths
+    return []
 
 
 if __name__ == "__main__":
