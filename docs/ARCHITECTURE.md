@@ -515,3 +515,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-20-early-action-recommendations -->
+## sprint-20-early-action-recommendations · Sprint 20 - Early Action Recommendations
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/actions/**`
+  - `config/actions/**`
+  - `tests/actions/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

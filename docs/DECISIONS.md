@@ -225,3 +225,12 @@ Contexto: se aprobó el spec `sprint-19-composite-drought-score` (Sprint 19 - Co
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-20-early-action-recommendations -->
+## 2026-07-15 · sprint-20-early-action-recommendations aprobado
+
+Contexto: se aprobó el spec `sprint-20-early-action-recommendations` (Sprint 20 - Early Action Recommendations).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

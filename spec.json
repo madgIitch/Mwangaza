@@ -1469,7 +1469,7 @@
     {
       "id": "sprint-20-early-action-recommendations",
       "name": "Sprint 20 - Early Action Recommendations",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.4.2",
       "estimated_hours": 4,
@@ -1497,12 +1497,12 @@
       ],
       "deliverable": "Lista de acciones tempranas contextualizada por alerta.",
       "acceptance": [
-        "AC1: Cada recomendación incluye acción, actor sugerido, urgencia y evidencia que la activó.",
-        "AC2: Las acciones no se presentan como órdenes oficiales ni asesoramiento médico.",
-        "AC3: Nivel green prioriza monitorización; yellow preparación; orange preposicionamiento; red activación urgente.",
-        "AC4: Sin score confiable se recomienda revisión de datos, no intervención automática.",
-        "AC5: El catálogo es editable sin cambiar código.",
-        "AC6: La salida conserva recommendation_version."
+        "Cada recomendacion incluye accion, actor sugerido, urgencia y evidencia que la activo.",
+        "Las acciones no se presentan como ordenes oficiales ni asesoramiento medico.",
+        "Nivel green prioriza monitorizacion; yellow preparacion; orange preposicionamiento; red activacion urgente.",
+        "Sin score confiable o con nivel unknown se recomienda revision de datos, no intervencion automatica.",
+        "El catalogo es editable sin cambiar codigo.",
+        "La salida conserva `recommendation_version`."
       ],
       "scope": [
         "src/mwangaza/actions/**",
@@ -1519,7 +1519,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:12:28.912Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:c2ca94428bc0d60a44dc093bca974870deb636052113d43fd11d84de0cc64baf",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:12:32.895Z"
     },
     {
       "id": "sprint-21-alert-persistence",
