@@ -45,6 +45,9 @@
 ## 2026-07-15T18:05:00Z - #sprint-21-alert-persistence Sprint 21 - Alert Persistence -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T16:30:00Z - #sprint-22-dashboard-shell Sprint 22 - Dashboard Shell -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 

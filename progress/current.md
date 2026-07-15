@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-21-alert-persistence - Sprint 21 - Alert Persistence** - estado: `review_pending`.
+Feature: **sprint-22-dashboard-shell - Sprint 22 - Dashboard Shell** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-21-alert-persistence - Sprint 21 - Alert Persistence** - estad
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 21 y cerrar con `node .harness/spec.mjs done sprint-21-alert-persistence` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 22 y cerrar con `node .harness/spec.mjs done sprint-22-dashboard-shell` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 
