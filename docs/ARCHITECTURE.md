@@ -473,3 +473,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-18-alert-thresholds -->
+## sprint-18-alert-thresholds · Sprint 18 - Alert Thresholds
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/alerts/thresholds.py`
+  - `config/thresholds/**`
+  - `tests/alerts/test_thresholds.py`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

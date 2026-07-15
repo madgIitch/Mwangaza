@@ -1347,7 +1347,7 @@
     {
       "id": "sprint-18-alert-thresholds",
       "name": "Sprint 18 - Alert Thresholds",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.4.0",
       "estimated_hours": 4,
@@ -1375,12 +1375,12 @@
       ],
       "deliverable": "Clasificación de severidad técnica por indicador.",
       "acceptance": [
-        "AC1: Los niveles permitidos son `green`, `yellow`, `orange`, `red` y `unknown`.",
-        "AC2: Los rangos deben cubrir el dominio configurado sin solaparse.",
-        "AC3: Calidad bloqueada fuerza `unknown` independientemente del valor.",
-        "AC4: Cada clasificación conserva threshold_version.",
-        "AC5: Cambiar umbrales no modifica alertas históricas.",
-        "AC6: Los presets se presentan como configuración de prototipo, no como estándar oficial del IGAD."
+        "Los niveles permitidos son exactamente `green`, `yellow`, `orange`, `red` y `unknown`.",
+        "`validate_preset(...)` exige que los rangos cubran el dominio configurado sin solapes ni huecos.",
+        "Calidad bloqueada o valor ausente fuerza `unknown` independientemente del valor numerico.",
+        "Cada clasificacion conserva `threshold_version`.",
+        "Cambiar umbrales produce una version distinta y no muta clasificaciones previas.",
+        "El preset por defecto se marca como configuracion de prototipo, no estandar oficial IGAD."
       ],
       "scope": [
         "src/mwangaza/alerts/thresholds.py",
@@ -1397,7 +1397,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:06:30.398Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:df8c817ec87e1f1121bcfeded1293e4874175229755d788420c4d0100de8b7a7",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:06:30.491Z"
     },
     {
       "id": "sprint-19-composite-drought-score",

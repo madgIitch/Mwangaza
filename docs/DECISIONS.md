@@ -207,3 +207,12 @@ Contexto: se aprobó el spec `sprint-17-data-quality` (Sprint 17 - Data Quality)
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-18-alert-thresholds -->
+## 2026-07-15 · sprint-18-alert-thresholds aprobado
+
+Contexto: se aprobó el spec `sprint-18-alert-thresholds` (Sprint 18 - Alert Thresholds).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
