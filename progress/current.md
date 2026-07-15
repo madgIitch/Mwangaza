@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-20-early-action-recommendations - Sprint 20 - Early Action Recommendations** - estado: `review_pending`.
+Feature: **sprint-21-alert-persistence - Sprint 21 - Alert Persistence** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-20-early-action-recommendations - Sprint 20 - Early Action Rec
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 20 y cerrar con `node .harness/spec.mjs done sprint-20-early-action-recommendations` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 21 y cerrar con `node .harness/spec.mjs done sprint-21-alert-persistence` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 

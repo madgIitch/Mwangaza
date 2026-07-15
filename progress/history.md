@@ -42,6 +42,9 @@
 ## 2026-07-15T17:45:00Z - #sprint-20-early-action-recommendations Sprint 20 - Early Action Recommendations -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T18:05:00Z - #sprint-21-alert-persistence Sprint 21 - Alert Persistence -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 
