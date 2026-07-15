@@ -1347,7 +1347,7 @@
     {
       "id": "sprint-18-alert-thresholds",
       "name": "Sprint 18 - Alert Thresholds",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.4.0",
       "estimated_hours": 4,
