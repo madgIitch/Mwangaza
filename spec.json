@@ -1530,7 +1530,7 @@
     {
       "id": "sprint-21-alert-persistence",
       "name": "Sprint 21 - Alert Persistence",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.4.3",
       "estimated_hours": 5,
@@ -1558,12 +1558,12 @@
       ],
       "deliverable": "Registro persistente e idempotente de alertas.",
       "acceptance": [
-        "AC1: Una alerta se identifica por región, tipo, período y versión de modelo.",
-        "AC2: Reprocesar el mismo snapshot no crea duplicados.",
-        "AC3: Un cambio de severidad genera un evento de transición.",
-        "AC4: Una alerta resuelta conserva su historia.",
-        "AC5: El registro guarda score, nivel, calidad, evidencias y recomendaciones.",
-        "AC6: Las migraciones son idempotentes y testeadas."
+        "Una alerta se identifica por region, tipo, periodo y version de modelo.",
+        "Reprocesar el mismo snapshot no crea duplicados.",
+        "Un cambio de severidad genera un evento de transicion.",
+        "Una alerta resuelta conserva su historia.",
+        "El registro guarda score, nivel, calidad, evidencias y recomendaciones.",
+        "Las migraciones son idempotentes y testeadas."
       ],
       "scope": [
         "src/mwangaza/db/**",
@@ -1580,7 +1580,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:15:28.883Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:5d6688d17e7868667a75a18b21006f5e1a8808c27ba0366650cc8b12dbf8bff8",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:15:28.906Z"
     },
     {
       "id": "sprint-22-dashboard-shell",

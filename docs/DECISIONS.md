@@ -234,3 +234,12 @@ Contexto: se aprobó el spec `sprint-20-early-action-recommendations` (Sprint 20
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-21-alert-persistence -->
+## 2026-07-15 · sprint-21-alert-persistence aprobado
+
+Contexto: se aprobó el spec `sprint-21-alert-persistence` (Sprint 21 - Alert Persistence).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

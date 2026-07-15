@@ -536,3 +536,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-21-alert-persistence -->
+## sprint-21-alert-persistence · Sprint 21 - Alert Persistence
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/db/**`
+  - `src/mwangaza/alerts/repository.py`
+  - `tests/db/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
