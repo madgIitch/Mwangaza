@@ -411,3 +411,24 @@ Objetivo no negociable:
   - `progress/**`
   - `src/mwangaza/db/**`
 
+<!-- harness:sprint-15-parquet-cache -->
+## sprint-15-parquet-cache · Sprint 15 - Parquet Cache
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/cache/**`
+  - `data/cache/.gitkeep`
+  - `tests/cache/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

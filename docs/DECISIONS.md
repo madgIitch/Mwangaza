@@ -180,3 +180,12 @@ Contexto: se aprobó el spec `sprint-14-indicator-snapshot` (Sprint 14 - Indicat
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-15-parquet-cache -->
+## 2026-07-15 · sprint-15-parquet-cache aprobado
+
+Contexto: se aprobó el spec `sprint-15-parquet-cache` (Sprint 15 - Parquet Cache).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

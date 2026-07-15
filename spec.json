@@ -1161,7 +1161,7 @@
     {
       "id": "sprint-15-parquet-cache",
       "name": "Sprint 15 - Parquet Cache",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.3.2",
       "estimated_hours": 5,
@@ -1189,12 +1189,14 @@
       ],
       "deliverable": "Cache local o remota segura y versionada.",
       "acceptance": [
-        "AC1: La clave incluye región, indicador, período, fuente y versión del algoritmo.",
-        "AC2: Una entrada válida evita una consulta nueva a Earth Engine.",
-        "AC3: Archivos se escriben temporalmente y se renombran de forma atómica.",
-        "AC4: Un Parquet corrupto se ignora y se regenera.",
-        "AC5: El TTL es configurable por tipo de dato.",
-        "AC6: La cache no contiene credenciales."
+        "`build_cache_key(...)` produce una clave estable que incluye region, indicador, periodo, fuente, version de algoritmo y tipo de dato.",
+        "`AnalyticalCache.get_or_compute(...)` devuelve una entrada valida desde cache sin invocar el productor cuando hay hit no expirado.",
+        "Las escrituras usan un archivo temporal en el mismo directorio y se publican con reemplazo atomico.",
+        "Una entrada corrupta se trata como miss controlado y permite regenerar el payload.",
+        "El TTL es configurable por tipo de dato y una entrada expirada no cuenta como hit.",
+        "La cache rechaza payloads o metadata con campos sensibles como private keys, tokens, secrets, passwords o service accounts.",
+        "Las entradas serializadas conservan `cache_key`, `algorithm_version`, `created_at`, `expires_at`, payload y metadata de cache.",
+        "La suite automatizada no llama Earth Engine ni requiere credenciales y cubre hit, miss, corrupto, TTL, atomicidad y bloqueo de secretos."
       ],
       "scope": [
         "src/mwangaza/cache/**",
@@ -1211,7 +1213,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T15:56:54.366Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:077140bd9f7c2984d656d8aed106a8393f2eb69cb7ab744746a568c3fa181979",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T15:56:59.946Z"
     },
     {
       "id": "sprint-16-refresh-pipeline",
