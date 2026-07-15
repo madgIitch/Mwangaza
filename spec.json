@@ -1530,7 +1530,7 @@
     {
       "id": "sprint-21-alert-persistence",
       "name": "Sprint 21 - Alert Persistence",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.4.3",
       "estimated_hours": 5,
