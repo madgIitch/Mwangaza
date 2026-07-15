@@ -1224,7 +1224,7 @@
     {
       "id": "sprint-16-refresh-pipeline",
       "name": "Sprint 16 - Refresh Pipeline",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.3.3",
       "estimated_hours": 6,
@@ -1252,12 +1252,14 @@
       ],
       "deliverable": "Pipeline de actualización por lotes con estado observable.",
       "acceptance": [
-        "AC1: Cada ejecución tiene run_id, inicio, fin, configuración efectiva y resultado por región.",
-        "AC2: Un fallo regional no elimina resultados válidos de otras regiones.",
-        "AC3: La opción `--resume` procesa únicamente unidades pendientes o fallidas.",
-        "AC4: La concurrencia máxima es configurable y conservadora.",
-        "AC5: El comando devuelve código distinto de cero si supera el umbral de fallos.",
-        "AC6: El resumen distingue cache hit, consulta remota, no_data y error."
+        "`run_refresh_pipeline(...)` crea un `PipelineRun` con `run_id`, `started_at`, `finished_at`, configuracion efectiva saneada y resultado por region.",
+        "Un fallo regional produce resultado `error` solo para esa region y conserva resultados validos de otras regiones.",
+        "`resume=True` procesa unicamente regiones pendientes o fallidas segun resultados previos.",
+        "`max_concurrency` es configurable, positivo y limitado a un valor conservador.",
+        "El run indica `exit_code=1` cuando la fraccion de fallos supera `max_failure_fraction`; en caso contrario `exit_code=0`.",
+        "El resumen distingue `cache_hit`, `remote_query`, `no_data`, `error` y `skipped`.",
+        "El CLI `mwangaza.cli refresh-pipeline` serializa el resumen y propaga el codigo de salida.",
+        "La suite automatizada usa tareas fake sin llamadas remotas ni credenciales y cubre resume, fallos, resumen y CLI."
       ],
       "scope": [
         "src/mwangaza/pipeline/**",
@@ -1274,7 +1276,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:00:31.154Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:e9c881c956e5857e01dfc17eff5813739681071e9a3182b8035445be9a74ec49",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:00:31.193Z"
     },
     {
       "id": "sprint-17-data-quality",

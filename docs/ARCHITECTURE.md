@@ -432,3 +432,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-16-refresh-pipeline -->
+## sprint-16-refresh-pipeline · Sprint 16 - Refresh Pipeline
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/pipeline/**`
+  - `src/mwangaza/cli.py`
+  - `tests/pipeline/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

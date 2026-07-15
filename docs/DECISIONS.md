@@ -189,3 +189,12 @@ Contexto: se aprobó el spec `sprint-15-parquet-cache` (Sprint 15 - Parquet Cach
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-16-refresh-pipeline -->
+## 2026-07-15 · sprint-16-refresh-pipeline aprobado
+
+Contexto: se aprobó el spec `sprint-16-refresh-pipeline` (Sprint 16 - Refresh Pipeline).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
