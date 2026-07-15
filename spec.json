@@ -1030,7 +1030,7 @@
     {
       "id": "sprint-13-spatial-aggregation",
       "name": "Sprint 13 - Spatial Aggregation",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.3.0",
       "estimated_hours": 5,
