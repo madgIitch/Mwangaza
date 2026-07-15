@@ -24,6 +24,9 @@
 ## 2026-07-15T13:05:00Z - #sprint-10-rainfall-anomaly Sprint 10 - Rainfall Anomaly -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T14:58:00Z - #sprint-11-current-land-surface-temperature Sprint 11 - Current Land Surface Temperature -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-14T17:20:00+02:00 - #sprint-7-ndvi-anomaly Sprint 7 - NDVI Anomaly -> review_pending
 - 1 intento - agente codex
 

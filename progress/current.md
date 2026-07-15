@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-10-rainfall-anomaly - Sprint 10 - Rainfall Anomaly** - estado: `review_pending`.
+Feature: **sprint-11-current-land-surface-temperature - Sprint 11 - Current Land Surface Temperature** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-10-rainfall-anomaly - Sprint 10 - Rainfall Anomaly** - estado:
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 10 y cerrar con `node .harness/spec.mjs done sprint-10-rainfall-anomaly` tras smoke test humano.
+- Revisar el diff de Sprint 11 y cerrar con `node .harness/spec.mjs done sprint-11-current-land-surface-temperature` tras smoke test humano.
 
 ## Ultimo resultado
 

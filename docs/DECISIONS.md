@@ -128,3 +128,12 @@ Contexto: se aprobó el spec `sprint-10-rainfall-anomaly` (Sprint 10 - Rainfall 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-11-current-land-surface-temperature -->
+## 2026-07-15 · sprint-11-current-land-surface-temperature aprobado
+
+Contexto: se aprobó el spec `sprint-11-current-land-surface-temperature` (Sprint 11 - Current Land Surface Temperature).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
