@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-13-spatial-aggregation - Sprint 13 - Spatial Aggregation** - estado: `review_pending`.
+Feature: **sprint-14-indicator-snapshot - Sprint 14 - Indicator Snapshot** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-13-spatial-aggregation - Sprint 13 - Spatial Aggregation** - e
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 13 y cerrar con `node .harness/spec.mjs done sprint-13-spatial-aggregation` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 14 y cerrar con `node .harness/spec.mjs done sprint-14-indicator-snapshot` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 

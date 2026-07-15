@@ -1095,7 +1095,7 @@
     {
       "id": "sprint-14-indicator-snapshot",
       "name": "Sprint 14 - Indicator Snapshot",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.3.1",
       "estimated_hours": 4,
