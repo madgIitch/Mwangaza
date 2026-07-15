@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-19-composite-drought-score - Sprint 19 - Composite Drought Score** - estado: `review_pending`.
+Feature: **sprint-20-early-action-recommendations - Sprint 20 - Early Action Recommendations** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-19-composite-drought-score - Sprint 19 - Composite Drought Sco
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 19 y cerrar con `node .harness/spec.mjs done sprint-19-composite-drought-score` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 20 y cerrar con `node .harness/spec.mjs done sprint-20-early-action-recommendations` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 
