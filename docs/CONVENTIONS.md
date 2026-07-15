@@ -37,6 +37,8 @@ Reglas de diseño/API:
 Reglas de tests:
 
 - Los tests deben cubrir importabilidad, versión, entrypoints públicos y ausencia de llamadas remotas en stubs.
+- Cuando una feature implemente o consuma datos externos reales (por ejemplo Earth Engine), el smoke test humano debe incluir una variante con datos reales y credenciales/configuración de producción o prod-like. Los tests automatizados siguen usando fakes/mocks para no depender de red ni secretos.
+- Los smoke tests con datos reales no deben imprimir ni commitear secretos. Deben validar que los payloads saneados no contienen private keys, service accounts, client emails ni rutas locales sensibles.
 
 Reglas de despliegue:
 

@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-07-15 · smoke tests con datos reales cuando aplique
+
+Contexto: para validar que las integraciones satelitales funcionan fuera de fixtures locales, el smoke test humano debe parecerse a producción cuando el sprint toque datos externos reales.
+
+Decisión: en los sprints que implementen o consuman datos externos reales, especialmente Earth Engine, el smoke test de cierre debe incluir una variante con datos reales y credenciales/configuración prod-like. Los tests automatizados continúan usando fakes/mocks para ser deterministas y no depender de red, cuota ni secretos.
+
+Consecuencia: al entregar esos sprints, además de los tests unitarios, se debe proporcionar o ejecutar un smoke real que consulte la fuente externa, valide el contrato resultante y compruebe que no se filtran secretos en payloads, logs o salidas.
+
 <!-- harness:sprint-0-repository-foundation -->
 ## 2026-07-14 · sprint-0-repository-foundation aprobado
 
