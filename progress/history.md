@@ -24,6 +24,9 @@
 ## 2026-07-15T15:58:00Z - #sprint-14-indicator-snapshot Sprint 14 - Indicator Snapshot -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-15T16:20:00Z - #sprint-15-parquet-cache Sprint 15 - Parquet Cache -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T12:20:00Z - #sprint-9-rainfall-climatology Sprint 9 - Rainfall Climatology -> review_pending
 - 1 intento - agente codex
 

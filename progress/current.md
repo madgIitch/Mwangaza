@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-14-indicator-snapshot - Sprint 14 - Indicator Snapshot** - estado: `review_pending`.
+Feature: **sprint-15-parquet-cache - Sprint 15 - Parquet Cache** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-14-indicator-snapshot - Sprint 14 - Indicator Snapshot** - est
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 14 y cerrar con `node .harness/spec.mjs done sprint-14-indicator-snapshot` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 15 y cerrar con `node .harness/spec.mjs done sprint-15-parquet-cache` tras smoke test humano si aplica.
 
 ## Ultimo resultado
 
