@@ -1408,7 +1408,7 @@
     {
       "id": "sprint-19-composite-drought-score",
       "name": "Sprint 19 - Composite Drought Score",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.4.1",
       "estimated_hours": 5,
@@ -1436,12 +1436,12 @@
       ],
       "deliverable": "Score compuesto regional con desglose auditable.",
       "acceptance": [
-        "AC1: El score final queda entre 0 y 100.",
-        "AC2: NDVI, lluvia y LST contribuyen por separado con pesos que suman 1.",
-        "AC3: Si falta una señal opcional, los pesos se renormalizan y queda registrado.",
-        "AC4: Si faltan señales obligatorias, el score es `null` y nivel `unknown`.",
-        "AC5: El resultado incluye contribución y evidencia de cada indicador.",
-        "AC6: El mismo snapshot y versión producen el mismo score."
+        "El score final queda entre 0 y 100 cuando hay señales obligatorias suficientes.",
+        "NDVI, lluvia y LST contribuyen por separado con pesos configurados que suman 1.",
+        "Si falta una señal opcional, los pesos se renormalizan y queda registrado en metadata.",
+        "Si faltan señales obligatorias o la calidad bloquea alertas, el score es `None` y el nivel `unknown`.",
+        "El resultado incluye contribucion, peso y evidencia de cada indicador usado.",
+        "El mismo snapshot y version de modelo producen el mismo `RiskSnapshot`."
       ],
       "scope": [
         "src/mwangaza/risk/**",
@@ -1458,7 +1458,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-15T16:09:25.866Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:e0fecffbc723d61467a78ca2a831eeb1824eceb2fa999b66d9e7454ad569ebc1",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-15T16:09:25.994Z"
     },
     {
       "id": "sprint-20-early-action-recommendations",

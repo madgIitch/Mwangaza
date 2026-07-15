@@ -216,3 +216,12 @@ Contexto: se aprobó el spec `sprint-18-alert-thresholds` (Sprint 18 - Alert Thr
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-19-composite-drought-score -->
+## 2026-07-15 · sprint-19-composite-drought-score aprobado
+
+Contexto: se aprobó el spec `sprint-19-composite-drought-score` (Sprint 19 - Composite Drought Score).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -494,3 +494,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-19-composite-drought-score -->
+## sprint-19-composite-drought-score · Sprint 19 - Composite Drought Score
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/risk/**`
+  - `config/risk_models/**`
+  - `tests/risk/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
