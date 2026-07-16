@@ -475,15 +475,24 @@ def main() -> None:
 
 
 def _render_html(st: Any, html: str) -> None:
-    html_renderer = getattr(st, "html", None)
-    if callable(html_renderer):
-        html_renderer(html)
-        return
-
     components = getattr(st, "components", None)
     component_html = getattr(getattr(components, "v1", None), "html", None)
     if callable(component_html):
         component_html(html, height=900, scrolling=True)
+        return
+
+    if getattr(st, "__name__", "") == "streamlit":
+        try:
+            import streamlit.components.v1 as streamlit_components
+        except ModuleNotFoundError:
+            streamlit_components = None
+        if streamlit_components is not None:
+            streamlit_components.html(html, height=900, scrolling=True)
+            return
+
+    html_renderer = getattr(st, "html", None)
+    if callable(html_renderer):
+        html_renderer(html)
         return
 
     st.markdown(html, unsafe_allow_html=True)

@@ -30,6 +30,25 @@ class FakeStreamlit:
         self.html_calls.append(body)
 
 
+class FakeComponentsV1:
+    def __init__(self) -> None:
+        self.html_calls: list[tuple[str, int, bool]] = []
+
+    def html(self, body: str, *, height: int, scrolling: bool) -> None:
+        self.html_calls.append((body, height, scrolling))
+
+
+class FakeComponents:
+    def __init__(self) -> None:
+        self.v1 = FakeComponentsV1()
+
+
+class FakeStreamlitWithComponents(FakeStreamlit):
+    def __init__(self) -> None:
+        super().__init__()
+        self.components = FakeComponents()
+
+
 class DashboardShellTests(unittest.TestCase):
     def test_home_shell_shows_brand_update_and_data_status(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
@@ -186,6 +205,19 @@ class DashboardShellTests(unittest.TestCase):
         self.assertNotIn("RuntimeError", html)
         self.assertNotIn("secret.json", html)
         self.assertNotIn("C:\\Users", html)
+
+    def test_render_prefers_components_html_for_svg_support(self) -> None:
+        fake = FakeStreamlitWithComponents()
+
+        render_dashboard(data_loader=lambda: load_dashboard_shell_data("demo"), streamlit_module=fake)
+
+        self.assertFalse(fake.html_calls)
+        self.assertTrue(fake.components.v1.html_calls)
+        html, height, scrolling = fake.components.v1.html_calls[0]
+        self.assertEqual(height, 900)
+        self.assertTrue(scrolling)
+        self.assertIn("<svg", html)
+        self.assertIn('fill="#c93636"', html)
 
     def test_layout_contract_prevents_horizontal_scroll(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
