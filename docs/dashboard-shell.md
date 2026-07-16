@@ -16,11 +16,12 @@ The shell follows the approved visual reference without embedding the reference 
 - left navigation with `Overview`, `Region`, `Alerts`, `Reports` and `About`;
 - top status bar with source, last update and freshness;
 - regional map placeholder, active alerts, regional metrics and recommendations;
+- regional risk choropleth, active alerts, regional metrics and recommendations;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 ## Data states
 
-The UI labels origin modes as `live`, `cache` and `demo`. By default the loader scans the configured cache directory for already materialized `risk_snapshot`, indicator snapshot and indicator payload JSON. It also reads active alerts from the local SQLite alert database when present. If no materialized payload exists, it falls back to deterministic demo data labelled as `demo`.
+The UI labels origin modes as `live`, `cache` and `demo`. By default the loader scans the configured cache directory for already materialized `risk_snapshot`, indicator snapshot and indicator payload JSON. Risk snapshots feed the regional map; indicator payloads feed the metric cards. It also reads active alerts from the local SQLite alert database when present. If no materialized payload exists, it falls back to deterministic demo data labelled as `demo`.
 
 Streamlit never starts Earth Engine work. Real observed values must be produced by the data/pipeline modules first and stored locally as cache or alert persistence artifacts.
 

@@ -10,6 +10,7 @@ from mwangaza import PROJECT_NAME, TAGLINE
 from mwangaza.actions import recommend_actions
 from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import RiskSnapshot
+from mwangaza.maps import RegionalRiskMap, build_regional_risk_map, demo_regional_risk_map
 
 DataMode = Literal["live", "cache", "demo"]
 Freshness = Literal["current", "stale", "error", "loading", "empty"]
@@ -56,6 +57,7 @@ class DashboardShellData:
     tagline: str
     selected_region: str
     data_status: DataStatus
+    risk_map: RegionalRiskMap
     navigation: tuple[NavigationItem, ...]
     metrics: tuple[RegionMetric, ...]
     alerts: tuple[AlertSummary, ...]
@@ -99,6 +101,7 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
             last_updated=data.data_status.last_updated,
             message="Dashboard data could not be loaded",
         ),
+        risk_map=data.risk_map,
         navigation=data.navigation,
         metrics=data.metrics,
         alerts=(),
@@ -109,6 +112,7 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
 def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> DashboardShellData | None:
     cached_payloads = _read_cached_payloads(cache_dir)
     risk = _latest_risk_snapshot(cached_payloads)
+    risks = _risk_snapshots(cached_payloads)
     snapshot = _latest_indicator_snapshot(cached_payloads)
     signals = _signals_for_view(cached_payloads, snapshot)
     if risk is None and snapshot is None and not signals:
@@ -140,6 +144,11 @@ def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> D
             source=source,
             last_updated=_compact_time(period_end),
             message=message,
+        ),
+        risk_map=build_regional_risk_map(
+            risks,
+            selected_region_id=region_id or "som",
+            source_mode="cache",
         ),
         navigation=_navigation(),
         metrics=_metrics_from_materialized(risk, signals),
@@ -179,6 +188,10 @@ def _extract_payloads(raw: Any) -> tuple[dict[str, Any], ...]:
 def _latest_risk_snapshot(payloads: tuple[dict[str, Any], ...]) -> dict[str, Any] | None:
     risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
     return max(risks, key=_payload_sort_time, default=None)
+
+
+def _risk_snapshots(payloads: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any], ...]:
+    return tuple(payload for payload in payloads if payload.get("payload_type") == "risk_snapshot")
 
 
 def _latest_indicator_snapshot(payloads: tuple[dict[str, Any], ...]) -> dict[str, Any] | None:
@@ -379,6 +392,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         tagline=TAGLINE,
         selected_region="Somalia",
         data_status=status_by_mode[mode],
+        risk_map=demo_regional_risk_map(selected_region_id="som"),
         navigation=_navigation(),
         metrics=(
             RegionMetric("NDVI anomaly", "-0.18", "z", "warning", "Vegetation stress"),

@@ -9,6 +9,7 @@ from mwangaza.services.dashboard_shell import (
     fallback_dashboard_shell_data,
     load_dashboard_shell_data,
 )
+from mwangaza.maps import build_regional_risk_map_html
 
 SAFE_ERROR_MESSAGE = "Dashboard data could not be loaded. Showing a safe fallback shell."
 
@@ -34,6 +35,7 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
         for metric in data.metrics
     )
     alerts = _render_alerts(data)
+    risk_map = build_regional_risk_map_html(data.risk_map)
     recommendations = "\n".join(
         f"<li>{escape(recommendation)}</li>" for recommendation in data.recommendations
     )
@@ -223,18 +225,60 @@ html, body, [data-testid="stAppViewContainer"] {{
 .map-panel {{
   min-height: 284px;
 }}
-.map-canvas {{
-  height: 220px;
+.regional-risk-map {{
+  display: grid;
+  gap: 10px;
+}}
+.regional-risk-svg {{
+  width: 100%;
+  height: 240px;
   border-radius: 8px;
   border: 1px solid #d7e0da;
-  background:
-    linear-gradient(140deg, rgba(31, 122, 77, 0.24), rgba(244, 197, 66, 0.18)),
-    repeating-linear-gradient(45deg, #eef4f0 0 14px, #e3ebe6 14px 28px);
-  display: grid;
-  place-items: center;
-  color: #2f5c45;
-  font-weight: 700;
+  background: #eef4f0;
 }}
+.risk-region {{
+  stroke: #ffffff;
+  stroke-width: 2;
+  transition: opacity 120ms ease, stroke-width 120ms ease;
+}}
+.risk-region-link:focus .risk-region,
+.risk-region-link:hover .risk-region {{
+  opacity: 0.78;
+  stroke-width: 4;
+}}
+.risk-region.is-selected {{
+  stroke: #17231c;
+  stroke-width: 4;
+}}
+.risk-green {{ fill: var(--mwa-green); }}
+.risk-yellow {{ fill: var(--mwa-yellow); }}
+.risk-orange {{ fill: var(--mwa-orange); }}
+.risk-red {{ fill: var(--mwa-red); }}
+.risk-unknown {{ fill: #8c9690; }}
+.risk-map-legend {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--mwa-muted);
+  font-size: 12px;
+}}
+.risk-legend-item {{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}}
+.risk-legend-item i {{
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}}
+.risk-legend-item.risk-green {{ color: var(--mwa-green); }}
+.risk-legend-item.risk-yellow {{ color: #9a7300; }}
+.risk-legend-item.risk-orange {{ color: var(--mwa-orange); }}
+.risk-legend-item.risk-red {{ color: var(--mwa-red); }}
+.risk-legend-item.risk-unknown {{ color: #6f7973; }}
 .legend {{
   display: flex;
   flex-wrap: wrap;
@@ -368,14 +412,8 @@ html, body, [data-testid="stAppViewContainer"] {{
       <div class="main-column">
         <section class="panel map-panel" id="overview">
           <h2>Regional Risk Map - IGAD</h2>
-          <div class="map-canvas">Selected region: {escape(data.selected_region)}</div>
-          <div class="legend">
-            <span style="color: var(--mwa-green)">Low</span>
-            <span style="color: var(--mwa-yellow)">Watch</span>
-            <span style="color: var(--mwa-orange)">Warning</span>
-            <span style="color: var(--mwa-red)">Critical</span>
-            <span style="color: #8c9690">Unknown</span>
-          </div>
+          {risk_map}
+          <p class="footer-note">Selected region: {escape(data.selected_region)}</p>
         </section>
         <section class="metrics-grid" id="region">{metrics}</section>
       </div>

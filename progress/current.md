@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-22-dashboard-shell - Sprint 22 - Dashboard Shell** - estado: `review_pending`.
+Feature: **sprint-23-regional-risk-map - Sprint 23 - Regional Risk Map** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-22-dashboard-shell - Sprint 22 - Dashboard Shell** - estado: `
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 22 y cerrar con `node .harness/spec.mjs done sprint-22-dashboard-shell` tras smoke test humano si aplica.
+- Revisar el diff de Sprint 23 y cerrar con `node .harness/spec.mjs done sprint-23-regional-risk-map` tras smoke test humano/real si aplica.
 
 ## Ultimo resultado
 

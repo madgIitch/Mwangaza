@@ -1654,7 +1654,7 @@
     {
       "id": "sprint-23-regional-risk-map",
       "name": "Sprint 23 - Regional Risk Map",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.1",
       "estimated_hours": 5,
@@ -1683,13 +1683,14 @@
       ],
       "deliverable": "Mapa regional interactivo de semáforo.",
       "acceptance": [
-        "AC1: Los colores representan green, yellow, orange, red y unknown con leyenda visible.",
-        "AC2: Cada tooltip muestra región, score, nivel, período y calidad.",
-        "AC3: Regiones sin datos aparecen como unknown, no green.",
-        "AC4: El mapa no deforma geometrías por mezclar sistemas de coordenadas.",
-        "AC5: La selección de una región actualiza el estado de navegación.",
-        "AC6: El mapa se renderiza con fixtures en tests de smoke.",
-        "AC7: Existe un script en smoke_tests/ que llama a GEE real con credenciales por variable de entorno, genera payloads saneados para risk/indicadores y escribe la cache que consume el dashboard."
+        "Los colores del mapa representan exactamente los niveles `green`, `yellow`, `orange`, `red` y `unknown`, con una leyenda visible que explica cada nivel.",
+        "Cada tooltip de region muestra nombre de region, score, nivel de riesgo, periodo y calidad de datos sin exponer metadata privada ni trazas internas.",
+        "Una region sin snapshot valido, con score no finito o con calidad bloqueante aparece como `unknown`, no como `green`.",
+        "El mapa usa las geometries `ui_geometry` del catalogo regional como GeoJSON WGS84 y no mezcla geometria analitica con geometria de UI.",
+        "La seleccion de una region actualiza el estado visual de region seleccionada/navegacion manteniendo el resto del dashboard renderizable.",
+        "El mapa se renderiza de forma determinista con fixtures/cache local en tests automatizados, sin Streamlit instalado, red ni Earth Engine.",
+        "Existe un script en `smoke_tests/` que, con credenciales GEE tomadas solo de variables de entorno, genera payloads saneados de riesgo/indicadores y escribe la cache consumida por el dashboard sin que Streamlit ejecute GEE.",
+        "Los tests o validaciones del smoke verifican que los payloads/cache no contienen campos o valores de secretos como `private_key`, `service_account`, `token`, `secret` o `password`."
       ],
       "scope": [
         "app.py",
@@ -1697,6 +1698,7 @@
         "src/mwangaza/services/**",
         "assets/**",
         "tests/ui/**",
+        "tests/maps/**",
         "pyproject.toml",
         "requirements*.txt",
         "Makefile",
@@ -1710,7 +1712,13 @@
         "src/mwangaza/maps/**",
         "smoke_tests/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-16T16:48:31.431Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:1dad34a1d4d79bec9cd05162cc2503802219b77555b3c5b5d398e6a126d0d39a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-16T16:48:40.021Z"
     },
     {
       "id": "sprint-24-country-drilldown",

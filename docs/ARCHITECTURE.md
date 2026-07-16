@@ -580,3 +580,29 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-23-regional-risk-map -->
+## sprint-23-regional-risk-map · Sprint 23 - Regional Risk Map
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `tests/maps/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `src/mwangaza/maps/**`
+  - `smoke_tests/**`
+

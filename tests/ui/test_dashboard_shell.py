@@ -81,8 +81,23 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.data_status.mode, "cache")
         self.assertEqual(data.data_status.source, "Materialized observed data")
         self.assertEqual(data.selected_region, "KEN")
+        self.assertEqual(data.risk_map.selected_region_id, "ken")
+        self.assertEqual(
+            next(region for region in data.risk_map.regions if region.region_id == "ken").color_level,
+            "red",
+        )
         self.assertIn("0.31", {metric.value for metric in data.metrics})
         self.assertIn("Activate urgent coordination review", data.recommendations[0])
+
+    def test_dashboard_renders_regional_risk_map_with_legend_and_tooltips(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn('class="regional-risk-map"', html)
+        self.assertIn('aria-label="IGAD regional risk map"', html)
+        for level in ("green", "yellow", "orange", "red", "unknown"):
+            self.assertIn(f'data-risk-level="{level}"', html)
+        self.assertIn("Somalia | score: 82 | level: red", html)
+        self.assertIn("risk-region risk-red is-selected", html)
 
     def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

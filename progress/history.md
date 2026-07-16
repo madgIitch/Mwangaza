@@ -18,6 +18,9 @@
 ## 2026-07-14T16:48:00+02:00 - #sprint-5-current-ndvi Sprint 5 - Current NDVI -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-16T00:00:00Z - #sprint-23-regional-risk-map Sprint 23 - Regional Risk Map -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-15T15:35:00Z - #sprint-13-spatial-aggregation Sprint 13 - Spatial Aggregation -> review_pending
 - 1 intento - agente codex
 

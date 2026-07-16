@@ -252,3 +252,12 @@ Contexto: se aprobó el spec `sprint-22-dashboard-shell` (Sprint 22 - Dashboard 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-23-regional-risk-map -->
+## 2026-07-16 · sprint-23-regional-risk-map aprobado
+
+Contexto: se aprobó el spec `sprint-23-regional-risk-map` (Sprint 23 - Regional Risk Map).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
