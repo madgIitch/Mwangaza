@@ -174,6 +174,17 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("Somalia | score: 82 | level: red", html)
         self.assertIn("risk-region risk-red is-selected", html)
 
+    def test_regional_risk_map_has_client_side_selection_interaction(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn('data-region-name="Somalia"', html)
+        self.assertIn('data-period="2026-07-01 to 2026-07-15"', html)
+        self.assertIn("addEventListener(\"click\"", html)
+        self.assertIn("addEventListener(\"keydown\"", html)
+        self.assertIn('role", "button"', html)
+        self.assertIn("data-region-readout-name", html)
+        self.assertIn("data-selected-region", html)
+
     def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             cache_dir = Path(tmp) / "cache"

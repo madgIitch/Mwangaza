@@ -207,11 +207,14 @@ def _render_region_path(region: RegionalRiskMapRegion, bounds: tuple[float, floa
     return (
         '<path class="{classes}" d="{path}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" '
         'data-region-id="{region_id}" data-risk-level="{level}" data-score="{score}" '
-        'data-quality="{quality}" tabindex="0"><title>{tooltip}</title></path>'
+        'data-region-name="{name}" data-period="{period}" data-quality="{quality}" '
+        'tabindex="0"><title>{tooltip}</title></path>'
     ).format(
         region_id=escape(region.region_id),
+        name=escape(region.name),
         level=escape(region.color_level),
         score=escape("" if region.score is None else _format_number(region.score)),
+        period=escape(_period_label(region.period_start, region.period_end)),
         quality=escape(region.quality_flag),
         classes=escape(classes),
         path=escape(path),
