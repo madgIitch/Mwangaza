@@ -21,9 +21,9 @@ The shell follows the approved visual reference without embedding the reference 
 
 ## Data states
 
-The UI labels origin modes as `live`, `cache` and `demo`. By default the loader scans the configured cache directory for already materialized `risk_snapshot`, indicator snapshot and indicator payload JSON. Risk snapshots feed the regional map; indicator payloads feed the metric cards. It also reads active alerts from the local SQLite alert database when present. If no materialized payload exists, it falls back to deterministic demo data labelled as `demo`.
+The UI labels origin modes as `live`, `cache` and `demo`. By default the loader first attempts a bounded Google Earth Engine live query when credentials are configured. If live GEE is unavailable, it scans the configured cache directory for already materialized `risk_snapshot`, indicator snapshot and indicator payload JSON. Risk snapshots feed the regional map; indicator payloads feed the metric cards. It also reads active alerts from the local SQLite alert database when present. If no live or materialized payload exists, it falls back to deterministic demo data labelled as `demo`.
 
-Streamlit never starts Earth Engine work. Real observed values must be produced by the data/pipeline modules first and stored locally as cache or alert persistence artifacts.
+Streamlit can start the bounded Sprint 23 Earth Engine live query for the configured dashboard region and period. It does not expose arbitrary geometry, collection, or date input to public users. Cache and demo remain the fallback paths.
 
 Loader failures render a safe fallback shell. The fallback intentionally omits exception text, traceback, local paths and secret-like values.
 

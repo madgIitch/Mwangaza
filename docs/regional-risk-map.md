@@ -6,8 +6,9 @@ Sprint 23 adds a deterministic IGAD choropleth map to the dashboard shell.
 
 - `mwangaza.maps.build_regional_risk_map(...)` builds a view model from local region catalog geometries and sanitized `RiskSnapshot` payloads.
 - `mwangaza.maps.build_regional_risk_map_html(...)` renders deterministic SVG/HTML for Streamlit and tests.
-- The dashboard consumes materialized local cache through `load_dashboard_shell_data(...)`; it does not call Earth Engine.
-- `smoke_tests/sprint23_regional_risk_map_real_gee.py` is the opt-in real GEE smoke that authenticates with GEE and writes dashboard cache payloads.
+- `mwangaza.services.live_gee_dashboard.load_live_gee_dashboard_payloads(...)` queries Earth Engine for NDVI, rainfall and LST, then builds the dashboard risk payloads.
+- The dashboard calls GEE directly in `live` mode when credentials are configured, using a bounded region and period. If GEE is unavailable, it falls back to local cache and then demo data.
+- `smoke_tests/sprint23_regional_risk_map_real_gee.py` uses the same live GEE path and writes dashboard cache payloads for repeatable manual validation.
 
 ## Visual states
 
@@ -24,4 +25,4 @@ Run manually with GEE credentials already exported:
 python smoke_tests/sprint23_regional_risk_map_real_gee.py --cache-dir .cache/mwangaza --region-id som
 ```
 
-The script reads credentials only from environment variables, prints sanitized GEE status, validates generated payloads for secret-like fields/values, and writes cache entries consumed by the dashboard.
+The script reads credentials only from environment variables, queries real GEE datasets, prints sanitized GEE status, validates generated payloads for secret-like fields/values, and writes cache entries consumed by the dashboard.

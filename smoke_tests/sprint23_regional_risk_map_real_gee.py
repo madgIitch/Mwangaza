@@ -8,17 +8,15 @@ from pathlib import Path
 from typing import Any
 
 from mwangaza.cache import AnalyticalCache, CacheConfig, build_cache_key
-from mwangaza.contracts import IndicatorObservation, RiskSnapshot
 from mwangaza.gee.auth import check_gee_auth
+from mwangaza.services.live_gee_dashboard import load_live_gee_dashboard_payloads
 
 SENSITIVE_KEY_PARTS = ("private_key", "service_account", "token", "secret", "password")
-DEFAULT_PERIOD_START = "2026-07-01T00:00:00Z"
-DEFAULT_PERIOD_END = "2026-07-15T00:00:00Z"
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Sprint 23 smoke: authenticate with real GEE and seed dashboard cache."
+        description="Sprint 23 smoke: query real GEE and seed dashboard cache."
     )
     parser.add_argument(
         "--cache-dir",
@@ -26,7 +24,10 @@ def main(argv: list[str] | None = None) -> int:
         default=Path(os.environ.get("MWANGAZA_CACHE_DIR", ".cache/mwangaza")),
         help="Cache directory consumed by the dashboard.",
     )
-    parser.add_argument("--region-id", default="som", help="Region ID to seed for the dashboard.")
+    parser.add_argument("--region-id", default="som", help="Region ID to query and seed.")
+    parser.add_argument("--period-start", default=None, help="ISO8601 analysis window start.")
+    parser.add_argument("--period-end", default=None, help="ISO8601 analysis window end.")
+    parser.add_argument("--scale", type=int, default=5500, help="Earth Engine reducer scale.")
     args = parser.parse_args(argv)
 
     auth = check_gee_auth()
@@ -34,7 +35,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"gee": auth.to_public_dict(), "cache_written": False}, sort_keys=True))
         return 1
 
-    payloads = build_seed_payloads(args.region_id)
+    payloads = load_live_gee_dashboard_payloads(
+        region_id=args.region_id,
+        period_start=args.period_start,
+        period_end=args.period_end,
+        scale_meters=args.scale,
+    )
     findings = find_sensitive_content(payloads)
     if findings:
         print(json.dumps({"cache_written": False, "sensitive_findings": findings}, sort_keys=True))
@@ -46,10 +52,10 @@ def main(argv: list[str] | None = None) -> int:
         key = build_cache_key(
             region_id=args.region_id,
             indicator=str(payload.get("indicator", payload.get("payload_type", "risk"))),
-            period_start=str(payload.get("period_start", DEFAULT_PERIOD_START)),
-            period_end=str(payload.get("period_end", DEFAULT_PERIOD_END)),
-            source=str(payload.get("source", "mwangaza.smoke.sprint23")),
-            algorithm_version="sprint23-smoke-v1",
+            period_start=str(payload.get("period_start", "")),
+            period_end=str(payload.get("period_end", "")),
+            source=str(payload.get("source", "mwangaza.live_gee_dashboard")),
+            algorithm_version="sprint23-live-gee-v1",
             data_type=str(payload.get("payload_type", "dashboard_payload")),
         )
         entry = cache.write(key, payload, now=datetime.now(UTC), metadata={"smoke_test": "sprint23"})
@@ -62,51 +68,12 @@ def main(argv: list[str] | None = None) -> int:
                 "cache_written": True,
                 "cache_dir": str(args.cache_dir),
                 "entries": len(written),
+                "source": "real_gee",
             },
             sort_keys=True,
         )
     )
     return 0
-
-
-def build_seed_payloads(region_id: str) -> list[dict[str, Any]]:
-    risk = RiskSnapshot(
-        region_id=region_id,
-        period_start=DEFAULT_PERIOD_START,
-        period_end=DEFAULT_PERIOD_END,
-        composite_score=76.0,
-        risk_level="emergency",
-        contributing_indicators=("ndvi", "rainfall_mm"),
-        source="mwangaza.smoke.sprint23.gee-authenticated",
-        quality_flag="ok",
-        is_simulated=False,
-        metadata={"model_version": "sprint23-smoke-v1", "updated_at": DEFAULT_PERIOD_END},
-    )
-    ndvi = IndicatorObservation(
-        region_id=region_id,
-        indicator="ndvi",
-        period_start=DEFAULT_PERIOD_START,
-        period_end=DEFAULT_PERIOD_END,
-        value=0.28,
-        unit="index",
-        source="MODIS/061/MOD13Q1",
-        quality_flag="ok",
-        is_simulated=False,
-        metadata={"updated_at": DEFAULT_PERIOD_END, "smoke_seed": "gee-authenticated"},
-    )
-    rainfall = IndicatorObservation(
-        region_id=region_id,
-        indicator="rainfall_mm",
-        period_start=DEFAULT_PERIOD_START,
-        period_end=DEFAULT_PERIOD_END,
-        value=18.0,
-        unit="mm",
-        source="UCSB-CHG/CHIRPS/DAILY",
-        quality_flag="ok",
-        is_simulated=False,
-        metadata={"updated_at": DEFAULT_PERIOD_END, "smoke_seed": "gee-authenticated"},
-    )
-    return [risk.to_dict(), ndvi.to_dict(), rainfall.to_dict()]
 
 
 def find_sensitive_content(payloads: Any) -> list[str]:

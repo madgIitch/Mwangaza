@@ -258,6 +258,6 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
 Contexto: se aprobó el spec `sprint-23-regional-risk-map` (Sprint 23 - Regional Risk Map).
 
-Decisión: implementar según el spec aprobado.
+Decisión: el dashboard debe consultar Google Earth Engine directamente en modo `live` cuando haya credenciales configuradas, usando solo region y periodo acotados por el sistema. Si GEE no esta disponible, debe caer a cache/demo con origen visible. El smoke real usa la misma ruta live y ademas siembra cache para validacion.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -11,6 +11,7 @@ from mwangaza.actions import recommend_actions
 from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import RiskSnapshot
 from mwangaza.maps import RegionalRiskMap, build_regional_risk_map, demo_regional_risk_map
+from mwangaza.services.live_gee_dashboard import load_live_gee_dashboard_payloads
 
 DataMode = Literal["live", "cache", "demo"]
 Freshness = Literal["current", "stale", "error", "loading", "empty"]
@@ -71,16 +72,17 @@ def load_dashboard_shell_data(
     data_dir: Path | None = None,
     alert_db_path: Path | None = None,
 ) -> DashboardShellData:
-    """Load materialized local data for the UI, falling back to labelled demo data.
-
-    The dashboard never starts Earth Engine work. Real values must already be present in
-    local cache files or the alert SQLite database produced by earlier pipeline steps.
-    """
+    """Load dashboard data from live GEE, then cache, then demo fallback."""
 
     if mode is not None:
         return _demo_dashboard_shell_data(mode)
 
     resolved_cache_dir, resolved_data_dir = _resolve_local_paths(cache_dir, data_dir)
+    if cache_dir is None and data_dir is None and alert_db_path is None:
+        live = _load_live_dashboard_data()
+        if live is not None:
+            return live
+
     materialized = _load_materialized_dashboard_data(
         resolved_cache_dir,
         alert_db_path or resolved_data_dir / "alerts.sqlite",
@@ -111,6 +113,43 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
 
 def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> DashboardShellData | None:
     cached_payloads = _read_cached_payloads(cache_dir)
+    return _dashboard_data_from_payloads(
+        cached_payloads,
+        alert_db_path,
+        mode="cache",
+        source_observed="Materialized observed data",
+        source_simulated="Materialized cache",
+        message_observed="Using cached observed data",
+        message_simulated="Using cached demo data",
+    )
+
+
+def _load_live_dashboard_data() -> DashboardShellData | None:
+    try:
+        payloads = tuple(load_live_gee_dashboard_payloads())
+    except Exception:
+        return None
+    return _dashboard_data_from_payloads(
+        payloads,
+        Path(),
+        mode="live",
+        source_observed="Google Earth Engine live query",
+        source_simulated="Google Earth Engine live query",
+        message_observed="Using live Google Earth Engine data",
+        message_simulated="Using live Google Earth Engine data",
+    )
+
+
+def _dashboard_data_from_payloads(
+    cached_payloads: tuple[dict[str, Any], ...],
+    alert_db_path: Path,
+    *,
+    mode: DataMode,
+    source_observed: str,
+    source_simulated: str,
+    message_observed: str,
+    message_simulated: str,
+) -> DashboardShellData | None:
     risk = _latest_risk_snapshot(cached_payloads)
     risks = _risk_snapshots(cached_payloads)
     snapshot = _latest_indicator_snapshot(cached_payloads)
@@ -129,8 +168,8 @@ def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> D
         *(signal.get("period_end") for signal in signals),
     )
     is_simulated = _all_simulated([payload for payload in (risk, snapshot, *signals) if payload])
-    source = "Materialized cache" if is_simulated else "Materialized observed data"
-    message = "Using cached demo data" if is_simulated else "Using cached observed data"
+    source = source_simulated if is_simulated else source_observed
+    message = message_simulated if is_simulated else message_observed
     alerts = _read_active_alerts(alert_db_path) or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
 
@@ -139,7 +178,7 @@ def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> D
         tagline=TAGLINE,
         selected_region=_region_label(region_id),
         data_status=DataStatus(
-            mode="cache",
+            mode=mode,
             freshness="current",
             source=source,
             last_updated=_compact_time(period_end),
@@ -148,7 +187,7 @@ def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> D
         risk_map=build_regional_risk_map(
             risks,
             selected_region_id=region_id or "som",
-            source_mode="cache",
+            source_mode=mode,
         ),
         navigation=_navigation(),
         metrics=_metrics_from_materialized(risk, signals),

@@ -8,7 +8,7 @@ Feature: **sprint-23-regional-risk-map - Sprint 23 - Regional Risk Map** - estad
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 23 y cerrar con `node .harness/spec.mjs done sprint-23-regional-risk-map` tras smoke test humano/real si aplica.
+- Revisar el diff de Sprint 23 y cerrar con `node .harness/spec.mjs done sprint-23-regional-risk-map` tras smoke test humano y prueba live GEE si hay credenciales.
 
 ## Ultimo resultado
 

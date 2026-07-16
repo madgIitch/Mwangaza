@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from mwangaza.alerts.repository import AlertRepository
 from mwangaza.actions import recommend_actions
@@ -88,6 +89,18 @@ class DashboardShellTests(unittest.TestCase):
         )
         self.assertIn("0.31", {metric.value for metric in data.metrics})
         self.assertIn("Activate urgent coordination review", data.recommendations[0])
+
+    def test_default_loader_uses_live_gee_payloads_before_cache_or_demo(self) -> None:
+        with patch(
+            "mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads",
+            return_value=[_risk_snapshot(is_simulated=False).to_dict()],
+        ):
+            data = load_dashboard_shell_data()
+
+        self.assertEqual(data.data_status.mode, "live")
+        self.assertEqual(data.data_status.source, "Google Earth Engine live query")
+        self.assertEqual(data.data_status.message, "Using live Google Earth Engine data")
+        self.assertEqual(data.selected_region, "KEN")
 
     def test_dashboard_renders_regional_risk_map_with_legend_and_tooltips(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))

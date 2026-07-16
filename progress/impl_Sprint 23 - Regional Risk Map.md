@@ -17,6 +17,7 @@
 - Conecta el dashboard a snapshots de riesgo materializados en cache local; Streamlit no ejecuta Earth Engine.
 - Regiones sin datos, score no finito o calidad bloqueante se muestran como `unknown`.
 - Anade smoke manual `smoke_tests/sprint23_regional_risk_map_real_gee.py` para autenticar GEE y sembrar cache saneada.
+- Correccion posterior: el dashboard ahora intenta consultar GEE directamente en modo `live` mediante `mwangaza.services.live_gee_dashboard`, con fallback a cache/demo si no hay credenciales o falla la consulta.
 - Verificacion ejecutada con `uv run python -m compileall -q src tests app.py smoke_tests`.
 - Verificacion ejecutada con `uv run python -m unittest discover -s tests`.
 - Diff-scope ejecutado con `node .harness/gates.mjs sprint-23-regional-risk-map`.
