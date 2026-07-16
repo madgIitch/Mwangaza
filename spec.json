@@ -1591,7 +1591,7 @@
     {
       "id": "sprint-22-dashboard-shell",
       "name": "Sprint 22 - Dashboard Shell",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.0",
       "estimated_hours": 5,
