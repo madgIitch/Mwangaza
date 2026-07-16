@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Mwangaza contributors" }]
-dependencies = []
+dependencies = [
+  "earthengine-api>=1.7.35",
+]
 
 [project.optional-dependencies]
 dev = [

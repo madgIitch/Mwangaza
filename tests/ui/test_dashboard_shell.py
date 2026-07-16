@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -101,6 +102,24 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.data_status.source, "Google Earth Engine live query")
         self.assertEqual(data.data_status.message, "Using live Google Earth Engine data")
         self.assertEqual(data.selected_region, "KEN")
+
+    def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
+        with (
+            patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
+            patch(
+                "mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads",
+                return_value=[_risk_snapshot(is_simulated=False).to_dict()],
+            ),
+            patch("builtins.print") as fake_print,
+        ):
+            load_dashboard_shell_data()
+
+        lines = [call.args[0] for call in fake_print.call_args_list]
+        self.assertIn("[mwangaza.dashboard] trying live GEE dashboard payloads", lines)
+        self.assertIn(
+            "[mwangaza.dashboard] loader selected mode=live source=Google Earth Engine live query",
+            lines,
+        )
 
     def test_dashboard_renders_regional_risk_map_with_legend_and_tooltips(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))

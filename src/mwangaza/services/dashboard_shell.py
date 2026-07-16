@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -81,13 +82,18 @@ def load_dashboard_shell_data(
     if cache_dir is None and data_dir is None and alert_db_path is None:
         live = _load_live_dashboard_data()
         if live is not None:
+            _debug_dashboard("loader selected mode=live source=Google Earth Engine live query")
             return live
 
     materialized = _load_materialized_dashboard_data(
         resolved_cache_dir,
         alert_db_path or resolved_data_dir / "alerts.sqlite",
     )
-    return materialized or _demo_dashboard_shell_data("demo")
+    if materialized is not None:
+        _debug_dashboard("loader selected mode=cache source=materialized local payloads")
+        return materialized
+    _debug_dashboard("loader selected mode=demo source=deterministic fallback")
+    return _demo_dashboard_shell_data("demo")
 
 
 def fallback_dashboard_shell_data() -> DashboardShellData:
@@ -126,9 +132,15 @@ def _load_materialized_dashboard_data(cache_dir: Path, alert_db_path: Path) -> D
 
 def _load_live_dashboard_data() -> DashboardShellData | None:
     try:
+        _debug_dashboard("trying live GEE dashboard payloads")
         payloads = tuple(load_live_gee_dashboard_payloads())
-    except Exception:
+    except Exception as exc:
+        _debug_dashboard(
+            "live GEE unavailable; falling back to cache/demo "
+            f"reason={type(exc).__name__}: {_sanitize_debug_message(str(exc))}"
+        )
         return None
+    _debug_dashboard(f"live GEE returned payload_count={len(payloads)}")
     return _dashboard_data_from_payloads(
         payloads,
         Path(),
@@ -582,3 +594,15 @@ def _format_number(value: object) -> str:
     if isinstance(value, float):
         return f"{value:.2f}".rstrip("0").rstrip(".")
     return str(value)
+
+
+def _debug_dashboard(message: str) -> None:
+    if os.environ.get("MWANGAZA_DASHBOARD_DEBUG") == "1":
+        print(f"[mwangaza.dashboard] {message}")
+
+
+def _sanitize_debug_message(message: str) -> str:
+    blocked = ("private_key", "service_account", "token", "secret", "password")
+    if any(part in message.lower() for part in blocked):
+        return "[redacted]"
+    return message[:240]
