@@ -51,12 +51,24 @@ class AlertSummary:
     title: str
     period: str
     action: str
+    region_id: str = ""
+
+
+@dataclass(frozen=True)
+class RegionProfile:
+    region_id: str
+    label: str
+    metrics: tuple[RegionMetric, ...]
+    alerts: tuple[AlertSummary, ...]
+    recommendations: tuple[str, ...]
+    status: Freshness = "current"
 
 
 @dataclass(frozen=True)
 class DashboardShellData:
     project: str
     tagline: str
+    selected_region_id: str
     selected_region: str
     data_status: DataStatus
     risk_map: RegionalRiskMap
@@ -64,6 +76,7 @@ class DashboardShellData:
     metrics: tuple[RegionMetric, ...]
     alerts: tuple[AlertSummary, ...]
     recommendations: tuple[str, ...]
+    region_profiles: tuple[RegionProfile, ...] = ()
 
 
 def load_dashboard_shell_data(
@@ -101,6 +114,7 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
     return DashboardShellData(
         project=data.project,
         tagline=data.tagline,
+        selected_region_id=data.selected_region_id,
         selected_region=data.selected_region,
         data_status=DataStatus(
             mode="demo",
@@ -183,12 +197,15 @@ def _dashboard_data_from_payloads(
     is_simulated = _all_simulated([payload for payload in (risk, snapshot, *signals) if payload])
     source = source_simulated if is_simulated else source_observed
     message = message_simulated if is_simulated else message_observed
-    alerts = _read_active_alerts(alert_db_path) or _alerts_from_risk(risk)
+    active_alerts = _read_active_alerts(alert_db_path)
+    alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
+    region_profiles = _region_profiles_from_payloads(cached_payloads, active_alerts)
 
     return DashboardShellData(
         project=PROJECT_NAME,
         tagline=TAGLINE,
+        selected_region_id=(region_id or "som").lower(),
         selected_region=_region_label(region_id),
         data_status=DataStatus(
             mode=mode,
@@ -199,13 +216,14 @@ def _dashboard_data_from_payloads(
         ),
         risk_map=build_regional_risk_map(
             risks,
-            selected_region_id=region_id or "som",
+            selected_region_id=(region_id or "som").lower(),
             source_mode=mode,
         ),
         navigation=_navigation(),
         metrics=_metrics_from_materialized(risk, signals),
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
+        region_profiles=region_profiles,
     )
 
 
@@ -250,6 +268,37 @@ def _latest_risk_snapshot(
 
 def _risk_snapshots(payloads: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any], ...]:
     return tuple(payload for payload in payloads if payload.get("payload_type") == "risk_snapshot")
+
+
+def _region_profiles_from_payloads(
+    payloads: tuple[dict[str, Any], ...],
+    active_alerts: tuple[AlertSummary, ...],
+) -> tuple[RegionProfile, ...]:
+    region_ids = tuple(
+        dict.fromkeys(
+            region_id
+            for region_id in (_first_text(payload.get("region_id")).lower() for payload in payloads)
+            if region_id
+        )
+    )
+    profiles: list[RegionProfile] = []
+    for region_id in region_ids:
+        risk = _latest_risk_snapshot(payloads, region_id=region_id)
+        snapshot = _latest_indicator_snapshot(payloads, region_id=region_id)
+        signals = _signals_for_view(payloads, snapshot, region_id=region_id)
+        alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
+        recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
+        profiles.append(
+            RegionProfile(
+                region_id=region_id,
+                label=_region_label(region_id),
+                metrics=_metrics_from_materialized(risk, signals),
+                alerts=alerts,
+                recommendations=recommendations or ("No action recommendations are available yet.",),
+                status="empty" if risk is None and not signals else "current",
+            )
+        )
+    return tuple(profiles)
 
 
 def _latest_indicator_snapshot(
@@ -342,9 +391,15 @@ def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
             title=_alert_title(str(row["severity"]), row["score"]),
             period=_period_label(str(row["period_start"]), str(row["period_end"])),
             action="View details",
+            region_id=str(row["region_id"]).lower(),
         )
         for row in rows
     )
+
+
+def _alerts_for_region(alerts: tuple[AlertSummary, ...], region_id: str) -> tuple[AlertSummary, ...]:
+    target = region_id.lower()
+    return tuple(alert for alert in alerts if alert.region_id == target)
 
 
 def _alerts_from_risk(risk: dict[str, Any] | None) -> tuple[AlertSummary, ...]:
@@ -363,6 +418,7 @@ def _alerts_from_risk(risk: dict[str, Any] | None) -> tuple[AlertSummary, ...]:
                 _first_text(risk.get("period_end")),
             ),
             action="View details",
+            region_id=_first_text(risk.get("region_id")).lower(),
         ),
     )
 
@@ -469,48 +525,86 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
             message="Data is current",
         ),
     }
+    metrics = (
+        RegionMetric("NDVI anomaly", "-0.18", "z", "warning", "Vegetation stress"),
+        RegionMetric("Rainfall anomaly", "-42", "%", "critical", "Below seasonal baseline"),
+        RegionMetric("LST anomaly", "+2.4", "C", "warning", "Surface heat elevated"),
+        RegionMetric("Composite score", "78", "/100", "critical", "High drought risk"),
+        RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
+        RegionMetric("Exposed population", "1.2M", "est.", "watch", "Exposure estimate"),
+    )
+    alerts = (
+        AlertSummary(
+            "Somalia",
+            "critical",
+            "Drought risk escalation",
+            "Jul 2026",
+            "View details",
+            region_id="som",
+        ),
+        AlertSummary(
+            "Northern Kenya",
+            "warning",
+            "Rainfall deficit watch",
+            "Jul 2026",
+            "View details",
+            region_id="ken",
+        ),
+        AlertSummary(
+            "Ethiopia",
+            "watch",
+            "Vegetation stress emerging",
+            "Jul 2026",
+            "View details",
+            region_id="eth",
+        ),
+    )
+    recommendations = (
+        "Prioritize water trucking readiness in high-risk districts.",
+        "Pre-position livestock feed in pastoral corridors.",
+        "Coordinate district verification before publishing alerts.",
+    )
     return DashboardShellData(
         project=PROJECT_NAME,
         tagline=TAGLINE,
+        selected_region_id="som",
         selected_region="Somalia",
         data_status=status_by_mode[mode],
         risk_map=demo_regional_risk_map(selected_region_id="som"),
         navigation=_navigation(),
-        metrics=(
-            RegionMetric("NDVI anomaly", "-0.18", "z", "warning", "Vegetation stress"),
-            RegionMetric("Rainfall anomaly", "-42", "%", "critical", "Below seasonal baseline"),
-            RegionMetric("LST anomaly", "+2.4", "C", "warning", "Surface heat elevated"),
-            RegionMetric("Composite score", "78", "/100", "critical", "High drought risk"),
-            RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
-            RegionMetric("Exposed population", "1.2M", "est.", "watch", "Exposure estimate"),
-        ),
-        alerts=(
-            AlertSummary(
-                "Somalia",
-                "critical",
-                "Drought risk escalation",
-                "Jul 2026",
-                "View details",
+        metrics=metrics,
+        alerts=alerts,
+        recommendations=recommendations,
+        region_profiles=(
+            RegionProfile("som", "Somalia", metrics, (alerts[0],), recommendations),
+            RegionProfile(
+                "ken",
+                "KEN",
+                (
+                    RegionMetric("NDVI anomaly", "-0.09", "z", "watch", "Vegetation stress emerging"),
+                    RegionMetric("Rainfall anomaly", "-28", "%", "warning", "Below seasonal baseline"),
+                    RegionMetric("LST anomaly", "+1.6", "C", "watch", "Surface heat elevated"),
+                    RegionMetric("Composite score", "61", "/100", "warning", "Risk level: warning"),
+                    RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
+                    RegionMetric("Exposed population", "No data", "", "unknown", "No materialized value"),
+                ),
+                (alerts[1],),
+                ("Preposition supplies and brief partners.",),
             ),
-            AlertSummary(
-                "Northern Kenya",
-                "warning",
-                "Rainfall deficit watch",
-                "Jul 2026",
-                "View details",
+            RegionProfile(
+                "eth",
+                "ETH",
+                (
+                    RegionMetric("NDVI anomaly", "No data", "", "unknown", "No materialized value"),
+                    RegionMetric("Rainfall anomaly", "-12", "%", "watch", "Below seasonal baseline"),
+                    RegionMetric("LST anomaly", "+0.8", "C", "normal", "Surface heat near baseline"),
+                    RegionMetric("Composite score", "38", "/100", "watch", "Risk level: watch"),
+                    RegionMetric("Data quality", "Degraded", "", "warning", "Use with caution"),
+                    RegionMetric("Exposed population", "No data", "", "unknown", "No materialized value"),
+                ),
+                (alerts[2],),
+                ("Prepare early action checklist.",),
             ),
-            AlertSummary(
-                "Ethiopia",
-                "watch",
-                "Vegetation stress emerging",
-                "Jul 2026",
-                "View details",
-            ),
-        ),
-        recommendations=(
-            "Prioritize water trucking readiness in high-risk districts.",
-            "Pre-position livestock feed in pastoral corridors.",
-            "Coordinate district verification before publishing alerts.",
         ),
     )
 

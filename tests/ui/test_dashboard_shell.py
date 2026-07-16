@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -145,6 +146,10 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(by_region["som"].color_level, "yellow")
         self.assertEqual(by_region["ken"].color_level, "red")
         self.assertIn("49.8", {metric.value for metric in data.metrics})
+        self.assertEqual([profile.region_id for profile in data.region_profiles], ["som", "ken"])
+        kenya = next(profile for profile in data.region_profiles if profile.region_id == "ken")
+        self.assertEqual(kenya.alerts[0].region, "KEN")
+        self.assertIn("Activate urgent coordination review", kenya.recommendations[0])
 
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
@@ -187,6 +192,28 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("data-selected-region-label", html)
         self.assertIn('querySelector("[data-selected-region-label]")', html)
         self.assertNotIn('querySelector("[data-selected-region]")', html)
+        self.assertIn("data-region-selector", html)
+        self.assertIn("data-region-detail", html)
+        self.assertIn("data-region-metrics", html)
+        self.assertIn("URLSearchParams(window.location.search)", html)
+
+    def test_region_drilldown_profiles_are_embedded_without_nested_rendering(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertEqual(html.count('class="mwa-shell"'), 1)
+        self.assertEqual(html.count('class="regional-risk-map"'), 1)
+        self.assertNotIn("<iframe", html.lower())
+        match = re.search(
+            r'<script type="application/json" data-region-profiles>(.*?)</script>',
+            html,
+            re.S,
+        )
+        self.assertIsNotNone(match)
+        profiles = json.loads(match.group(1))
+        self.assertIn("som", profiles)
+        self.assertIn("ken", profiles)
+        self.assertEqual(profiles["ken"]["metrics"][0]["label"], "NDVI anomaly")
+        self.assertEqual(profiles["som"]["alerts"][0]["region"], "Somalia")
 
     def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

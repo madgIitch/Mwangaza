@@ -611,3 +611,27 @@ Objetivo no negociable:
 - **external_contracts:** El dashboard intenta primero `mwangaza.services.live_gee_dashboard.load_live_gee_dashboard_payloads(...)` para consultar GEE en modo `live` con region y periodo acotados. Si GEE no esta configurado o falla, baja a cache local y luego demo.
 - **auth_secrets:** Las credenciales GEE siguen entrando solo por variables de entorno existentes; no se renderizan en HTML, payloads ni cache.
 - **ui_states:** El origen visible distingue `live`, `cache` y `demo`; un fallo live no rompe la UI.
+
+<!-- harness:sprint-24-country-drilldown -->
+## sprint-24-country-drilldown · Sprint 24 - Country Drilldown
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

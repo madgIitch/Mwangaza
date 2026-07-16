@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-23-regional-risk-map - Sprint 23 - Regional Risk Map** - estado: `review_pending`.
+Feature: **sprint-24-country-drilldown - Sprint 24 - Country Drilldown** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-23-regional-risk-map - Sprint 23 - Regional Risk Map** - estad
 
 ## Siguiente accion
 
-- Revisar el diff de Sprint 23 y cerrar con `node .harness/spec.mjs done sprint-23-regional-risk-map` tras smoke test humano y prueba live GEE si hay credenciales.
+- Revisar el diff de Sprint 24 y cerrar con `node .harness/spec.mjs done sprint-24-country-drilldown` tras smoke test humano del drilldown.
 
 ## Ultimo resultado
 

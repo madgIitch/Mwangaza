@@ -1724,7 +1724,7 @@
     {
       "id": "sprint-24-country-drilldown",
       "name": "Sprint 24 - Country Drilldown",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.2",
       "estimated_hours": 4,
@@ -1754,16 +1754,16 @@
       ],
       "deliverable": "Vista detallada de país basada en el snapshot más reciente.",
       "acceptance": [
-        "AC1: Hacer click o usar teclado sobre una región del mapa abre o actualiza el perfil del país seleccionado sin dejar de renderizar el mapa regional.",
-        "AC2: La navegación o panel Region muestra el análisis funcional del país seleccionado y mantiene un camino claro de vuelta a Overview.",
-        "AC3: La interacción de región no produce renderizado anidado; existe una sola instancia del shell y del mapa regional en el DOM del componente.",
-        "AC4: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad, fecha, fuente y período para el país seleccionado.",
-        "AC5: Cada tarjeta incluye unidad y comparación histórica cuando exista; datos ausentes muestran `No data`, no cero.",
-        "AC6: Alertas y recomendaciones se recalculan o filtran para la región seleccionada y muestran severidad, evidencia y versión.",
-        "AC7: Cambiar de país no dispara consultas Earth Engine arbitrarias desde la UI; consume payloads live/cache/demo ya acotados por configuración.",
-        "AC8: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita y conserva fallback si el parámetro no es válido.",
-        "AC9: La UI tiene estados empty, loading y error por región sin traceback, rutas locales ni secretos.",
-        "AC10: Tests automatizados cubren selección desde mapa, permanencia del mapa renderizado, ausencia de renderizado anidado, panel Region funcional, selector manual, URL state, no-data, alertas por región y ausencia de consultas remotas en interacción."
+        "Hacer click o usar teclado sobre una región del mapa abre o actualiza el perfil del país seleccionado sin dejar de renderizar el mapa regional.",
+        "La navegación o panel Region muestra el análisis funcional del país seleccionado y mantiene un camino claro de vuelta a Overview.",
+        "La interacción de región no produce renderizado anidado; existe una sola instancia del shell y del mapa regional en el DOM del componente.",
+        "La vista muestra NDVI, lluvia, LST, anomalías, score, calidad, fecha, fuente y período para el país seleccionado.",
+        "Cada tarjeta incluye unidad y comparación histórica cuando exista; datos ausentes muestran `No data`, no cero.",
+        "Alertas y recomendaciones se recalculan o filtran para la región seleccionada y muestran severidad, evidencia y versión.",
+        "Cambiar de país no dispara consultas Earth Engine arbitrarias desde la UI; consume payloads live/cache/demo ya acotados por configuración.",
+        "El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita y conserva fallback si el parámetro no es válido.",
+        "La UI tiene estados empty, loading y error por región sin traceback, rutas locales ni secretos.",
+        "Tests automatizados cubren selección desde mapa, permanencia del mapa renderizado, ausencia de renderizado anidado, panel Region funcional, selector manual, URL state, no-data, alertas por región y ausencia de consultas remotas en interacción."
       ],
       "scope": [
         "app.py",
@@ -1782,7 +1782,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-16T20:30:56.611Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:27423be7ba666ed3f1de2c67b47c77566b1d4a1a9f1e74a146909cce6736e32a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-16T20:31:09.253Z"
     },
     {
       "id": "sprint-25-subnational-pilot",

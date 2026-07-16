@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from html import escape
 from typing import Any
@@ -37,6 +38,9 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
     alerts = _render_alerts(data)
     risk_map = build_regional_risk_map_html(data.risk_map)
     selected_region = _selected_map_region(data)
+    region_options = _render_region_options(data)
+    region_profiles_json = _region_profiles_json(data)
+    region_panel = _render_region_panel(data)
     recommendations = "\n".join(
         f"<li>{escape(recommendation)}</li>" for recommendation in data.recommendations
     )
@@ -301,6 +305,33 @@ html, body, [data-testid="stAppViewContainer"] {{
   color: var(--mwa-muted);
   font-size: 12px;
 }}
+.region-toolbar {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}}
+.region-toolbar select {{
+  border: 1px solid var(--mwa-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--mwa-text);
+  padding: 7px 9px;
+  min-width: 150px;
+}}
+.region-detail {{
+  margin-top: 10px;
+}}
+.region-detail h3 {{
+  margin: 0;
+  font-size: 16px;
+}}
+.region-detail p {{
+  margin: 5px 0 0;
+  color: var(--mwa-muted);
+  font-size: 12px;
+}}
 .legend {{
   display: flex;
   flex-wrap: wrap;
@@ -444,7 +475,20 @@ html, body, [data-testid="stAppViewContainer"] {{
           </div>
           <p class="footer-note">Selected region: <span data-selected-region-label>{escape(data.selected_region)}</span></p>
         </section>
-        <section class="metrics-grid" id="region">{metrics}</section>
+        <section class="panel region-detail" id="region">
+          <div class="region-toolbar">
+            <div>
+              <h2>Region</h2>
+              <p>Country drilldown from loaded dashboard payloads.</p>
+            </div>
+            <label>
+              <span class="footer-note">Country</span>
+              <select data-region-selector>{region_options}</select>
+            </label>
+          </div>
+          <div data-region-detail>{region_panel}</div>
+        </section>
+        <section class="metrics-grid" data-region-metrics>{metrics}</section>
       </div>
       <aside class="side-column">
         <section class="panel" id="alerts">
@@ -465,15 +509,67 @@ html, body, [data-testid="stAppViewContainer"] {{
     </section>
   </main>
 </div>
+<script type="application/json" data-region-profiles>{region_profiles_json}</script>
 <script>
 (() => {{
-  const root = document.currentScript?.previousElementSibling;
+  const dataScript = document.currentScript?.previousElementSibling;
+  const root = dataScript?.previousElementSibling;
   if (!root || root.dataset.mwangazaInteractive === "1") return;
   root.dataset.mwangazaInteractive = "1";
+  const profiles = dataScript?.textContent ? JSON.parse(dataScript.textContent) : {{}};
   const paths = Array.from(root.querySelectorAll(".risk-region"));
   const selectedLabel = root.querySelector("[data-selected-region-label]");
   const readoutName = root.querySelector("[data-region-readout-name]");
   const readoutDetail = root.querySelector("[data-region-readout-detail]");
+  const selector = root.querySelector("[data-region-selector]");
+  const detail = root.querySelector("[data-region-detail]");
+  const metricsGrid = root.querySelector("[data-region-metrics]");
+
+  function escapeHtml(value) {{
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({{
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }}[char]));
+  }}
+
+  function metricHtml(metric) {{
+    return `<section class="metric-card" data-severity="${{escapeHtml(metric.severity)}}">`
+      + `<span class="metric-label">${{escapeHtml(metric.label)}}</span>`
+      + `<strong>${{escapeHtml(metric.value)}}<small>${{escapeHtml(metric.unit)}}</small></strong>`
+      + `<p>${{escapeHtml(metric.detail)}}</p></section>`;
+  }}
+
+  function alertsHtml(alerts) {{
+    if (!alerts.length) return '<p class="footer-note">No active alerts available for this region.</p>';
+    return alerts.map((alert) => `<article class="alert-item" data-severity="${{escapeHtml(alert.severity)}}">`
+      + `<h3>${{escapeHtml(alert.title)}}</h3><p>${{escapeHtml(alert.region)}} - ${{escapeHtml(alert.period)}}</p>`
+      + `<span class="alert-action">${{escapeHtml(alert.action)}}</span></article>`).join("");
+  }}
+
+  function recommendationsHtml(items) {{
+    if (!items.length) return "<li>No action recommendations are available yet.</li>";
+    return items.map((item) => `<li>${{escapeHtml(item)}}</li>`).join("");
+  }}
+
+  function renderProfile(regionId) {{
+    const profile = profiles[regionId];
+    if (!profile) return;
+    if (selector) selector.value = regionId;
+    if (selectedLabel) selectedLabel.textContent = profile.label;
+    if (detail) {{
+      detail.innerHTML = `<h3>${{escapeHtml(profile.label)}}</h3>`
+        + `<p>Status: ${{escapeHtml(profile.status)}} | Loaded payload drilldown</p>`
+        + `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
+    }}
+    if (metricsGrid) metricsGrid.innerHTML = profile.metrics.map(metricHtml).join("");
+    const alertsPanel = root.querySelector("#alerts .alert-list, #alerts .footer-note");
+    if (alertsPanel) alertsPanel.outerHTML = `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
+    const recommendations = root.querySelector("#reports .recommendations");
+    if (recommendations) recommendations.innerHTML = recommendationsHtml(profile.recommendations);
+  }}
 
   function selectRegion(path) {{
     paths.forEach((item) => {{
@@ -492,6 +588,10 @@ html, body, [data-testid="stAppViewContainer"] {{
     if (readoutDetail) {{
       readoutDetail.textContent = `Score: ${{score}} | Level: ${{level}} | Period: ${{period}} | Quality: ${{quality}}`;
     }}
+    renderProfile(path.dataset.regionId || "");
+    const url = new URL(window.location.href);
+    url.searchParams.set("region", path.dataset.regionId || "");
+    window.history.replaceState(null, "", url);
   }}
 
   paths.forEach((path) => {{
@@ -505,6 +605,16 @@ html, body, [data-testid="stAppViewContainer"] {{
       }}
     }});
   }});
+  selector?.addEventListener("change", () => {{
+    const path = paths.find((item) => item.dataset.regionId === selector.value);
+    if (path) selectRegion(path);
+    else renderProfile(selector.value);
+  }});
+  const requestedRegion = new URLSearchParams(window.location.search).get("region");
+  if (requestedRegion && profiles[requestedRegion]) {{
+    const path = paths.find((item) => item.dataset.regionId === requestedRegion);
+    if (path) selectRegion(path);
+  }}
 }})();
 </script>
 """
@@ -587,6 +697,92 @@ def _render_alerts(data: DashboardShellData) -> str:
             for alert in data.alerts
         )
     )
+
+
+def _render_region_options(data: DashboardShellData) -> str:
+    selected = data.selected_region_id
+    return "\n".join(
+        '<option value="{region_id}"{selected}>{label}</option>'.format(
+            region_id=escape(profile.region_id),
+            selected=" selected" if profile.region_id == selected else "",
+            label=escape(profile.label),
+        )
+        for profile in data.region_profiles
+    )
+
+
+def _render_region_panel(data: DashboardShellData) -> str:
+    profile = _selected_region_profile(data)
+    if profile is None:
+        return (
+            "<h3>Unknown region</h3>"
+            '<p class="footer-note">No region payloads are available in the current shell view.</p>'
+        )
+    return (
+        f"<h3>{escape(profile.label)}</h3>"
+        f"<p>Status: {escape(profile.status)} | Loaded payload drilldown</p>"
+        f'<div class="alert-list">{_render_profile_alerts(profile.alerts)}</div>'
+    )
+
+
+def _render_profile_alerts(alerts: tuple[Any, ...]) -> str:
+    if not alerts:
+        return '<p class="footer-note">No active alerts available for this region.</p>'
+    return "\n".join(
+        '<article class="alert-item" data-severity="{severity}">'
+        "<h3>{title}</h3>"
+        "<p>{region} - {period}</p>"
+        '<span class="alert-action">{action}</span>'
+        "</article>".format(
+            severity=escape(alert.severity),
+            title=escape(alert.title),
+            region=escape(alert.region),
+            period=escape(alert.period),
+            action=escape(alert.action),
+        )
+        for alert in alerts
+    )
+
+
+def _selected_region_profile(data: DashboardShellData) -> Any | None:
+    for profile in data.region_profiles:
+        if profile.region_id == data.selected_region_id:
+            return profile
+    return data.region_profiles[0] if data.region_profiles else None
+
+
+def _region_profiles_json(data: DashboardShellData) -> str:
+    profiles = {
+        profile.region_id: {
+            "region_id": profile.region_id,
+            "label": profile.label,
+            "status": profile.status,
+            "metrics": [
+                {
+                    "label": metric.label,
+                    "value": metric.value,
+                    "unit": metric.unit,
+                    "severity": metric.severity,
+                    "detail": metric.detail,
+                }
+                for metric in profile.metrics
+            ],
+            "alerts": [
+                {
+                    "region": alert.region,
+                    "severity": alert.severity,
+                    "title": alert.title,
+                    "period": alert.period,
+                    "action": alert.action,
+                }
+                for alert in profile.alerts
+            ],
+            "recommendations": list(profile.recommendations),
+        }
+        for profile in data.region_profiles
+    }
+    raw = json.dumps(profiles, ensure_ascii=True, separators=(",", ":"))
+    return raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 def _selected_map_region(data: DashboardShellData) -> Any:
