@@ -5,6 +5,7 @@ import unittest
 from mwangaza.contracts import RiskSnapshot
 from mwangaza.maps import (
     RISK_COLOR_LEVELS,
+    RISK_LEVEL_COLORS,
     build_regional_risk_map,
     build_regional_risk_map_html,
     risk_level_to_color,
@@ -57,6 +58,8 @@ class RegionalRiskMapTests(unittest.TestCase):
         self.assertIn('data-selected-region="som"', html)
         self.assertIn('data-region-id="som"', html)
         self.assertIn("risk-region risk-red is-selected", html)
+        self.assertIn(f'fill="{RISK_LEVEL_COLORS["red"]}"', html)
+        self.assertIn('stroke="#17231c"', html)
         self.assertIn("<title>Somalia | score: 82 | level: red", html)
 
     def test_smoke_payload_validator_rejects_sensitive_fields(self) -> None:

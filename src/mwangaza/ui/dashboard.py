@@ -241,10 +241,11 @@ html, body, [data-testid="stAppViewContainer"] {{
   stroke-width: 2;
   transition: opacity 120ms ease, stroke-width 120ms ease;
 }}
-.risk-region-link:focus .risk-region,
-.risk-region-link:hover .risk-region {{
+.risk-region:focus,
+.risk-region:hover {{
   opacity: 0.78;
   stroke-width: 4;
+  outline: none;
 }}
 .risk-region.is-selected {{
   stroke: #17231c;

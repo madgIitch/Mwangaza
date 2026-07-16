@@ -23,6 +23,13 @@ RISK_LEVEL_CLASS = {
     "red": "risk-red",
     "unknown": "risk-unknown",
 }
+RISK_LEVEL_COLORS = {
+    "green": "#1f7a4d",
+    "yellow": "#f4c542",
+    "orange": "#e68032",
+    "red": "#c93636",
+    "unknown": "#8c9690",
+}
 BLOCKING_QUALITY_FLAGS = {"invalid", "no_data", "insufficient_history"}
 
 
@@ -198,9 +205,9 @@ def _render_region_path(region: RegionalRiskMapRegion, bounds: tuple[float, floa
     if region.selected:
         classes += " is-selected"
     return (
-        '<a href="#region" class="risk-region-link" data-region-id="{region_id}" '
-        'data-risk-level="{level}" data-score="{score}" data-quality="{quality}">'
-        '<path class="{classes}" d="{path}"><title>{tooltip}</title></path></a>'
+        '<path class="{classes}" d="{path}" fill="{fill}" stroke="{stroke}" stroke-width="{stroke_width}" '
+        'data-region-id="{region_id}" data-risk-level="{level}" data-score="{score}" '
+        'data-quality="{quality}" tabindex="0"><title>{tooltip}</title></path>'
     ).format(
         region_id=escape(region.region_id),
         level=escape(region.color_level),
@@ -208,6 +215,9 @@ def _render_region_path(region: RegionalRiskMapRegion, bounds: tuple[float, floa
         quality=escape(region.quality_flag),
         classes=escape(classes),
         path=escape(path),
+        fill=RISK_LEVEL_COLORS[region.color_level],
+        stroke="#17231c" if region.selected else "#ffffff",
+        stroke_width="4" if region.selected else "2",
         tooltip=escape(region.tooltip),
     )
 
@@ -279,6 +289,7 @@ def _finite(value: float | None) -> bool:
 
 __all__ = [
     "RISK_COLOR_LEVELS",
+    "RISK_LEVEL_COLORS",
     "RegionalRiskMap",
     "RegionalRiskMapRegion",
     "build_regional_risk_map",
