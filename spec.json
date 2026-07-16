@@ -1654,7 +1654,7 @@
     {
       "id": "sprint-23-regional-risk-map",
       "name": "Sprint 23 - Regional Risk Map",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.1",
       "estimated_hours": 5,
