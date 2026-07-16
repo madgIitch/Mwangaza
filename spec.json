@@ -1744,22 +1744,24 @@
         }
       ],
       "tasks": [
-        "Conectar la selección del mapa regional con la vista de país.",
+        "Conectar la selección del mapa regional con la vista de país sin ocultar ni reemplazar el mapa.",
         "Crear selector de país con estado compartible por URL.",
+        "Convertir el panel Region en una vista funcional de análisis por país.",
         "Actualizar tarjetas de indicadores, score, explicación, alertas y recomendaciones al cambiar de país.",
         "Añadir estados empty/loading/error para datos de región y cambios de selección.",
         "Mantener las consultas GEE fuera de interacción arbitraria y consumir payloads live/cache ya acotados."
       ],
       "deliverable": "Vista detallada de país basada en el snapshot más reciente.",
       "acceptance": [
-        "AC1: Hacer click o usar teclado sobre una región del mapa abre o actualiza el perfil del país seleccionado.",
-        "AC2: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad, fecha, fuente y período para el país seleccionado.",
-        "AC3: Cada tarjeta incluye unidad y comparación histórica cuando exista; datos ausentes muestran `No data`, no cero.",
-        "AC4: Alertas y recomendaciones se recalculan o filtran para la región seleccionada y muestran severidad, evidencia y versión.",
-        "AC5: Cambiar de país no dispara consultas Earth Engine arbitrarias desde la UI; consume payloads live/cache/demo ya acotados por configuración.",
-        "AC6: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita y conserva fallback si el parámetro no es válido.",
-        "AC7: La UI tiene estados empty, loading y error por región sin traceback, rutas locales ni secretos.",
-        "AC8: Tests automatizados cubren selección desde mapa, selector manual, URL state, no-data, alertas por región y ausencia de consultas remotas en interacción."
+        "AC1: Hacer click o usar teclado sobre una región del mapa abre o actualiza el perfil del país seleccionado sin dejar de renderizar el mapa regional.",
+        "AC2: La navegación o panel Region muestra el análisis funcional del país seleccionado y mantiene un camino claro de vuelta a Overview.",
+        "AC3: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad, fecha, fuente y período para el país seleccionado.",
+        "AC4: Cada tarjeta incluye unidad y comparación histórica cuando exista; datos ausentes muestran `No data`, no cero.",
+        "AC5: Alertas y recomendaciones se recalculan o filtran para la región seleccionada y muestran severidad, evidencia y versión.",
+        "AC6: Cambiar de país no dispara consultas Earth Engine arbitrarias desde la UI; consume payloads live/cache/demo ya acotados por configuración.",
+        "AC7: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita y conserva fallback si el parámetro no es válido.",
+        "AC8: La UI tiene estados empty, loading y error por región sin traceback, rutas locales ni secretos.",
+        "AC9: Tests automatizados cubren selección desde mapa, permanencia del mapa renderizado, panel Region funcional, selector manual, URL state, no-data, alertas por región y ausencia de consultas remotas en interacción."
       ],
       "scope": [
         "app.py",
