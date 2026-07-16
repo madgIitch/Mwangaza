@@ -183,7 +183,10 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("addEventListener(\"keydown\"", html)
         self.assertIn('role", "button"', html)
         self.assertIn("data-region-readout-name", html)
-        self.assertIn("data-selected-region", html)
+        self.assertIn('class="regional-risk-map" data-selected-region="som"', html)
+        self.assertIn("data-selected-region-label", html)
+        self.assertIn('querySelector("[data-selected-region-label]")', html)
+        self.assertNotIn('querySelector("[data-selected-region]")', html)
 
     def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

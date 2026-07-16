@@ -442,7 +442,7 @@ html, body, [data-testid="stAppViewContainer"] {{
               Period: {escape(selected_region.period)} | Quality: {escape(selected_region.quality_flag)}
             </span>
           </div>
-          <p class="footer-note">Selected region: <span data-selected-region>{escape(data.selected_region)}</span></p>
+          <p class="footer-note">Selected region: <span data-selected-region-label>{escape(data.selected_region)}</span></p>
         </section>
         <section class="metrics-grid" id="region">{metrics}</section>
       </div>
@@ -471,7 +471,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   if (!root || root.dataset.mwangazaInteractive === "1") return;
   root.dataset.mwangazaInteractive = "1";
   const paths = Array.from(root.querySelectorAll(".risk-region"));
-  const selectedLabel = root.querySelector("[data-selected-region]");
+  const selectedLabel = root.querySelector("[data-selected-region-label]");
   const readoutName = root.querySelector("[data-region-readout-name]");
   const readoutDetail = root.querySelector("[data-region-readout-detail]");
 
