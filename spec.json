@@ -1732,7 +1732,7 @@
       "dependencies": [
         "sprint-23-regional-risk-map"
       ],
-      "objective": "Permitir abrir el perfil detallado de un país.",
+      "objective": "Permitir abrir y compartir el perfil detallado de un país desde el mapa regional, con métricas, alertas y recomendaciones sincronizadas con la región seleccionada.",
       "user_stories": [
         {
           "id": "HU24.1",
@@ -1744,20 +1744,22 @@
         }
       ],
       "tasks": [
-        "Crear selector de país.",
-        "Mostrar tarjetas de indicadores.",
-        "Mostrar score y explicación.",
-        "Mostrar recomendaciones.",
-        "Añadir enlaces internos."
+        "Conectar la selección del mapa regional con la vista de país.",
+        "Crear selector de país con estado compartible por URL.",
+        "Actualizar tarjetas de indicadores, score, explicación, alertas y recomendaciones al cambiar de país.",
+        "Añadir estados empty/loading/error para datos de región y cambios de selección.",
+        "Mantener las consultas GEE fuera de interacción arbitraria y consumir payloads live/cache ya acotados."
       ],
       "deliverable": "Vista detallada de país basada en el snapshot más reciente.",
       "acceptance": [
-        "AC1: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad y fecha.",
-        "AC2: Cada tarjeta incluye unidad y comparación histórica.",
-        "AC3: Los datos ausentes muestran `No data`, no cero.",
-        "AC4: Las recomendaciones indican severidad y versión.",
-        "AC5: Cambiar de país no dispara consultas Earth Engine desde la UI.",
-        "AC6: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita."
+        "AC1: Hacer click o usar teclado sobre una región del mapa abre o actualiza el perfil del país seleccionado.",
+        "AC2: La vista muestra NDVI, lluvia, LST, anomalías, score, calidad, fecha, fuente y período para el país seleccionado.",
+        "AC3: Cada tarjeta incluye unidad y comparación histórica cuando exista; datos ausentes muestran `No data`, no cero.",
+        "AC4: Alertas y recomendaciones se recalculan o filtran para la región seleccionada y muestran severidad, evidencia y versión.",
+        "AC5: Cambiar de país no dispara consultas Earth Engine arbitrarias desde la UI; consume payloads live/cache/demo ya acotados por configuración.",
+        "AC6: El estado seleccionado puede compartirse mediante parámetros de URL cuando Streamlit lo permita y conserva fallback si el parámetro no es válido.",
+        "AC7: La UI tiene estados empty, loading y error por región sin traceback, rutas locales ni secretos.",
+        "AC8: Tests automatizados cubren selección desde mapa, selector manual, URL state, no-data, alertas por región y ausencia de consultas remotas en interacción."
       ],
       "scope": [
         "app.py",
