@@ -123,6 +123,17 @@ class RealGeeRegionalAdapter:
             metadata={**_metadata(self.scale_meters), "raw_band": "LST_Day_1km"},
         )
 
+    def latest_collection_date(self, collection_id: str) -> str:
+        millis = self.ee.ImageCollection(collection_id).aggregate_max("system:time_start").getInfo()
+        if not isinstance(millis, int | float):
+            raise LiveGeeDashboardError(f"collection has no available images: {collection_id}")
+        return (
+            datetime.fromtimestamp(float(millis) / 1000, UTC)
+            .replace(hour=0, minute=0, second=0, microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
+
 
 def load_live_gee_dashboard_payloads(
     *,
@@ -137,11 +148,21 @@ def load_live_gee_dashboard_payloads(
         raise LiveGeeDashboardError(auth.message)
 
     module = ee_module or importlib.import_module("ee")
-    end = period_end or _default_period_end()
-    start = period_start or _default_period_start(end)
     target_region = (region_id or os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
     adapter = RealGeeRegionalAdapter(module, scale_meters=scale_meters)
+    start, end = resolve_live_gee_period(adapter, period_start=period_start, period_end=period_end)
     return build_live_gee_payloads(target_region, start, end, adapter=adapter)
+
+
+def resolve_live_gee_period(
+    adapter: Any,
+    *,
+    period_start: str | None = None,
+    period_end: str | None = None,
+) -> tuple[str, str]:
+    end = period_end or _latest_common_collection_date(adapter)
+    start = period_start or _default_period_start(end)
+    return start, end
 
 
 def build_live_gee_payloads(
@@ -209,6 +230,15 @@ def _default_period_start(period_end: str) -> str:
     return (end - timedelta(days=DEFAULT_LOOKBACK_DAYS - 1)).astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
+def _latest_common_collection_date(adapter: Any) -> str:
+    dates = (
+        adapter.latest_collection_date(NdviCollectionConfig().collection_id),
+        adapter.latest_collection_date(RainfallCollectionConfig().collection_id),
+        adapter.latest_collection_date(LstCollectionConfig().collection_id),
+    )
+    return min(dates)
+
+
 def _first_number(values: dict[str, Any]) -> float | None:
     for value in values.values():
         if isinstance(value, int | float) and not isinstance(value, bool) and math.isfinite(value):
@@ -234,4 +264,5 @@ __all__ = [
     "RealGeeRegionalAdapter",
     "build_live_gee_payloads",
     "load_live_gee_dashboard_payloads",
+    "resolve_live_gee_period",
 ]

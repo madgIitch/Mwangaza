@@ -5,10 +5,18 @@ import unittest
 from mwangaza.data.lst import LstCollectionConfig, LstQueryResult
 from mwangaza.data.ndvi import NdviCollectionConfig, NdviQueryResult
 from mwangaza.data.rainfall import RainfallCollectionConfig, RainfallQueryResult
-from mwangaza.services.live_gee_dashboard import build_live_gee_payloads
+from mwangaza.services.live_gee_dashboard import build_live_gee_payloads, resolve_live_gee_period
 
 
 class FakeLiveGeeAdapter:
+    def latest_collection_date(self, collection_id: str) -> str:
+        dates = {
+            "MODIS/061/MOD13Q1": "2026-06-25T00:00:00Z",
+            "UCSB-CHG/CHIRPS/DAILY": "2026-07-10T00:00:00Z",
+            "MODIS/061/MOD11A2": "2026-07-08T00:00:00Z",
+        }
+        return dates[collection_id]
+
     def query_ndvi(
         self,
         geometry: dict[str, object],
@@ -81,6 +89,12 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertIn("ndvi", indicators)
         self.assertIn("rainfall_mm", indicators)
         self.assertIn("lst_c", indicators)
+
+    def test_resolves_default_window_to_latest_common_collection_date(self) -> None:
+        start, end = resolve_live_gee_period(FakeLiveGeeAdapter())
+
+        self.assertEqual(start, "2026-06-11T00:00:00Z")
+        self.assertEqual(end, "2026-06-25T00:00:00Z")
 
 
 if __name__ == "__main__":
