@@ -1724,7 +1724,7 @@
     {
       "id": "sprint-24-country-drilldown",
       "name": "Sprint 24 - Country Drilldown",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.2",
       "estimated_hours": 4,
