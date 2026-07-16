@@ -162,10 +162,11 @@ def _dashboard_data_from_payloads(
     message_observed: str,
     message_simulated: str,
 ) -> DashboardShellData | None:
-    risk = _latest_risk_snapshot(cached_payloads)
+    selected_region_id = _selected_region_id(cached_payloads)
+    risk = _latest_risk_snapshot(cached_payloads, region_id=selected_region_id)
     risks = _risk_snapshots(cached_payloads)
-    snapshot = _latest_indicator_snapshot(cached_payloads)
-    signals = _signals_for_view(cached_payloads, snapshot)
+    snapshot = _latest_indicator_snapshot(cached_payloads, region_id=selected_region_id)
+    signals = _signals_for_view(cached_payloads, snapshot, region_id=selected_region_id)
     if risk is None and snapshot is None and not signals:
         return None
 
@@ -236,8 +237,14 @@ def _extract_payloads(raw: Any) -> tuple[dict[str, Any], ...]:
     return ()
 
 
-def _latest_risk_snapshot(payloads: tuple[dict[str, Any], ...]) -> dict[str, Any] | None:
+def _latest_risk_snapshot(
+    payloads: tuple[dict[str, Any], ...],
+    *,
+    region_id: str = "",
+) -> dict[str, Any] | None:
     risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+    if region_id:
+        risks = [payload for payload in risks if payload.get("region_id") == region_id]
     return max(risks, key=_payload_sort_time, default=None)
 
 
@@ -245,23 +252,33 @@ def _risk_snapshots(payloads: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any
     return tuple(payload for payload in payloads if payload.get("payload_type") == "risk_snapshot")
 
 
-def _latest_indicator_snapshot(payloads: tuple[dict[str, Any], ...]) -> dict[str, Any] | None:
+def _latest_indicator_snapshot(
+    payloads: tuple[dict[str, Any], ...],
+    *,
+    region_id: str = "",
+) -> dict[str, Any] | None:
     snapshots = [
         payload
         for payload in payloads
         if isinstance(payload.get("snapshot_id"), str) and isinstance(payload.get("signals"), list)
     ]
+    if region_id:
+        snapshots = [payload for payload in snapshots if payload.get("region_id") == region_id]
     return max(snapshots, key=_payload_sort_time, default=None)
 
 
 def _signals_for_view(
     payloads: tuple[dict[str, Any], ...],
     snapshot: dict[str, Any] | None,
+    *,
+    region_id: str = "",
 ) -> tuple[dict[str, Any], ...]:
     if snapshot is not None and isinstance(snapshot.get("signals"), list):
         return tuple(item for item in snapshot["signals"] if isinstance(item, dict))
     allowed = {"indicator_observation", "anomaly"}
     signals = [payload for payload in payloads if payload.get("payload_type") in allowed]
+    if region_id:
+        signals = [payload for payload in signals if payload.get("region_id") == region_id]
     if not signals:
         return ()
     latest_region = _first_text(max(signals, key=_payload_sort_time).get("region_id"))
@@ -272,6 +289,20 @@ def _signals_for_view(
         if payload.get("region_id") == latest_region and payload.get("period_end") == latest_period
     ]
     return tuple(sorted(filtered, key=lambda item: str(item.get("indicator", ""))))
+
+
+def _selected_region_id(payloads: tuple[dict[str, Any], ...]) -> str:
+    available = tuple(
+        dict.fromkeys(
+            region_id
+            for region_id in (_first_text(payload.get("region_id")).lower() for payload in payloads)
+            if region_id
+        )
+    )
+    preferred = (os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
+    if preferred in available:
+        return preferred
+    return available[0] if available else ""
 
 
 def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:

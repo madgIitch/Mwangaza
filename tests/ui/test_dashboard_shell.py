@@ -122,6 +122,30 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.data_status.message, "Using live Google Earth Engine data")
         self.assertEqual(data.selected_region, "KEN")
 
+    def test_default_loader_keeps_preferred_live_region_with_multiple_risks(self) -> None:
+        with (
+            patch.dict(os.environ, {"MWANGAZA_DASHBOARD_REGION_ID": "som"}),
+            patch(
+                "mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads",
+                return_value=[
+                    _json_payload(
+                        _risk_snapshot(region_id="som", risk_level="watch", score=49.8, is_simulated=False)
+                    ),
+                    _json_payload(
+                        _risk_snapshot(region_id="ken", risk_level="emergency", score=82.0, is_simulated=False)
+                    ),
+                ],
+            ),
+        ):
+            data = load_dashboard_shell_data()
+
+        self.assertEqual(data.selected_region, "SOM")
+        self.assertEqual(data.risk_map.selected_region_id, "som")
+        by_region = {region.region_id: region for region in data.risk_map.regions}
+        self.assertEqual(by_region["som"].color_level, "yellow")
+        self.assertEqual(by_region["ken"].color_level, "red")
+        self.assertIn("49.8", {metric.value for metric in data.metrics})
+
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
@@ -230,12 +254,13 @@ class DashboardShellTests(unittest.TestCase):
 
 def _risk_snapshot(
     *,
+    region_id: str = "ken",
     risk_level: str = "emergency",
     score: float = 82.0,
     is_simulated: bool = False,
 ) -> RiskSnapshot:
     return RiskSnapshot(
-        region_id="ken",
+        region_id=region_id,
         period_start="2026-07-01T00:00:00Z",
         period_end="2026-07-08T00:00:00Z",
         composite_score=score,
@@ -246,6 +271,10 @@ def _risk_snapshot(
         is_simulated=is_simulated,
         metadata={"model_version": "composite-risk-v1", "updated_at": "2026-07-09T00:00:00Z"},
     )
+
+
+def _json_payload(risk: RiskSnapshot) -> dict[str, object]:
+    return json.loads(json.dumps(risk.to_dict()))
 
 
 if __name__ == "__main__":

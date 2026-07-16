@@ -6,6 +6,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import IndicatorObservation
 from mwangaza.data.indicator_snapshot import build_indicator_snapshot
 from mwangaza.data.lst import LstCollectionConfig, LstQueryResult, compute_current_lst
@@ -17,6 +18,7 @@ from mwangaza.data.rainfall import (
 )
 from mwangaza.gee.auth import check_gee_auth
 from mwangaza.quality import evaluate_data_quality
+from mwangaza.regions import COUNTRY_LEVEL, list_regions
 from mwangaza.risk import compute_composite_drought_score
 
 DEFAULT_SCALE_METERS = 5500
@@ -151,7 +153,12 @@ def load_live_gee_dashboard_payloads(
     target_region = (region_id or os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
     adapter = RealGeeRegionalAdapter(module, scale_meters=scale_meters)
     start, end = resolve_live_gee_period(adapter, period_start=period_start, period_end=period_end)
-    return build_live_gee_payloads(target_region, start, end, adapter=adapter)
+    region_ids = (
+        (target_region,)
+        if region_id is not None
+        else _ordered_region_ids(target_region, _enabled_country_region_ids())
+    )
+    return build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
 
 
 def resolve_live_gee_period(
@@ -192,13 +199,30 @@ def build_live_gee_payloads(
     )
     quality = evaluate_data_quality(snapshot, now=datetime.now(UTC))
     risk = compute_composite_drought_score(snapshot, quality)
-    payloads = [risk.to_dict(), snapshot.to_dict(), *(signal.to_dict() for signal in signals)]
+    payloads = [
+        _json_safe(risk.to_dict()),
+        _json_safe(snapshot.to_dict()),
+        *(_json_safe(signal.to_dict()) for signal in signals),
+    ]
     for payload in payloads:
         metadata = payload.setdefault("metadata", {})
         if isinstance(metadata, dict):
             metadata["source_mode"] = "live"
             metadata["smoke_source"] = "real_gee"
             metadata["updated_at"] = metadata.get("updated_at", _utc_now())
+    return payloads
+
+
+def build_live_gee_payloads_for_regions(
+    region_ids: tuple[str, ...],
+    period_start: str,
+    period_end: str,
+    *,
+    adapter: RealGeeRegionalAdapter,
+) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for region_id in region_ids:
+        payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
     return payloads
 
 
@@ -210,6 +234,16 @@ def _reduce(image: Any, reducer: Any, geometry: Any, adapter: RealGeeRegionalAda
         maxPixels=adapter.max_pixels,
     ).getInfo()
     return value if isinstance(value, dict) else {}
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    return value
 
 
 def _metadata(scale_meters: int) -> dict[str, Any]:
@@ -239,6 +273,22 @@ def _latest_common_collection_date(adapter: Any) -> str:
     return min(dates)
 
 
+def _enabled_country_region_ids() -> tuple[str, ...]:
+    countries = list_regions(level=COUNTRY_LEVEL, include_pilots=False)
+    try:
+        enabled_iso3 = set(load_settings().enabled_countries)
+    except ConfigurationError:
+        enabled_iso3 = {country.iso3 for country in countries}
+    return tuple(country.id for country in countries if country.iso3 in enabled_iso3)
+
+
+def _ordered_region_ids(selected_region_id: str, region_ids: tuple[str, ...]) -> tuple[str, ...]:
+    selected = selected_region_id.lower()
+    ordered = [selected]
+    ordered.extend(region_id for region_id in region_ids if region_id != selected)
+    return tuple(dict.fromkeys(ordered))
+
+
 def _first_number(values: dict[str, Any]) -> float | None:
     for value in values.values():
         if isinstance(value, int | float) and not isinstance(value, bool) and math.isfinite(value):
@@ -263,6 +313,7 @@ __all__ = [
     "LiveGeeDashboardError",
     "RealGeeRegionalAdapter",
     "build_live_gee_payloads",
+    "build_live_gee_payloads_for_regions",
     "load_live_gee_dashboard_payloads",
     "resolve_live_gee_period",
 ]

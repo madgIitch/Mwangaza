@@ -5,7 +5,11 @@ import unittest
 from mwangaza.data.lst import LstCollectionConfig, LstQueryResult
 from mwangaza.data.ndvi import NdviCollectionConfig, NdviQueryResult
 from mwangaza.data.rainfall import RainfallCollectionConfig, RainfallQueryResult
-from mwangaza.services.live_gee_dashboard import build_live_gee_payloads, resolve_live_gee_period
+from mwangaza.services.live_gee_dashboard import (
+    build_live_gee_payloads,
+    build_live_gee_payloads_for_regions,
+    resolve_live_gee_period,
+)
 
 
 class FakeLiveGeeAdapter:
@@ -95,6 +99,19 @@ class LiveGeeDashboardTests(unittest.TestCase):
 
         self.assertEqual(start, "2026-06-11T00:00:00Z")
         self.assertEqual(end, "2026-06-25T00:00:00Z")
+
+    def test_builds_live_payloads_for_multiple_regions_in_order(self) -> None:
+        payloads = build_live_gee_payloads_for_regions(
+            ("som", "ken"),
+            "2026-07-01T00:00:00Z",
+            "2026-07-15T00:00:00Z",
+            adapter=FakeLiveGeeAdapter(),  # type: ignore[arg-type]
+        )
+
+        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+        self.assertEqual([risk["region_id"] for risk in risks], ["som", "ken"])
+        self.assertEqual(len(payloads), 10)
+        self.assertFalse(any(payload.get("is_simulated") is True for payload in payloads))
 
 
 if __name__ == "__main__":
