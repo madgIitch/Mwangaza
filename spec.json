@@ -1993,7 +1993,7 @@
     {
       "id": "sprint-28-active-alerts",
       "name": "Sprint 28 - Active Alerts",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.6",
       "estimated_hours": 4,
