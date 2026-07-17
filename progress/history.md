@@ -132,3 +132,8 @@
 - Intervalos, confianza, elegibilidad y gate de alerta preventiva.
 - Dashboard marca forecasts como estimaciones experimentales.
 - Validado con confidence tests, UI, suite completa y gate del harness.
+## 2026-07-17T13:40:00Z - #sprint-38-multilingual-interface Sprint 38 - Multilingual Interface -> review_pending
+
+- Catalogos `en`, `sw`, `so` con fallback ingles y warnings.
+- Dashboard traduce navegacion/modos sin modificar fuentes, fechas ni valores.
+- Validado con i18n tests, UI, suite completa y gate del harness.

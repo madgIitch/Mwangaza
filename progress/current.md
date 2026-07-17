@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-37-forecast-confidence - Sprint 37 - Forecast Confidence** - estado: `review_pending`.
+Feature: **sprint-38-multilingual-interface - Sprint 38 - Multilingual Interface** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-37-forecast-confidence - Sprint 37 - Forecast Confidence** - e
 
 ## Siguiente accion
 
-- Smoke visual: confirmar texto de forecast experimental en About. Cerrar con `node .harness/spec.mjs done sprint-37-forecast-confidence` si pasa.
+- Smoke visual con `MWANGAZA_LANG=sw` y `MWANGAZA_LANG=so`. Cerrar con `node .harness/spec.mjs done sprint-38-multilingual-interface` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-37-forecast-confidence - Sprint 37 - Forecast Confidence** - e
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.forecasting.test_confidence`
+- `uv run python -m unittest tests.i18n.test_i18n`
 - `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-37-forecast-confidence`
+- `node .harness\gates.mjs sprint-38-multilingual-interface`

@@ -7,6 +7,7 @@ from html import escape
 from typing import Any
 
 from mwangaza.exports import build_visible_export, safe_export_filename
+from mwangaza.i18n import AVAILABLE_LANGUAGES, normalize_language, translate
 from mwangaza.notifications import NotificationOutbox, simulate_notifications_for_alert
 from mwangaza.reports import build_executive_report_context, safe_report_filename
 from mwangaza.services.dashboard_shell import (
@@ -21,10 +22,11 @@ SAFE_ERROR_MESSAGE = "Dashboard data could not be loaded. Showing a safe fallbac
 
 def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = False) -> str:
     shell_id = _shell_dom_id(data)
+    language = normalize_language(os.environ.get("MWANGAZA_LANG", "en"))
     nav = "\n".join(
         f'<button class="nav-item{" is-active" if item.active else ""}" '
         f'type="button" data-nav-target="{escape(item.key)}">'
-        f"<span>{escape(item.label)}</span></button>"
+        f"<span>{escape(_t(f'nav.{item.key}', language))}</span></button>"
         for item in data.navigation
     )
     metrics = "\n".join(
@@ -60,9 +62,16 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
         '<span class="mode-chip{active}" data-mode="{mode}">{label}</span>'.format(
             active=" is-active" if data.data_status.mode == mode else "",
             mode=mode,
-            label=label,
+            label=_t(f"status.{mode}", language),
         )
-        for mode, label in (("live", "Live data"), ("cache", "Cache data"), ("demo", "Demo data"))
+        for mode in ("live", "cache", "demo")
+    )
+    language_options = "\n".join(
+        '<option value="{lang}"{selected}>{lang}</option>'.format(
+            lang=lang,
+            selected=" selected" if lang == language else "",
+        )
+        for lang in AVAILABLE_LANGUAGES
     )
     error_banner = (
         f'<div class="safe-error" role="alert">{escape(SAFE_ERROR_MESSAGE)}</div>'
@@ -772,7 +781,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   }}
 }}
 </style>
-<div class="mwa-shell" data-shell-id="{escape(shell_id)}">
+<div class="mwa-shell" data-shell-id="{escape(shell_id)}" data-language="{escape(language)}">
   <header class="topbar">
     <div class="brand-row">
       <div class="brand-mark" aria-hidden="true"></div>
@@ -792,6 +801,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   </header>
   <aside class="sidebar" aria-label="Mwangaza navigation">
     <nav class="nav-stack">{nav}</nav>
+    <label class="period-control">Language<select data-language-selector>{language_options}</select></label>
     <div class="mode-stack" aria-label="Data origin modes">{mode_chips}</div>
   </aside>
   <main class="main">
@@ -1514,6 +1524,10 @@ def _format_history_value(value: Any) -> str:
     if isinstance(value, int | float):
         return f"{value:.2f}".rstrip("0").rstrip(".")
     return str(value)
+
+
+def _t(key: str, language: str) -> str:
+    return translate(key, language=language).value
 
 
 def _selected_region_profile(data: DashboardShellData) -> Any | None:

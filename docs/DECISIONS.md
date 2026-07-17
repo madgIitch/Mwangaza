@@ -387,3 +387,12 @@ Contexto: se aprobó el spec `sprint-37-forecast-confidence` (Sprint 37 - Foreca
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-38-multilingual-interface -->
+## 2026-07-17 · sprint-38-multilingual-interface aprobado
+
+Contexto: se aprobó el spec `sprint-38-multilingual-interface` (Sprint 38 - Multilingual Interface).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
