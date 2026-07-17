@@ -2332,7 +2332,7 @@
     {
       "id": "sprint-33-public-api",
       "name": "Sprint 33 - Public API",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.7.0",
       "estimated_hours": 6,
@@ -2360,12 +2360,12 @@
       ],
       "deliverable": "API de lectura documentada para integraciones.",
       "acceptance": [
-        "AC1: Existen endpoints `/health`, `/api/v1/regions`, `/api/v1/snapshots/latest`, `/api/v1/alerts` y `/api/v1/forecasts` cuando estén disponibles.",
-        "AC2: La API nunca inicia cálculos Earth Engine bajo una petición pública.",
-        "AC3: Las respuestas cumplen los contratos versionados.",
-        "AC4: Errores usan `{error:{code,message}}` sin stack traces.",
-        "AC5: Listados tienen límite máximo y paginación.",
-        "AC6: OpenAPI se genera automáticamente y contiene ejemplos."
+        "Existen `/health`, `/api/v1/regions`, `/api/v1/snapshots/latest`, `/api/v1/alerts`, `/api/v1/forecasts` y `/openapi.json`.",
+        "Ningun endpoint `/api/v1/**` inicia calculos Earth Engine ni llama al loader live bajo peticion publica.",
+        "Las respuestas publicas incluyen `schema_version` y campos contractuales estables.",
+        "Los errores usan `{error:{code,message}}` sin stack traces, rutas locales ni secretos.",
+        "Listados aceptan `limit` y `offset`, aplican limite maximo 100 y devuelven `total`.",
+        "OpenAPI se genera automaticamente como JSON y contiene ejemplos para los endpoints v1."
       ],
       "scope": [
         "src/mwangaza/api/**",
@@ -2383,7 +2383,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:39:50.944Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:39:58.215Z"
     },
     {
       "id": "sprint-34-audit-trail",
