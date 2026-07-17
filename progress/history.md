@@ -122,3 +122,8 @@
 - Outbox simulado multicanal con masking, dedupe y no-red por defecto.
 - Dashboard con preview simulada.
 - Validado con notification tests, UI, suite completa y gate del harness.
+## 2026-07-17T13:10:00Z - #sprint-36-forecast-model Sprint 36 - Forecast Model -> review_pending
+
+- Forecast baseline experimental determinista.
+- Backtest con MAE y error relativo seguro.
+- Validado con forecast tests, compile, suite completa y gate del harness.

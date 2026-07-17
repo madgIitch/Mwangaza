@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-35-notification-simulator - Sprint 35 - Notification Simulator** - estado: `review_pending`.
+Feature: **sprint-36-forecast-model - Sprint 36 - Forecast Model** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-35-notification-simulator - Sprint 35 - Notification Simulator
 
 ## Siguiente accion
 
-- Smoke visual: confirmar preview simulada y ausencia de datos de destinatario reales. Cerrar con `node .harness/spec.mjs done sprint-35-notification-simulator` si pasa.
+- Revisar que Sprint 37 agregue confianza antes de mostrar forecast como decision support. Cerrar con `node .harness/spec.mjs done sprint-36-forecast-model` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-35-notification-simulator - Sprint 35 - Notification Simulator
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.notifications.test_notification_simulator`
-- `uv run python -m unittest tests.ui.test_dashboard_shell`
+- `uv run python -m unittest tests.forecasting.test_forecast_model`
+- `uv run python -m compileall -q src tests app.py`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-35-notification-simulator`
+- `node .harness\gates.mjs sprint-36-forecast-model`

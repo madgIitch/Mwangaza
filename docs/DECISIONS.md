@@ -369,3 +369,12 @@ Contexto: se aprobó el spec `sprint-35-notification-simulator` (Sprint 35 - Not
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-36-forecast-model -->
+## 2026-07-17 · sprint-36-forecast-model aprobado
+
+Contexto: se aprobó el spec `sprint-36-forecast-model` (Sprint 36 - Forecast Model).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

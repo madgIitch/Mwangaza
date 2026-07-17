@@ -923,3 +923,23 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-36-forecast-model -->
+## sprint-36-forecast-model · Sprint 36 - Forecast Model
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/forecasting/**`
+  - `tests/forecasting/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
