@@ -10,6 +10,7 @@ from mwangaza.contracts import (
     Anomaly,
     Baseline,
     ContractValidationError,
+    ExposureEstimate,
     Forecast,
     IndicatorObservation,
     dumps_payload,
@@ -44,6 +45,7 @@ class ContractRoundtripTests(unittest.TestCase):
         self.assertEqual(loads_payload(_fixture("risk_snapshot.json")).payload_type, "risk_snapshot")
         self.assertEqual(loads_payload(_fixture("alert.json")).payload_type, "alert")
         self.assertIsInstance(loads_payload(_fixture("forecast.json")), Forecast)
+        self.assertIsInstance(loads_payload(_exposure_payload()), ExposureEstimate)
 
 
 class ContractValidationTests(unittest.TestCase):
@@ -112,9 +114,58 @@ class ContractValidationTests(unittest.TestCase):
         with self.assertRaisesRegex(ContractValidationError, "source"):
             loads_payload(payload)
 
+    def test_exposure_estimate_requires_potentially_exposed_metadata_and_demo_flag(self) -> None:
+        payload = _exposure_payload()
+        loaded = loads_payload(payload)
+
+        public = loaded.to_dict()
+        self.assertEqual(public["metric"], "potentially_exposed")
+        self.assertIn("source", public)
+        self.assertIn("source_year", public)
+        self.assertIn("resolution", public)
+        self.assertIn("method", public)
+        self.assertIn("quality_flag", public)
+        self.assertIn("is_demo", public)
+        self.assertNotIn("affected", json.dumps(public).lower())
+
+    def test_exposure_rejects_affected_terminology(self) -> None:
+        payload = _exposure_payload()
+        payload["metric"] = "affected"
+        with self.assertRaisesRegex(ContractValidationError, "potentially_exposed"):
+            loads_payload(payload)
+
+        payload = _exposure_payload()
+        payload["warnings"] = ["affected wording is not allowed"]
+        with self.assertRaisesRegex(ContractValidationError, "affected"):
+            loads_payload(payload)
+
 
 def _fixture(name: str) -> dict[str, object]:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
+
+
+def _exposure_payload() -> dict[str, object]:
+    return {
+        "payload_type": "exposure_estimate",
+        "schema_version": SCHEMA_VERSION,
+        "region_id": "som",
+        "period_start": "2026-07-01T00:00:00Z",
+        "period_end": "2026-07-15T00:00:00Z",
+        "metric": "potentially_exposed",
+        "population_estimate": 1180000.0,
+        "livelihood_estimate": 410000.0,
+        "rounded_value": "1.2M",
+        "precision_label": "rounded_to_100k",
+        "display_range": "1.1M-1.3M",
+        "source": "demo-population-grid",
+        "source_year": 2024,
+        "resolution": "1 km",
+        "method": "regional_fixture_sum",
+        "quality_flag": "ok",
+        "is_demo": True,
+        "warnings": [],
+        "metadata": {"fixture": "contract"},
+    }
 
 
 if __name__ == "__main__":

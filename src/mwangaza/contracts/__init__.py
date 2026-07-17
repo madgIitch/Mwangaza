@@ -14,13 +14,14 @@ INDICATOR_UNITS = {
     "rainfall_mm": "mm",
     "lst_c": "celsius",
     "composite_score": "score",
-    "exposure": "people_estimate",
+    "potentially_exposed": "people_estimate",
 }
 QUALITY_FLAGS = ("ok", "no_data", "insufficient_history", "invalid", "degraded")
 NULL_VALUE_FLAGS = ("no_data", "insufficient_history", "invalid")
 RISK_LEVELS = ("low", "watch", "warning", "emergency")
 ALERT_SEVERITIES = ("info", "watch", "warning", "critical")
 ALERT_STATUSES = ("draft", "active", "resolved", "cancelled")
+EXPOSURE_METHODS = ("regional_fixture_sum", "weighted_overlap", "not_available")
 
 Payload = TypeVar("Payload", bound="ContractPayload")
 RegionValidator = Callable[[str], object]
@@ -339,6 +340,74 @@ class Forecast(ContractPayload):
         _validate_source(self.source)
 
 
+@dataclass(frozen=True)
+class ExposureEstimate(ContractPayload):
+    payload_type: ClassVar[str] = "exposure_estimate"
+    region_id: str = ""
+    period_start: str = ""
+    period_end: str = ""
+    metric: str = "potentially_exposed"
+    population_estimate: float | None = None
+    livelihood_estimate: float | None = None
+    rounded_value: str = ""
+    precision_label: str = ""
+    display_range: str = ""
+    source: str = ""
+    source_year: int = 0
+    resolution: str = ""
+    method: str = ""
+    quality_flag: str = ""
+    is_demo: bool = False
+    warnings: tuple[str, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
+    schema_version: str = SCHEMA_VERSION
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> ExposureEstimate:
+        item = cls(
+            schema_version=_required_str(payload, "schema_version"),
+            region_id=_required_str(payload, "region_id"),
+            period_start=_required_str(payload, "period_start"),
+            period_end=_required_str(payload, "period_end"),
+            metric=_required_str(payload, "metric"),
+            population_estimate=_optional_number(payload, "population_estimate"),
+            livelihood_estimate=_optional_number(payload, "livelihood_estimate"),
+            rounded_value=str(payload.get("rounded_value", "")).strip(),
+            precision_label=_required_str(payload, "precision_label"),
+            display_range=str(payload.get("display_range", "")).strip(),
+            source=_required_str(payload, "source"),
+            source_year=_required_int(payload, "source_year"),
+            resolution=_required_str(payload, "resolution"),
+            method=_required_str(payload, "method"),
+            quality_flag=_required_str(payload, "quality_flag"),
+            is_demo=_required_bool(payload, "is_demo"),
+            warnings=tuple(_optional_str_list(payload, "warnings")),
+            metadata=_metadata(payload),
+        )
+        item.validate()
+        return item
+
+    def validate(self, region_validator: RegionValidator | None = None) -> None:
+        super().validate(region_validator)
+        _validate_region_id(self.region_id, region_validator)
+        _validate_period(self.period_start, self.period_end)
+        if self.metric != "potentially_exposed":
+            raise ContractValidationError("exposure metric must be potentially_exposed")
+        if self.method not in EXPOSURE_METHODS:
+            raise ContractValidationError(f"unsupported exposure method: {self.method}")
+        _validate_quality_flag(self.quality_flag)
+        _validate_source(self.source)
+        if self.source_year <= 0:
+            raise ContractValidationError("source_year must be positive")
+        if self.population_estimate is None and self.quality_flag == "ok":
+            raise ContractValidationError("ok exposure requires population_estimate")
+        _validate_optional_finite("population_estimate", self.population_estimate)
+        _validate_optional_finite("livelihood_estimate", self.livelihood_estimate)
+        lowered = json.dumps(self.to_dict(), sort_keys=True).lower()
+        if "affected" in lowered:
+            raise ContractValidationError("exposure payload must not use affected terminology")
+
+
 PAYLOAD_TYPES: dict[str, type[ContractPayload]] = {
     IndicatorObservation.payload_type: IndicatorObservation,
     Baseline.payload_type: Baseline,
@@ -346,6 +415,7 @@ PAYLOAD_TYPES: dict[str, type[ContractPayload]] = {
     RiskSnapshot.payload_type: RiskSnapshot,
     Alert.payload_type: Alert,
     Forecast.payload_type: Forecast,
+    ExposureEstimate.payload_type: ExposureEstimate,
 }
 
 
@@ -359,9 +429,13 @@ def loads_payload(raw: str | dict[str, Any]) -> ContractPayload:
     if not isinstance(data, dict):
         raise ContractValidationError("payload must be a JSON object")
     metadata = data.get("metadata")
-    if isinstance(metadata, dict) and metadata.get("fixture") and data.get("is_simulated") is not True:
-        raise ContractValidationError("canonical fixtures must set is_simulated=true")
     payload_type = _required_str(data, "payload_type")
+    if isinstance(metadata, dict) and metadata.get("fixture"):
+        if payload_type == ExposureEstimate.payload_type:
+            if data.get("is_demo") is not True:
+                raise ContractValidationError("exposure fixtures must set is_demo=true")
+        elif data.get("is_simulated") is not True:
+            raise ContractValidationError("canonical fixtures must set is_simulated=true")
     cls = PAYLOAD_TYPES.get(payload_type)
     if cls is None:
         raise ContractValidationError(f"unsupported payload_type: {payload_type}")
@@ -472,6 +546,13 @@ def _optional_number(payload: dict[str, Any], field_name: str) -> float | None:
 def _required_list(payload: dict[str, Any], field_name: str) -> list[str]:
     value = payload.get(field_name)
     if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        raise ContractValidationError(f"{field_name} must be a list of strings")
+    return value
+
+
+def _optional_str_list(payload: dict[str, Any], field_name: str) -> list[str]:
+    value = payload.get(field_name, [])
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ContractValidationError(f"{field_name} must be a list of strings")
     return value
 

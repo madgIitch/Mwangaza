@@ -92,3 +92,8 @@
 
 ## 2026-07-14T16:48:00+02:00 - #sprint-5-current-ndvi Sprint 5 - Current NDVI -> review_pending
 - 1 intento - agente codex
+## 2026-07-17T11:40:00Z - #sprint-30-exposure-estimation Sprint 30 - Exposure Estimation -> review_pending
+
+- Contrato `ExposureEstimate` y metrica `potentially_exposed`.
+- Dashboard con fuente, ano, resolucion, metodo, calidad, demo/sintetico y warnings.
+- Validado con contratos, UI, suite completa y gate del harness.

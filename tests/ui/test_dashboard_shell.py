@@ -384,6 +384,68 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("Current rainfall ranks #2 of 5 comparable periods", html)
         self.assertIn("does not infer impacts", html)
 
+    def test_exposure_estimate_uses_potentially_exposed_metadata_and_demo_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            payloads = [
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="warning",
+                    score=66.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-15T00:00:00Z",
+                ).to_dict(),
+                _exposure_payload(
+                    region_id="som",
+                    population=1180000.0,
+                    display_range="1.1M-1.3M",
+                    warnings=["mixed source years: population 2024, livestock 2021"],
+                ),
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+            html = build_dashboard_shell_html(data)
+
+        exposure = next(metric for metric in data.metrics if metric.label == "potentially_exposed")
+        self.assertEqual(exposure.value, "1.1M-1.3M")
+        self.assertIn("source demo-population-grid", exposure.detail)
+        self.assertIn("year 2024", exposure.detail)
+        self.assertIn("1 km", exposure.detail)
+        self.assertIn("regional_fixture_sum", exposure.detail)
+        self.assertIn("quality ok", exposure.detail)
+        self.assertIn("demo/synthetic", exposure.detail)
+        self.assertIn("warning: mixed source years", exposure.detail)
+        self.assertIn("potentially_exposed", html)
+        self.assertIn("1.1M-1.3M", html)
+        self.assertIn("demo/synthetic", html)
+        self.assertNotIn("Exposed population", html)
+
+    def test_invalid_exposure_dataset_is_hidden_without_invented_value(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            exposure = _exposure_payload(region_id="som", population=1180000.0)
+            exposure["source"] = "C:\\Users\\secret\\population.csv"
+            payloads = [
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="watch",
+                    score=44.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-15T00:00:00Z",
+                ).to_dict(),
+                exposure,
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        exposure_metric = next(metric for metric in data.metrics if metric.label == "potentially_exposed")
+        self.assertEqual(exposure_metric.value, "No data")
+        self.assertEqual(exposure_metric.detail, "No valid exposure dataset")
+
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
@@ -675,6 +737,36 @@ def _signal_payload(
         "quality_flag": quality_flag,
         "is_simulated": False,
         "metadata": {"updated_at": period_end, "baseline_value": baseline},
+    }
+
+
+def _exposure_payload(
+    *,
+    region_id: str,
+    population: float,
+    display_range: str = "1.1M-1.3M",
+    warnings: list[str] | None = None,
+) -> dict[str, object]:
+    return {
+        "payload_type": "exposure_estimate",
+        "schema_version": "mwangaza.contracts.v1",
+        "region_id": region_id,
+        "period_start": "2026-07-01T00:00:00Z",
+        "period_end": "2026-07-15T00:00:00Z",
+        "metric": "potentially_exposed",
+        "population_estimate": population,
+        "livelihood_estimate": 410000.0,
+        "rounded_value": "1.2M",
+        "precision_label": "rounded_to_100k",
+        "display_range": display_range,
+        "source": "demo-population-grid",
+        "source_year": 2024,
+        "resolution": "1 km",
+        "method": "regional_fixture_sum",
+        "quality_flag": "ok",
+        "is_demo": True,
+        "warnings": warnings or [],
+        "metadata": {"fixture": "ui"},
     }
 
 

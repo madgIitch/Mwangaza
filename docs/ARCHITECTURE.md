@@ -770,3 +770,31 @@ Objetivo no negociable:
   - `tests/data/**`
   - `tests/fixtures/**`
 
+<!-- harness:sprint-30-exposure-estimation -->
+## sprint-30-exposure-estimation · Sprint 30 - Exposure Estimation
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+

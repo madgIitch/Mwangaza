@@ -11,6 +11,7 @@ from mwangaza import PROJECT_NAME, TAGLINE
 from mwangaza.actions import recommend_actions
 from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import RiskSnapshot
+from mwangaza.data.exposure import display_exposure_value, exposure_detail, exposure_from_payload
 from mwangaza.maps import RegionalRiskMap, build_regional_risk_map, demo_regional_risk_map
 from mwangaza.regions import COUNTRY_LEVEL, PILOT_LEVEL, list_regions
 from mwangaza.services.live_gee_dashboard import load_live_gee_dashboard_payloads
@@ -292,6 +293,7 @@ def _dashboard_data_from_payloads(
     risks = _risk_snapshots(period_payloads)
     snapshot = _latest_indicator_snapshot(period_payloads, region_id=selected_region_id)
     signals = _signals_for_view(period_payloads, snapshot, region_id=selected_region_id)
+    exposure = _latest_exposure_estimate(period_payloads, region_id=selected_region_id)
     if risk is None and snapshot is None and not signals:
         return None
 
@@ -332,7 +334,7 @@ def _dashboard_data_from_payloads(
             source_mode=mode,
         ),
         navigation=_navigation(),
-        metrics=_metrics_from_materialized(risk, signals),
+        metrics=_metrics_from_materialized(risk, signals, exposure),
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
         region_profiles=region_profiles,
@@ -386,6 +388,7 @@ def _temporal_period_from_payloads(
     risks = _risk_snapshots(payloads)
     snapshot = _latest_indicator_snapshot(payloads, region_id=selected_region_id)
     signals = _signals_for_view(payloads, snapshot, region_id=selected_region_id)
+    exposure = _latest_exposure_estimate(payloads, region_id=selected_region_id)
     if risk is None and snapshot is None and not signals:
         return None
     region_id = _first_text(
@@ -410,7 +413,7 @@ def _temporal_period_from_payloads(
             selected_region_id=(region_id or "som").lower(),
             source_mode=mode,
         ),
-        metrics=_metrics_from_materialized(risk, signals),
+        metrics=_metrics_from_materialized(risk, signals, exposure),
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
         region_profiles=_region_profiles_from_payloads(payloads, active_alerts, trend_payloads=comparison_payloads),
@@ -493,6 +496,18 @@ def _risk_snapshots(payloads: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any
     return tuple(payload for payload in payloads if payload.get("payload_type") == "risk_snapshot")
 
 
+def _latest_exposure_estimate(
+    payloads: tuple[dict[str, Any], ...],
+    *,
+    region_id: str = "",
+) -> dict[str, Any] | None:
+    estimates = [payload for payload in payloads if payload.get("payload_type") == "exposure_estimate"]
+    if region_id:
+        estimates = [payload for payload in estimates if payload.get("region_id") == region_id]
+    valid = [payload for payload in estimates if exposure_from_payload(payload) is not None]
+    return max(valid, key=_payload_sort_time, default=None)
+
+
 def _region_profiles_from_payloads(
     payloads: tuple[dict[str, Any], ...],
     active_alerts: tuple[AlertSummary, ...],
@@ -513,6 +528,7 @@ def _region_profiles_from_payloads(
         risk = _latest_risk_snapshot(payloads, region_id=region_id)
         snapshot = _latest_indicator_snapshot(payloads, region_id=region_id)
         signals = _signals_for_view(payloads, snapshot, region_id=region_id)
+        exposure = _latest_exposure_estimate(payloads, region_id=region_id)
         alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
         recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
         comparison_payloads = trend_payloads or payloads
@@ -520,7 +536,7 @@ def _region_profiles_from_payloads(
             RegionProfile(
                 region_id=region_id,
                 label=_region_label(region_id),
-                metrics=_metrics_from_materialized(risk, signals),
+                metrics=_metrics_from_materialized(risk, signals, exposure),
                 alerts=alerts,
                 recommendations=recommendations or ("No action recommendations are available yet.",),
                 trends=_trends_for_region(comparison_payloads, region_id),
@@ -1116,6 +1132,7 @@ def _baseline_value(signal: dict[str, Any]) -> float | None:
 def _metrics_from_materialized(
     risk: dict[str, Any] | None,
     signals: tuple[dict[str, Any], ...],
+    exposure: dict[str, Any] | None = None,
 ) -> tuple[RegionMetric, ...]:
     by_indicator = {str(signal.get("indicator")): signal for signal in signals}
     return (
@@ -1124,7 +1141,7 @@ def _metrics_from_materialized(
         _metric_from_signal(by_indicator.get("lst_c"), "LST anomaly", "C"),
         _risk_metric(risk),
         _quality_metric(risk, signals),
-        _metric_from_signal(by_indicator.get("exposure"), "Exposed population", "est."),
+        _exposure_metric(exposure),
     )
 
 
@@ -1168,6 +1185,29 @@ def _quality_metric(risk: dict[str, Any] | None, signals: tuple[dict[str, Any], 
     return RegionMetric("Data quality", "Good", "", "normal", "Materialized indicators available")
 
 
+def _exposure_metric(exposure: dict[str, Any] | None) -> RegionMetric:
+    estimate = exposure_from_payload(exposure)
+    if estimate is None:
+        return RegionMetric(
+            "potentially_exposed",
+            "No data",
+            "",
+            "unknown",
+            "No valid exposure dataset",
+        )
+    value = display_exposure_value(estimate)
+    if value == "No data":
+        return RegionMetric("potentially_exposed", "No data", "", "unknown", exposure_detail(estimate))
+    severity = "watch" if estimate.warnings else _quality_severity(estimate.quality_flag)
+    return RegionMetric(
+        "potentially_exposed",
+        value,
+        "est.",
+        severity,
+        exposure_detail(estimate),
+    )
+
+
 def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
     status_by_mode = {
         "live": DataStatus(
@@ -1198,7 +1238,14 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         RegionMetric("LST anomaly", "+2.4", "C", "warning", "Surface heat elevated"),
         RegionMetric("Composite score", "78", "/100", "critical", "High drought risk"),
         RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
-        RegionMetric("Exposed population", "1.2M", "est.", "watch", "Exposure estimate"),
+        RegionMetric(
+            "potentially_exposed",
+            "1.1M-1.3M",
+            "est.",
+            "watch",
+            "potentially_exposed | source demo-population-grid | year 2024 | 1 km | "
+            "regional_fixture_sum | quality ok | demo/synthetic",
+        ),
     )
     alerts = _prioritized_alerts((
         AlertSummary(
@@ -1306,7 +1353,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                     RegionMetric("LST anomaly", "+1.6", "C", "watch", "Surface heat elevated"),
                     RegionMetric("Composite score", "61", "/100", "warning", "Risk level: warning"),
                     RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
-                    RegionMetric("Exposed population", "No data", "", "unknown", "No materialized value"),
+                    RegionMetric("potentially_exposed", "No data", "", "unknown", "No valid exposure dataset"),
                 ),
                 (alerts[1],),
                 ("Preposition supplies and brief partners.",),
@@ -1338,7 +1385,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                     RegionMetric("LST anomaly", "+0.8", "C", "normal", "Surface heat near baseline"),
                     RegionMetric("Composite score", "38", "/100", "watch", "Risk level: watch"),
                     RegionMetric("Data quality", "Degraded", "", "warning", "Use with caution"),
-                    RegionMetric("Exposed population", "No data", "", "unknown", "No materialized value"),
+                    RegionMetric("potentially_exposed", "No data", "", "unknown", "No valid exposure dataset"),
                 ),
                 (alerts[2],),
                 ("Prepare early action checklist.",),

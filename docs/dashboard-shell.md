@@ -27,6 +27,8 @@ layout direction without embedding mock data or future-only interactions:
   available, explicit gaps and quality/anomaly details;
 - historical comparison for the selected region, limited to same-window
   seasonal periods already present in live/cache/demo payloads;
+- potential exposure card labelled `potentially_exposed`, with source, year,
+  resolution, method, quality and demo/synthetic status;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,
@@ -57,6 +59,11 @@ payload periods only when the start and end month/day match exactly. Rows with
 select up to three comparable periods in the browser; the current period remains
 the reference. The narrative is intentionally limited to observed satellite
 differences and does not infer causes, measured impacts or affected population.
+
+Exposure estimates are rendered only from valid `exposure_estimate` payloads.
+The visible metric is `potentially_exposed`; invalid or missing datasets render
+as `No data`. Demo/synthetic status, source, year, resolution, method and
+quality remain visible with the value or range.
 
 Loader failures render a safe fallback shell. The fallback intentionally omits exception text, traceback, local paths and secret-like values.
 

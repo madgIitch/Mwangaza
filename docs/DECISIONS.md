@@ -315,3 +315,12 @@ Contexto: se aprobó el spec `sprint-29-historical-comparison` (Sprint 29 - Hist
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-30-exposure-estimation -->
+## 2026-07-17 · sprint-30-exposure-estimation aprobado
+
+Contexto: se aprobó el spec `sprint-30-exposure-estimation` (Sprint 30 - Exposure Estimation).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
