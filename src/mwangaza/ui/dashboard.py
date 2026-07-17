@@ -61,17 +61,19 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
     return f"""
 <style>
 :root {{
-  --mwa-bg: #f5f7f6;
+  --mwa-bg: #f6f8fa;
   --mwa-panel: #ffffff;
-  --mwa-border: #dfe7e1;
-  --mwa-text: #17231c;
-  --mwa-muted: #647067;
-  --mwa-green: #1f7a4d;
-  --mwa-green-soft: #e7f4ed;
-  --mwa-yellow: #f4c542;
-  --mwa-orange: #e68032;
-  --mwa-red: #c93636;
-  --mwa-blue: #3b6f9e;
+  --mwa-border: #dfe4ea;
+  --mwa-border-soft: #e8ecf1;
+  --mwa-text: #0f1727;
+  --mwa-muted: #667085;
+  --mwa-green: #18853b;
+  --mwa-green-soft: #e9f5eb;
+  --mwa-yellow: #f7bb0c;
+  --mwa-orange: #ff8513;
+  --mwa-red: #e9322c;
+  --mwa-blue: #1d5fbf;
+  --mwa-shadow: 0 1px 4px rgba(24, 35, 52, .11);
 }}
 html, body, [data-testid="stAppViewContainer"] {{
   background: var(--mwa-bg);
@@ -84,66 +86,105 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .mwa-shell {{
   display: grid;
-  grid-template-columns: minmax(188px, 230px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-rows: 84px minmax(0, 1fr) 48px;
   width: 100%;
   max-width: 1366px;
   margin: 0 auto;
-  padding: 8px;
+  min-height: 900px;
   font-family: Inter, Segoe UI, Arial, sans-serif;
+  background: linear-gradient(#fbfcfd, #f7f9fb);
 }}
 .sidebar, .topbar, .panel, .metric-card {{
   background: var(--mwa-panel);
   border: 1px solid var(--mwa-border);
   border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(25, 42, 31, 0.06);
+  box-shadow: var(--mwa-shadow);
+}}
+.topbar {{
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-height: 84px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  box-shadow: none;
 }}
 .sidebar {{
-  min-height: 720px;
-  padding: 16px;
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  padding: 20px 13px 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  box-shadow: none;
 }}
 .brand-row {{
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }}
 .brand-mark {{
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   background: linear-gradient(135deg, var(--mwa-yellow) 0 45%, var(--mwa-green) 46% 100%);
 }}
 .brand-title {{
   margin: 0;
-  font-size: 20px;
+  font-size: 27px;
   line-height: 1.1;
+  color: #17233b;
 }}
 .tagline {{
-  margin: 4px 0 0;
-  color: var(--mwa-muted);
-  font-size: 12px;
+  margin: 6px 0 0;
+  color: #4e5970;
+  font-size: 13px;
 }}
 .nav-stack {{
   display: grid;
-  gap: 6px;
+  gap: 3px;
 }}
 .nav-item {{
+  position: relative;
+  display: flex;
+  align-items: center;
   color: var(--mwa-text);
   text-decoration: none;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 0 18px;
   border-radius: 8px;
   font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }}
 .nav-item.is-active {{
-  background: var(--mwa-green-soft);
-  color: var(--mwa-green);
+  background: linear-gradient(90deg, #f0f7f1, #f5f8f5);
+  color: #08742b;
   font-weight: 700;
+}}
+.nav-item.is-active::before {{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 4px;
+  border-radius: 4px;
+  background: #0a8a33;
 }}
 .mode-stack {{
   margin-top: auto;
@@ -168,21 +209,48 @@ html, body, [data-testid="stAppViewContainer"] {{
   color: var(--mwa-green);
   font-weight: 700;
 }}
-.main {{
-  display: grid;
-  gap: 14px;
-}}
-.topbar {{
-  min-height: 74px;
-  padding: 14px 16px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+.status-band {{
+  justify-self: center;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 24px;
+  background: #f3f5f8;
+  color: #384259;
+  font-size: 12px;
+}}
+.status-divider {{
+  width: 1px;
+  height: 18px;
+  background: #d8dde5;
+}}
+.status-mode {{
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--mwa-green-soft);
+  color: var(--mwa-green);
+  font-size: 12px;
+  font-weight: 800;
+}}
+.main {{
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  gap: 12px;
+  padding: 13px 14px 8px 15px;
+  overflow: hidden;
 }}
 .page-title {{
   margin: 0;
-  font-size: 24px;
+  font-size: 18px;
   line-height: 1.1;
 }}
 .status-row {{
@@ -217,18 +285,32 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .workspace {{
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.8fr);
+  grid-template-columns: minmax(660px, 1.28fr) minmax(360px, 0.72fr);
   gap: 14px;
+  min-height: 0;
 }}
 .panel {{
-  padding: 14px;
+  padding: 0;
+  overflow: hidden;
 }}
 .panel h2 {{
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 16px;
 }}
+.panel-header {{
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--mwa-border);
+}}
+.panel-body {{
+  padding: 12px;
+}}
 .map-panel {{
-  min-height: 284px;
+  min-height: 416px;
 }}
 .regional-risk-map {{
   display: grid;
@@ -236,7 +318,7 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .regional-risk-svg {{
   width: 100%;
-  height: 240px;
+  height: 300px;
   border-radius: 8px;
   border: 1px solid #d7e0da;
   background: #eef4f0;
@@ -310,7 +392,6 @@ html, body, [data-testid="stAppViewContainer"] {{
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
 }}
 .region-toolbar select {{
   border: 1px solid var(--mwa-border);
@@ -321,10 +402,10 @@ html, body, [data-testid="stAppViewContainer"] {{
   min-width: 150px;
 }}
 .region-detail {{
-  margin-top: 10px;
+  min-height: 220px;
 }}
 .region-detail h3 {{
-  margin: 0;
+  margin: 10px 0 0;
   font-size: 16px;
 }}
 .region-detail p {{
@@ -375,18 +456,20 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .metrics-grid {{
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
 }}
 .metric-card {{
-  padding: 12px;
-  min-height: 116px;
+  padding: 10px 9px 8px;
+  min-height: 106px;
   box-shadow: none;
+  text-align: center;
 }}
 .metric-card strong {{
   display: block;
-  margin-top: 8px;
-  font-size: 22px;
+  margin-top: 7px;
+  font-size: 21px;
+  font-weight: 700;
 }}
 .metric-card small {{
   margin-left: 3px;
@@ -395,7 +478,7 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .metric-label, .metric-card p {{
   color: var(--mwa-muted);
-  font-size: 12px;
+  font-size: 11px;
 }}
 .metric-card p {{
   margin: 8px 0 0;
@@ -406,7 +489,7 @@ html, body, [data-testid="stAppViewContainer"] {{
 .metric-card[data-severity="normal"] {{ border-left: 4px solid var(--mwa-green); }}
 .alert-list {{
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }}
 .alert-item {{
   border: 1px solid var(--mwa-border);
@@ -435,29 +518,73 @@ html, body, [data-testid="stAppViewContainer"] {{
   margin: 0;
   padding-left: 18px;
 }}
+.side-column {{
+  display: grid;
+  grid-template-rows: minmax(190px, auto) minmax(160px, auto) minmax(105px, auto);
+  gap: 12px;
+}}
+.main-column {{
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 12px;
+  min-width: 0;
+}}
+.footer {{
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 24px 0 274px;
+  background: #fff;
+  border-top: 1px solid #e2e6eb;
+  color: #4e5b70;
+  font-size: 10px;
+}}
 .footer-note {{
   color: var(--mwa-muted);
   font-size: 11px;
 }}
-@media (max-width: 900px) {{
-  .mwa-shell, .workspace {{
+@media (max-width: 1120px) {{
+  .mwa-shell {{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }}
+  .topbar, .sidebar, .main, .footer {{
+    grid-column: 1;
+  }}
+  .topbar {{
     grid-template-columns: 1fr;
   }}
   .sidebar {{
-    min-height: auto;
+    grid-row: 2;
+    border-right: 0;
+    border-bottom: 1px solid var(--mwa-border);
   }}
+  .main {{
+    grid-row: 3;
+  }}
+  .footer {{
+    grid-row: 4;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }}
+  .workspace {{
+    grid-template-columns: 1fr;
+  }}
+  .metrics-grid {{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }}
+}}
+@media (max-width: 560px) {{
   .metrics-grid {{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }}
 }}
-@media (max-width: 560px) {{
-  .metrics-grid, .topbar {{
-    grid-template-columns: 1fr;
-  }}
-}}
 </style>
 <div class="mwa-shell">
-  <aside class="sidebar" aria-label="Mwangaza navigation">
+  <header class="topbar">
     <div class="brand-row">
       <div class="brand-mark" aria-hidden="true"></div>
       <div>
@@ -465,73 +592,75 @@ html, body, [data-testid="stAppViewContainer"] {{
         <p class="tagline">{escape(data.tagline)}</p>
       </div>
     </div>
+    <div class="status-band" aria-label="Data status">
+      <span><strong>Data source:</strong> {escape(data.data_status.source)}</span>
+      <span class="status-divider"></span>
+      <span><strong>Last update:</strong> {escape(data.data_status.last_updated)}</span>
+      <span class="status-divider"></span>
+      <span><strong>{escape(data.data_status.message)}</strong></span>
+    </div>
+    <div class="status-mode" data-mode="{escape(data.data_status.mode)}">{escape(data.data_status.mode.upper())}</div>
+  </header>
+  <aside class="sidebar" aria-label="Mwangaza navigation">
     <nav class="nav-stack">{nav}</nav>
     <div class="mode-stack" aria-label="Data origin modes">{mode_chips}</div>
   </aside>
   <main class="main">
     {error_banner}
-    <header class="topbar">
-      <div>
-        <h2 class="page-title">Regional Drought Operations</h2>
-        <div class="status-row">
-          <span class="status-pill" data-freshness="{escape(data.data_status.freshness)}">
-            {escape(data.data_status.message)}
-          </span>
-          <span class="status-pill">{escape(data.data_status.source)}</span>
-          <span class="timestamp">Last update: {escape(data.data_status.last_updated)}</span>
-        </div>
-      </div>
-      <div class="status-pill" data-mode="{escape(data.data_status.mode)}">
-        {escape(data.data_status.mode.upper())}
-      </div>
-    </header>
     <section class="workspace">
       <div class="main-column">
         <section class="panel map-panel" id="overview">
-          <h2>Regional Risk Map - IGAD</h2>
-          {risk_map}
-          <div class="region-readout" aria-live="polite">
-            <strong data-region-readout-name>{escape(selected_region.name)}</strong>
-            <span data-region-readout-detail>
-              Score: {escape(selected_region.score_label)} | Level: {escape(selected_region.color_level)} |
-              Period: {escape(selected_region.period)} | Quality: {escape(selected_region.quality_flag)}
-            </span>
+          <div class="panel-header"><h2>Regional Risk Map - IGAD</h2></div>
+          <div class="panel-body">
+            {risk_map}
+            <div class="region-readout" aria-live="polite">
+              <strong data-region-readout-name>{escape(selected_region.name)}</strong>
+              <span data-region-readout-detail>
+                Score: {escape(selected_region.score_label)} | Level: {escape(selected_region.color_level)} |
+                Period: {escape(selected_region.period)} | Quality: {escape(selected_region.quality_flag)}
+              </span>
+            </div>
+            <p class="footer-note">Selected region: <span data-selected-region-label>{escape(data.selected_region)}</span></p>
           </div>
-          <p class="footer-note">Selected region: <span data-selected-region-label>{escape(data.selected_region)}</span></p>
         </section>
         <section class="panel region-detail" id="region">
-          <div class="region-toolbar">
+          <div class="panel-header region-toolbar">
             <div>
               <h2>Region</h2>
-              <p>Country drilldown from loaded dashboard payloads.</p>
             </div>
             <label>
               <span class="footer-note">Country</span>
               <select data-region-selector>{region_options}</select>
             </label>
           </div>
-          <div data-region-detail>{region_panel}</div>
+          <div class="panel-body" data-region-detail>{region_panel}</div>
         </section>
         <section class="metrics-grid" data-region-metrics>{metrics}</section>
       </div>
       <aside class="side-column">
         <section class="panel" id="alerts">
-          <h2>Active Alerts</h2>
-          {alerts}
+          <div class="panel-header"><h2>Active Alerts</h2></div>
+          <div class="panel-body">{alerts}</div>
         </section>
         <section class="panel" id="reports">
-          <h2>Early Action Recommendations</h2>
-          <ul class="recommendations">{recommendations}</ul>
+          <div class="panel-header"><h2>Early Action Recommendations</h2></div>
+          <div class="panel-body"><ul class="recommendations">{recommendations}</ul></div>
         </section>
         <section class="panel" id="about">
-          <h2>About</h2>
-          <p class="footer-note">
-            Prototype dashboard shell. Observed, cached and demo data are labelled separately.
-          </p>
+          <div class="panel-header"><h2>About</h2></div>
+          <div class="panel-body">
+            <p class="footer-note">
+              Prototype dashboard shell. Observed, cached and demo data are labelled separately.
+            </p>
+          </div>
         </section>
       </aside>
     </section>
   </main>
+  <footer class="footer">
+    <div>Mwangaza is a decision-support prototype. Use satellite observations alongside local knowledge.</div>
+    <div>IGAD regional drought operations</div>
+  </footer>
 </div>
 <script type="application/json" data-region-profiles>{region_profiles_json}</script>
 <script>

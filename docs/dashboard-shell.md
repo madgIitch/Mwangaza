@@ -11,13 +11,18 @@ Sprint 22 replaces the foundation placeholder with the first operational Streaml
 
 ## Visual model
 
-The shell follows the approved visual reference without embedding the reference image:
+The shell follows the approved visual reference and the local `mwangaza-mockup/`
+layout direction without embedding mock data or future-only interactions:
 
+- top status bar with brand, source, last update and freshness;
 - left navigation with `Overview`, `Region`, `Alerts`, `Reports` and `About`;
-- top status bar with source, last update and freshness;
-- regional map placeholder, active alerts, regional metrics and recommendations;
 - regional risk choropleth, active alerts, regional metrics and recommendations;
+- country drilldown and subnational pilot panel backed by loaded dashboard payloads;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
+
+Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,
+language switching and low-bandwidth mode remain out of the active dashboard until
+their own specs are approved.
 
 ## Data states
 

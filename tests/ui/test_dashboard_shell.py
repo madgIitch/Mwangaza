@@ -59,6 +59,16 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("Last update:", html)
         self.assertIn("Data is current", html)
 
+    def test_shell_uses_mockup_inspired_operational_layout(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn('class="status-band"', html)
+        self.assertIn('class="sidebar"', html)
+        self.assertIn('class="workspace"', html)
+        self.assertIn('class="side-column"', html)
+        self.assertIn('class="footer"', html)
+        self.assertIn("IGAD regional drought operations", html)
+
     def test_navigation_contains_required_sections(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
 
