@@ -31,6 +31,8 @@ layout direction without embedding mock data or future-only interactions:
   resolution, method, quality and demo/synthetic status;
 - executive report action with deterministic filename and optional configured
   dashboard QR link;
+- visible snapshot CSV/JSON export labels with row limit and geometry omitted by
+  default;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,
@@ -71,6 +73,10 @@ The executive report panel uses the selected in-memory dashboard snapshot. It
 does not query Earth Engine or recalculate indicators. The generated filename is
 deterministic, and the QR status appears only when `MWANGAZA_DASHBOARD_URL`
 contains a public URL.
+
+CSV/JSON export labels use the same selected in-memory snapshot. Exports are
+row-limited, keep null values as null/empty instead of zero, and omit geometry
+unless a future approved flow requests simplified UI geometry explicitly.
 
 Loader failures render a safe fallback shell. The fallback intentionally omits exception text, traceback, local paths and secret-like values.
 

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from html import escape
 from typing import Any
 
+from mwangaza.exports import build_visible_export, safe_export_filename
 from mwangaza.reports import build_executive_report_context, safe_report_filename
 from mwangaza.services.dashboard_shell import (
     DashboardShellData,
@@ -1380,9 +1381,24 @@ def _render_report_action(data: DashboardShellData) -> str:
         '<div class="report-action" data-report-filename="{filename}">'
         "<p class=\"footer-note\">PDF preserves the selected snapshot, sources, versions, quality and limitations.</p>"
         "<p><strong>{filename}</strong></p>"
+        "{export}"
         "{qr}"
         "</div>"
-    ).format(filename=escape(safe_report_filename(context)), qr=qr)
+    ).format(filename=escape(safe_report_filename(context)), export=_render_export_action(data), qr=qr)
+
+
+def _render_export_action(data: DashboardShellData) -> str:
+    export = build_visible_export(data, max_rows=500, include_geometry=False)
+    return (
+        '<p class="footer-note" data-export-summary="visible-snapshot">'
+        "CSV/JSON export the visible snapshot only; row limit 500; geometry omitted by default."
+        "</p>"
+        '<p><span data-export-filename="csv">{csv}</span> | '
+        '<span data-export-filename="json">{json}</span></p>'
+    ).format(
+        csv=escape(safe_export_filename(export, "csv")),
+        json=escape(safe_export_filename(export, "json")),
+    )
 
 
 def _render_alert_evidence(items: tuple[tuple[str, str], ...]) -> str:

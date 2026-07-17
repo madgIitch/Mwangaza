@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-31-executive-pdf-report - Sprint 31 - Executive PDF Report** - estado: `review_pending`.
+Feature: **sprint-32-data-export - Sprint 32 - Data Export** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-31-executive-pdf-report - Sprint 31 - Executive PDF Report** -
 
 ## Siguiente accion
 
-- Smoke visual: abrir dashboard y confirmar que el panel Executive Report comunica filename, snapshot, fuentes/limitaciones y QR configurado solo cuando aplica. Cerrar con `node .harness/spec.mjs done sprint-31-executive-pdf-report` si pasa.
+- Smoke visual: confirmar que el panel de exportacion comunica snapshot visible, limite y geometria omitida. Cerrar con `node .harness/spec.mjs done sprint-32-data-export` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-31-executive-pdf-report - Sprint 31 - Executive PDF Report** -
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.reports.test_executive_report`
+- `uv run python -m unittest tests.exports.test_visible_export`
 - `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-31-executive-pdf-report`
+- `node .harness\gates.mjs sprint-32-data-export`

@@ -333,3 +333,12 @@ Contexto: se aprobó el spec `sprint-31-executive-pdf-report` (Sprint 31 - Execu
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-32-data-export -->
+## 2026-07-17 · sprint-32-data-export aprobado
+
+Contexto: se aprobó el spec `sprint-32-data-export` (Sprint 32 - Data Export).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

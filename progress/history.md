@@ -102,3 +102,8 @@
 - Reporte ejecutivo determinista desde snapshot del dashboard.
 - HTML, bytes PDF, filename seguro y QR opcional por URL configurada.
 - Validado con reportes, UI, suite completa y gate del harness.
+## 2026-07-17T12:10:00Z - #sprint-32-data-export Sprint 32 - Data Export -> review_pending
+
+- Exportacion segura CSV/JSON del snapshot visible.
+- Schema, metadata, nulls, saneamiento, limite de filas y geometria opcional.
+- Validado con export tests, UI, suite completa y gate del harness.
