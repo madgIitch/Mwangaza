@@ -2263,7 +2263,7 @@
     {
       "id": "sprint-32-data-export",
       "name": "Sprint 32 - Data Export",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.6.3",
       "estimated_hours": 3,
@@ -2291,12 +2291,12 @@
       ],
       "deliverable": "Exportación segura de snapshots agregados.",
       "acceptance": [
-        "AC1: CSV y JSON contienen los mismos valores y unidades visibles.",
-        "AC2: El JSON incluye schema_version y metadata de fuente.",
-        "AC3: No se exportan secretos, rutas internas ni credenciales.",
-        "AC4: Las geometrías solo se incluyen mediante opción explícita y simplificadas.",
-        "AC5: El endpoint o botón limita volumen y período.",
-        "AC6: Valores null se conservan como null o campo vacío, no cero."
+        "CSV y JSON contienen los mismos valores, unidades y calidades visibles para el snapshot exportado.",
+        "El JSON incluye `schema_version` y metadata de fuente no sensible.",
+        "No se exportan secretos, rutas internas, credenciales ni errores crudos.",
+        "Las geometrías se omiten por defecto y solo aparecen simplificadas con opcion explicita.",
+        "La exportacion limita volumen y periodo mediante `max_rows` y snapshot seleccionado.",
+        "Valores `None` se conservan como `null` en JSON y campo vacio en CSV, nunca como cero."
       ],
       "scope": [
         "src/mwangaza/exports/**",
@@ -2319,19 +2319,15 @@
         "src/mwangaza/api/**",
         "src/mwangaza/contracts/**",
         "src/mwangaza/db/**",
-        "tests/api/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/api/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:36:18.023Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:36:24.641Z"
     },
     {
       "id": "sprint-33-public-api",
