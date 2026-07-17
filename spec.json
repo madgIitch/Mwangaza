@@ -2060,7 +2060,7 @@
     {
       "id": "sprint-29-historical-comparison",
       "name": "Sprint 29 - Historical Comparison",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.6.0",
       "estimated_hours": 5,
