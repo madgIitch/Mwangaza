@@ -2455,7 +2455,7 @@
     {
       "id": "sprint-35-notification-simulator",
       "name": "Sprint 35 - Notification Simulator",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.7.2",
       "estimated_hours": 4,
@@ -2483,12 +2483,12 @@
       ],
       "deliverable": "Flujo demostrable de notificación con outbox auditable.",
       "acceptance": [
-        "AC1: Por defecto ningún mensaje sale a una red externa.",
-        "AC2: Cada envío simulado guarda canal, destinatario enmascarado, contenido, alerta y estado.",
-        "AC3: Solo niveles configurados crean notificaciones.",
-        "AC4: Reprocesar una alerta no duplica mensajes con la misma clave.",
-        "AC5: La UI permite abrir la vista previa.",
-        "AC6: Los adapters reales requieren feature flag y secretos separados."
+        "Por defecto ningun mensaje sale a una red externa ni se invoca adapter real.",
+        "Cada envio simulado guarda canal, destinatario enmascarado, contenido, alerta, estado y dedupe key.",
+        "Solo severidades configuradas crean notificaciones.",
+        "Reprocesar una alerta no duplica mensajes con la misma clave.",
+        "La UI muestra una vista previa del mensaje simulado y estado de outbox.",
+        "Los adapters reales fallan cerrados sin feature flag explicito y secretos separados."
       ],
       "scope": [
         "src/mwangaza/notifications/**",
@@ -2508,19 +2508,15 @@
         ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:45:27.802Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:45:32.739Z"
     },
     {
       "id": "sprint-36-forecast-model",
