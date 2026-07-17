@@ -1861,7 +1861,7 @@
     {
       "id": "sprint-26-temporal-slider",
       "name": "Sprint 26 - Temporal Slider",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.4",
       "estimated_hours": 4,
