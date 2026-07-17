@@ -2196,7 +2196,7 @@
     {
       "id": "sprint-31-executive-pdf-report",
       "name": "Sprint 31 - Executive PDF Report",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.6.2",
       "estimated_hours": 6,
@@ -2224,12 +2224,12 @@
       ],
       "deliverable": "PDF ejecutivo reproducible y presentable.",
       "acceptance": [
-        "AC1: El informe incluye región, período, indicadores, score, nivel, calidad y recomendaciones.",
-        "AC2: Incluye fecha de generación, versiones y fuentes.",
-        "AC3: Los gráficos corresponden al mismo snapshot del texto.",
-        "AC4: El QR usa una URL configurada y se omite si no existe.",
-        "AC5: La generación no requiere acceso Earth Engine.",
-        "AC6: El nombre del archivo es seguro y determinista."
+        "El informe incluye region, periodo, indicadores, score, nivel, calidad y recomendaciones del mismo snapshot.",
+        "El informe incluye fecha de generacion, versiones, fuentes y limitaciones visibles.",
+        "Los graficos o barras del informe corresponden al mismo snapshot que el texto y no recalculan datos.",
+        "El QR usa una URL configurada y se omite por completo si no existe.",
+        "La generacion de contexto, HTML y bytes PDF no requiere acceso Earth Engine ni red.",
+        "El nombre del archivo es seguro, determinista y contiene region y periodo."
       ],
       "scope": [
         "src/mwangaza/reports/**",
@@ -2250,19 +2250,15 @@
         "src/mwangaza/ui/**",
         "src/mwangaza/services/**",
         "assets/**",
-        "tests/ui/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/ui/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:31:42.526Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:31:49.255Z"
     },
     {
       "id": "sprint-32-data-export",
