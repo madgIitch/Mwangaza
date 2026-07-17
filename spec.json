@@ -1861,7 +1861,7 @@
     {
       "id": "sprint-26-temporal-slider",
       "name": "Sprint 26 - Temporal Slider",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.4",
       "estimated_hours": 4,
@@ -1889,12 +1889,12 @@
       ],
       "deliverable": "Exploración temporal coherente del mapa.",
       "acceptance": [
-        "AC1: El selector ofrece únicamente períodos con datos disponibles.",
-        "AC2: Cambiar período actualiza mapa, tarjetas y alertas de forma consistente.",
-        "AC3: Los períodos parciales se marcan visualmente.",
-        "AC4: No se recalculan indicadores al mover el slider.",
-        "AC5: El período seleccionado aparece en título y tooltips.",
-        "AC6: La selección por defecto es el snapshot publicable más reciente."
+        "El selector ofrece únicamente periodos con datos disponibles.",
+        "Cambiar periodo actualiza mapa, tarjetas y alertas de forma consistente.",
+        "Los periodos parciales se marcan visualmente.",
+        "No se recalculan indicadores al mover el slider.",
+        "El periodo seleccionado aparece en título y tooltips.",
+        "La selección por defecto es el snapshot publicable más reciente."
       ],
       "scope": [
         "app.py",
@@ -1913,7 +1913,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T00:23:49.839Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T00:23:55.551Z"
     },
     {
       "id": "sprint-27-indicator-trends",

@@ -40,6 +40,9 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
     selected_region = _selected_map_region(data)
     region_options = _render_region_options(data)
     region_profiles_json = _region_profiles_json(data)
+    temporal_periods_json = _temporal_periods_json(data)
+    temporal_options = _render_temporal_options(data)
+    selected_period = _selected_temporal_period(data)
     region_panel = _render_region_panel(data)
     recommendations = "\n".join(
         f"<li>{escape(recommendation)}</li>" for recommendation in data.recommendations
@@ -239,6 +242,35 @@ html, body, [data-testid="stAppViewContainer"] {{
   color: var(--mwa-green);
   font-size: 12px;
   font-weight: 800;
+}}
+.period-control {{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mwa-muted);
+  font-size: 11px;
+  font-weight: 700;
+}}
+.period-control select {{
+  border: 1px solid var(--mwa-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--mwa-text);
+  padding: 6px 9px;
+}}
+.period-state {{
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--mwa-green-soft);
+  color: var(--mwa-green);
+  font-size: 11px;
+  font-weight: 800;
+}}
+.period-state[data-period-status="partial"] {{
+  background: #fff7d8;
+  color: #8a6500;
 }}
 .main {{
   grid-column: 2;
@@ -610,9 +642,16 @@ html, body, [data-testid="stAppViewContainer"] {{
     <section class="workspace">
       <div class="main-column">
         <section class="panel map-panel" id="overview">
-          <div class="panel-header"><h2>Regional Risk Map - IGAD</h2></div>
+          <div class="panel-header">
+            <h2>Regional Risk Map - IGAD <span data-period-title>{escape(selected_period.label)}</span></h2>
+            <label class="period-control">
+              Period
+              <select data-period-selector>{temporal_options}</select>
+              <span class="period-state" data-period-status="{escape(selected_period.status)}">{escape(selected_period.status)}</span>
+            </label>
+          </div>
           <div class="panel-body">
-            {risk_map}
+            <div data-risk-map-slot>{risk_map}</div>
             <div class="region-readout" aria-live="polite">
               <strong data-region-readout-name>{escape(selected_region.name)}</strong>
               <span data-region-readout-detail>
@@ -663,18 +702,25 @@ html, body, [data-testid="stAppViewContainer"] {{
   </footer>
 </div>
 <script type="application/json" data-region-profiles>{region_profiles_json}</script>
+<script type="application/json" data-temporal-periods>{temporal_periods_json}</script>
 <script>
 (() => {{
-  const dataScript = document.currentScript?.previousElementSibling;
-  const root = dataScript?.previousElementSibling;
+  const root = document.querySelector(".mwa-shell");
+  const dataScript = document.querySelector("[data-region-profiles]");
+  const temporalScript = document.querySelector("[data-temporal-periods]");
   if (!root || root.dataset.mwangazaInteractive === "1") return;
   root.dataset.mwangazaInteractive = "1";
-  const profiles = dataScript?.textContent ? JSON.parse(dataScript.textContent) : {{}};
-  const paths = Array.from(root.querySelectorAll(".risk-region"));
+  let profiles = dataScript?.textContent ? JSON.parse(dataScript.textContent) : {{}};
+  const periods = temporalScript?.textContent ? JSON.parse(temporalScript.textContent) : [];
+  let paths = [];
   const selectedLabel = root.querySelector("[data-selected-region-label]");
   const readoutName = root.querySelector("[data-region-readout-name]");
   const readoutDetail = root.querySelector("[data-region-readout-detail]");
   const selector = root.querySelector("[data-region-selector]");
+  const periodSelector = root.querySelector("[data-period-selector]");
+  const periodTitle = root.querySelector("[data-period-title]");
+  const periodState = root.querySelector("[data-period-status]");
+  const mapSlot = root.querySelector("[data-risk-map-slot]");
   const detail = root.querySelector("[data-region-detail]");
   const metricsGrid = root.querySelector("[data-region-metrics]");
 
@@ -737,6 +783,21 @@ html, body, [data-testid="stAppViewContainer"] {{
     if (recommendations) recommendations.innerHTML = recommendationsHtml(profile.recommendations);
   }}
 
+  function bindPaths() {{
+    paths = Array.from(root.querySelectorAll(".risk-region"));
+    paths.forEach((path) => {{
+      path.setAttribute("role", "button");
+      path.setAttribute("aria-pressed", path.classList.contains("is-selected") ? "true" : "false");
+      path.addEventListener("click", () => selectRegion(path));
+      path.addEventListener("keydown", (event) => {{
+        if (event.key === "Enter" || event.key === " ") {{
+          event.preventDefault();
+          selectRegion(path);
+        }}
+      }});
+    }});
+  }}
+
   function selectRegion(path) {{
     paths.forEach((item) => {{
       item.classList.remove("is-selected", "is-active");
@@ -760,22 +821,40 @@ html, body, [data-testid="stAppViewContainer"] {{
     window.history.replaceState(null, "", url);
   }}
 
-  paths.forEach((path) => {{
-    path.setAttribute("role", "button");
-    path.setAttribute("aria-pressed", path.classList.contains("is-selected") ? "true" : "false");
-    path.addEventListener("click", () => selectRegion(path));
-    path.addEventListener("keydown", (event) => {{
-      if (event.key === "Enter" || event.key === " ") {{
-        event.preventDefault();
-        selectRegion(path);
-      }}
-    }});
-  }});
+  function renderPeriod(periodKey) {{
+    const period = periods.find((item) => item.period_key === periodKey);
+    if (!period) return;
+    profiles = period.profiles || {{}};
+    if (mapSlot) {{
+      mapSlot.innerHTML = period.risk_map_html || "";
+      bindPaths();
+    }}
+    if (periodTitle) periodTitle.textContent = period.label;
+    if (periodState) {{
+      periodState.textContent = period.status;
+      periodState.dataset.periodStatus = period.status;
+    }}
+    if (periodSelector) periodSelector.value = period.period_key;
+    const preferredRegion = selector?.value && profiles[selector.value] ? selector.value : period.selected_region_id;
+    const path = paths.find((item) => item.dataset.regionId === preferredRegion);
+    if (path) selectRegion(path);
+    else renderProfile(preferredRegion);
+    const url = new URL(window.location.href);
+    url.searchParams.set("period", period.period_key);
+    window.history.replaceState(null, "", url);
+  }}
+
+  bindPaths();
   selector?.addEventListener("change", () => {{
     const path = paths.find((item) => item.dataset.regionId === selector.value);
     if (path) selectRegion(path);
     else renderProfile(selector.value);
   }});
+  periodSelector?.addEventListener("change", () => renderPeriod(periodSelector.value));
+  const requestedPeriod = new URLSearchParams(window.location.search).get("period");
+  if (requestedPeriod && periods.some((item) => item.period_key === requestedPeriod)) {{
+    renderPeriod(requestedPeriod);
+  }}
   const requestedRegion = new URLSearchParams(window.location.search).get("region");
   if (requestedRegion && profiles[requestedRegion]) {{
     const path = paths.find((item) => item.dataset.regionId === requestedRegion);
@@ -877,6 +956,18 @@ def _render_region_options(data: DashboardShellData) -> str:
     )
 
 
+def _render_temporal_options(data: DashboardShellData) -> str:
+    selected = _selected_temporal_period(data).period_key
+    return "\n".join(
+        '<option value="{period_key}"{selected}>{label}</option>'.format(
+            period_key=escape(period.period_key),
+            selected=" selected" if period.period_key == selected else "",
+            label=escape(f"{period.label} ({period.status})"),
+        )
+        for period in _temporal_periods_for_view(data)
+    )
+
+
 def _render_region_panel(data: DashboardShellData) -> str:
     profile = _selected_region_profile(data)
     if profile is None:
@@ -951,31 +1042,41 @@ def _selected_region_profile(data: DashboardShellData) -> Any | None:
 
 
 def _region_profiles_json(data: DashboardShellData) -> str:
-    profiles = {
+    profiles = _profiles_dict(data.region_profiles)
+    raw = json.dumps(profiles, ensure_ascii=True, separators=(",", ":"))
+    return raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
+
+def _temporal_periods_json(data: DashboardShellData) -> str:
+    periods = [
+        {
+            "period_key": period.period_key,
+            "label": period.label,
+            "status": period.status,
+            "is_partial": period.is_partial,
+            "last_updated": period.last_updated,
+            "selected_region_id": period.selected_region_id,
+            "selected_region": period.selected_region,
+            "risk_map_html": build_regional_risk_map_html(period.risk_map),
+            "metrics": [_metric_dict(metric) for metric in period.metrics],
+            "alerts": [_alert_dict(alert) for alert in period.alerts],
+            "recommendations": list(period.recommendations),
+            "profiles": _profiles_dict(period.region_profiles),
+        }
+        for period in _temporal_periods_for_view(data)
+    ]
+    raw = json.dumps(periods, ensure_ascii=True, separators=(",", ":"))
+    return raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
+
+def _profiles_dict(region_profiles: tuple[Any, ...]) -> dict[str, Any]:
+    return {
         profile.region_id: {
             "region_id": profile.region_id,
             "label": profile.label,
             "status": profile.status,
-            "metrics": [
-                {
-                    "label": metric.label,
-                    "value": metric.value,
-                    "unit": metric.unit,
-                    "severity": metric.severity,
-                    "detail": metric.detail,
-                }
-                for metric in profile.metrics
-            ],
-            "alerts": [
-                {
-                    "region": alert.region,
-                    "severity": alert.severity,
-                    "title": alert.title,
-                    "period": alert.period,
-                    "action": alert.action,
-                }
-                for alert in profile.alerts
-            ],
+            "metrics": [_metric_dict(metric) for metric in profile.metrics],
+            "alerts": [_alert_dict(alert) for alert in profile.alerts],
             "recommendations": list(profile.recommendations),
             "pilot_units": [
                 {
@@ -995,10 +1096,53 @@ def _region_profiles_json(data: DashboardShellData) -> str:
                 for unit in profile.pilot_units
             ],
         }
-        for profile in data.region_profiles
+        for profile in region_profiles
     }
-    raw = json.dumps(profiles, ensure_ascii=True, separators=(",", ":"))
-    return raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
+
+def _metric_dict(metric: Any) -> dict[str, str]:
+    return {
+        "label": metric.label,
+        "value": metric.value,
+        "unit": metric.unit,
+        "severity": metric.severity,
+        "detail": metric.detail,
+    }
+
+
+def _alert_dict(alert: Any) -> dict[str, str]:
+    return {
+        "region": alert.region,
+        "severity": alert.severity,
+        "title": alert.title,
+        "period": alert.period,
+        "action": alert.action,
+    }
+
+
+def _temporal_periods_for_view(data: DashboardShellData) -> tuple[Any, ...]:
+    if data.temporal_periods:
+        return data.temporal_periods
+    return (
+        _SinglePeriodView(
+            period_key=data.data_status.last_updated,
+            label=data.data_status.last_updated[:10] or "Current",
+            status="complete",
+            is_partial=False,
+            last_updated=data.data_status.last_updated,
+            selected_region_id=data.selected_region_id,
+            selected_region=data.selected_region,
+            risk_map=data.risk_map,
+            metrics=data.metrics,
+            alerts=data.alerts,
+            recommendations=data.recommendations,
+            region_profiles=data.region_profiles,
+        ),
+    )
+
+
+def _selected_temporal_period(data: DashboardShellData) -> Any:
+    return _temporal_periods_for_view(data)[0]
 
 
 def _selected_map_region(data: DashboardShellData) -> Any:
@@ -1029,6 +1173,37 @@ class _MapRegionReadout:
         self.color_level = color_level
         self.period = period
         self.quality_flag = quality_flag
+
+
+class _SinglePeriodView:
+    def __init__(
+        self,
+        *,
+        period_key: str,
+        label: str,
+        status: str,
+        is_partial: bool,
+        last_updated: str,
+        selected_region_id: str,
+        selected_region: str,
+        risk_map: Any,
+        metrics: tuple[Any, ...],
+        alerts: tuple[Any, ...],
+        recommendations: tuple[str, ...],
+        region_profiles: tuple[Any, ...],
+    ) -> None:
+        self.period_key = period_key
+        self.label = label
+        self.status = status
+        self.is_partial = is_partial
+        self.last_updated = last_updated
+        self.selected_region_id = selected_region_id
+        self.selected_region = selected_region
+        self.risk_map = risk_map
+        self.metrics = metrics
+        self.alerts = alerts
+        self.recommendations = recommendations
+        self.region_profiles = region_profiles
 
 
 def _period_label(period_start: str, period_end: str) -> str:

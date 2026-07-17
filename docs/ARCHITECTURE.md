@@ -663,3 +663,26 @@ Objetivo no negociable:
   - `tests/data/**`
   - `tests/fixtures/**`
 
+<!-- harness:sprint-26-temporal-slider -->
+## sprint-26-temporal-slider · Sprint 26 - Temporal Slider
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-25-subnational-pilot - Sprint 25 - Subnational Pilot** - estado: `review_pending`.
+Feature: **sprint-26-temporal-slider - Sprint 26 - Temporal Slider** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-25-subnational-pilot - Sprint 25 - Subnational Pilot** - estad
 
 ## Siguiente accion
 
-- Smoke test humano del dashboard live en Streamlit y cerrar con `node .harness/spec.mjs done sprint-25-subnational-pilot` si el drilldown subnacional responde correctamente.
+- Smoke test humano del selector temporal en Streamlit y cerrar con `node .harness/spec.mjs done sprint-26-temporal-slider` si el cambio de periodo actualiza mapa, tarjetas y alertas correctamente.
 
 ## Ultimo resultado
 
@@ -18,6 +18,6 @@ Feature: **sprint-25-subnational-pilot - Sprint 25 - Subnational Pilot** - estad
 
 Validaciones ejecutadas:
 
-- `uv run python -m unittest tests.services.test_live_gee_dashboard tests.ui.test_dashboard_shell`
+- `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-25-subnational-pilot`
+- `node .harness\gates.mjs sprint-26-temporal-slider`

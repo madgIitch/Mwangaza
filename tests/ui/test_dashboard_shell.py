@@ -173,6 +173,62 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(kenya.alerts[0].region, "KEN")
         self.assertIn("Activate urgent coordination review", kenya.recommendations[0])
 
+    def test_temporal_periods_default_to_latest_available_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            older = _risk_snapshot(
+                region_id="som",
+                risk_level="watch",
+                score=41.0,
+                period_start="2026-06-01T00:00:00Z",
+                period_end="2026-06-15T00:00:00Z",
+            )
+            latest = _risk_snapshot(
+                region_id="som",
+                risk_level="warning",
+                score=68.0,
+                period_start="2026-07-01T00:00:00Z",
+                period_end="2026-07-15T00:00:00Z",
+            )
+            (cache_dir / "older.json").write_text(json.dumps({"payload": older.to_dict()}), encoding="utf-8")
+            (cache_dir / "latest.json").write_text(json.dumps({"payload": latest.to_dict()}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        self.assertEqual([period.label for period in data.temporal_periods], ["2026-07-15", "2026-06-15"])
+        self.assertEqual(data.temporal_periods[0].status, "partial")
+        self.assertEqual(data.data_status.last_updated, "2026-07-15 00:00:00 UTC")
+        self.assertIn("68", {metric.value for metric in data.metrics})
+
+    def test_temporal_selector_embeds_loaded_periods_without_recalculation_hooks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            for name, score, end in (
+                ("older", 41.0, "2026-06-15T00:00:00Z"),
+                ("latest", 68.0, "2026-07-15T00:00:00Z"),
+            ):
+                risk = _risk_snapshot(
+                    region_id="som",
+                    risk_level="watch",
+                    score=score,
+                    period_start=end.replace("15T", "01T"),
+                    period_end=end,
+                )
+                (cache_dir / f"{name}.json").write_text(json.dumps({"payload": risk.to_dict()}), encoding="utf-8")
+
+            html = build_dashboard_shell_html(load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp)))
+
+        self.assertIn("data-period-selector", html)
+        self.assertIn("data-temporal-periods", html)
+        self.assertIn("2026-07-15", html)
+        self.assertIn("2026-06-15", html)
+        self.assertIn('data-period-status="partial"', html)
+        self.assertIn("function renderPeriod", html)
+        self.assertIn("mapSlot.innerHTML", html)
+        self.assertNotIn("load_live_gee_dashboard_payloads", html)
+
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
@@ -333,11 +389,13 @@ def _risk_snapshot(
     risk_level: str = "emergency",
     score: float = 82.0,
     is_simulated: bool = False,
+    period_start: str = "2026-07-01T00:00:00Z",
+    period_end: str = "2026-07-08T00:00:00Z",
 ) -> RiskSnapshot:
     return RiskSnapshot(
         region_id=region_id,
-        period_start="2026-07-01T00:00:00Z",
-        period_end="2026-07-08T00:00:00Z",
+        period_start=period_start,
+        period_end=period_end,
         composite_score=score,
         risk_level=risk_level,
         contributing_indicators=("ndvi", "rainfall_mm"),

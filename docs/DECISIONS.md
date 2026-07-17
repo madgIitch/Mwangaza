@@ -279,3 +279,12 @@ Contexto: se aprobó el spec `sprint-25-subnational-pilot` (Sprint 25 - Subnatio
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-26-temporal-slider -->
+## 2026-07-17 · sprint-26-temporal-slider aprobado
+
+Contexto: se aprobó el spec `sprint-26-temporal-slider` (Sprint 26 - Temporal Slider).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

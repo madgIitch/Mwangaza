@@ -83,6 +83,22 @@ class RegionProfile:
 
 
 @dataclass(frozen=True)
+class TemporalPeriod:
+    period_key: str
+    label: str
+    status: str
+    is_partial: bool
+    last_updated: str
+    selected_region_id: str
+    selected_region: str
+    risk_map: RegionalRiskMap
+    metrics: tuple[RegionMetric, ...]
+    alerts: tuple[AlertSummary, ...]
+    recommendations: tuple[str, ...]
+    region_profiles: tuple[RegionProfile, ...]
+
+
+@dataclass(frozen=True)
 class DashboardShellData:
     project: str
     tagline: str
@@ -95,6 +111,7 @@ class DashboardShellData:
     alerts: tuple[AlertSummary, ...]
     recommendations: tuple[str, ...]
     region_profiles: tuple[RegionProfile, ...] = ()
+    temporal_periods: tuple[TemporalPeriod, ...] = ()
 
 
 def load_dashboard_shell_data(
@@ -146,6 +163,7 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
         metrics=data.metrics,
         alerts=(),
         recommendations=("Retry after checking configuration and data refresh status.",),
+        temporal_periods=data.temporal_periods,
     )
 
 
@@ -194,11 +212,14 @@ def _dashboard_data_from_payloads(
     message_observed: str,
     message_simulated: str,
 ) -> DashboardShellData | None:
-    selected_region_id = _selected_region_id(cached_payloads)
-    risk = _latest_risk_snapshot(cached_payloads, region_id=selected_region_id)
-    risks = _risk_snapshots(cached_payloads)
-    snapshot = _latest_indicator_snapshot(cached_payloads, region_id=selected_region_id)
-    signals = _signals_for_view(cached_payloads, snapshot, region_id=selected_region_id)
+    active_alerts = _read_active_alerts(alert_db_path)
+    temporal_periods = _temporal_periods_from_payloads(cached_payloads, active_alerts, mode=mode)
+    period_payloads = _payloads_for_period(cached_payloads, temporal_periods[0].period_key) if temporal_periods else cached_payloads
+    selected_region_id = _selected_region_id(period_payloads)
+    risk = _latest_risk_snapshot(period_payloads, region_id=selected_region_id)
+    risks = _risk_snapshots(period_payloads)
+    snapshot = _latest_indicator_snapshot(period_payloads, region_id=selected_region_id)
+    signals = _signals_for_view(period_payloads, snapshot, region_id=selected_region_id)
     if risk is None and snapshot is None and not signals:
         return None
 
@@ -215,10 +236,9 @@ def _dashboard_data_from_payloads(
     is_simulated = _all_simulated([payload for payload in (risk, snapshot, *signals) if payload])
     source = source_simulated if is_simulated else source_observed
     message = message_simulated if is_simulated else message_observed
-    active_alerts = _read_active_alerts(alert_db_path)
     alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
-    region_profiles = _region_profiles_from_payloads(cached_payloads, active_alerts)
+    region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts)
 
     return DashboardShellData(
         project=PROJECT_NAME,
@@ -242,6 +262,74 @@ def _dashboard_data_from_payloads(
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
         region_profiles=region_profiles,
+        temporal_periods=temporal_periods,
+    )
+
+
+def _temporal_periods_from_payloads(
+    payloads: tuple[dict[str, Any], ...],
+    active_alerts: tuple[AlertSummary, ...],
+    *,
+    mode: DataMode,
+) -> tuple[TemporalPeriod, ...]:
+    keys = tuple(
+        sorted(
+            {
+                key
+                for payload in payloads
+                if (key := _payload_period_key(payload))
+            },
+            reverse=True,
+        )
+    )
+    periods: list[TemporalPeriod] = []
+    for key in keys:
+        period_payloads = _payloads_for_period(payloads, key)
+        period = _temporal_period_from_payloads(period_payloads, active_alerts, mode=mode, period_key=key)
+        if period is not None:
+            periods.append(period)
+    return tuple(periods)
+
+
+def _temporal_period_from_payloads(
+    payloads: tuple[dict[str, Any], ...],
+    active_alerts: tuple[AlertSummary, ...],
+    *,
+    mode: DataMode,
+    period_key: str,
+) -> TemporalPeriod | None:
+    selected_region_id = _selected_region_id(payloads)
+    risk = _latest_risk_snapshot(payloads, region_id=selected_region_id)
+    risks = _risk_snapshots(payloads)
+    snapshot = _latest_indicator_snapshot(payloads, region_id=selected_region_id)
+    signals = _signals_for_view(payloads, snapshot, region_id=selected_region_id)
+    if risk is None and snapshot is None and not signals:
+        return None
+    region_id = _first_text(
+        risk.get("region_id") if risk else None,
+        snapshot.get("region_id") if snapshot else None,
+        *(signal.get("region_id") for signal in signals),
+    )
+    alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
+    recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
+    partial = _is_partial_period(payloads)
+    return TemporalPeriod(
+        period_key=period_key,
+        label=_period_key_label(period_key),
+        status="partial" if partial else "complete",
+        is_partial=partial,
+        last_updated=_compact_time(period_key),
+        selected_region_id=(region_id or "som").lower(),
+        selected_region=_region_label(region_id),
+        risk_map=build_regional_risk_map(
+            risks,
+            selected_region_id=(region_id or "som").lower(),
+            source_mode=mode,
+        ),
+        metrics=_metrics_from_materialized(risk, signals),
+        alerts=alerts,
+        recommendations=recommendations or ("No action recommendations are available yet.",),
+        region_profiles=_region_profiles_from_payloads(payloads, active_alerts),
     )
 
 
@@ -271,6 +359,37 @@ def _extract_payloads(raw: Any) -> tuple[dict[str, Any], ...]:
     if isinstance(payload, list):
         return tuple(item for item in payload if isinstance(item, dict))
     return ()
+
+
+def _payload_period_key(payload: dict[str, Any]) -> str:
+    return _first_text(payload.get("period_end"), payload.get("newest_updated_at"))
+
+
+def _payloads_for_period(payloads: tuple[dict[str, Any], ...], period_key: str) -> tuple[dict[str, Any], ...]:
+    return tuple(payload for payload in payloads if _payload_period_key(payload) == period_key)
+
+
+def _period_key_label(period_key: str) -> str:
+    return period_key[:10] if len(period_key) >= 10 else period_key
+
+
+def _is_partial_period(payloads: tuple[dict[str, Any], ...]) -> bool:
+    risk_region_ids = {
+        _first_text(payload.get("region_id")).lower()
+        for payload in payloads
+        if payload.get("payload_type") == "risk_snapshot"
+    }
+    expected = {"ndvi", "rainfall_mm", "lst_c"}
+    for region_id in risk_region_ids:
+        indicators = {
+            str(payload.get("indicator"))
+            for payload in payloads
+            if _first_text(payload.get("region_id")).lower() == region_id
+            and payload.get("payload_type") in {"indicator_observation", "anomaly"}
+        }
+        if not expected.issubset(indicators):
+            return True
+    return any(str(payload.get("quality_flag", "ok")) not in {"ok", ""} for payload in payloads)
 
 
 def _latest_risk_snapshot(
