@@ -2775,7 +2775,7 @@
     {
       "id": "sprint-40-pwa-installability",
       "name": "Sprint 40 - React PWA Migration",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.4",
       "estimated_hours": 12,
@@ -3731,7 +3731,7 @@
       "dependencies": [
         "sprint-55-mwangaza-1-0-release"
       ],
-      "objective": "Rellenar los placeholders de la pantalla `/region` con contratos API/PWA completos y rutas internas funcionales, sin disparar consultas Earth Engine desde la interacci\u00f3n de usuario.",
+      "objective": "Rellenar los placeholders de la pantalla `/region` con contratos API/PWA completos y rutas internas funcionales, sin disparar consultas Earth Engine desde la interacción de usuario.",
       "user_stories": [
         {
           "id": "HU56.1",
@@ -3743,23 +3743,23 @@
         }
       ],
       "tasks": [
-        "Exponer en la API PWA payloads subnacionales con geometr\u00eda UI, m\u00e9tricas, score, calidad y periodo para pilotos configurados.",
-        "Sustituir el mapa placeholder de `/region` por un mapa subnacional accesible cuando existan geometr\u00edas y mantener tabla lite en low-bandwidth.",
-        "Rellenar el ranking subnacional con unidades piloto reales, ordenado por score num\u00e9rico y con `unknown` al final.",
+        "Exponer en la API PWA payloads subnacionales con geometría UI, métricas, score, calidad y periodo para pilotos configurados.",
+        "Sustituir el mapa placeholder de `/region` por un mapa subnacional accesible cuando existan geometrías y mantener tabla lite en low-bandwidth.",
+        "Rellenar el ranking subnacional con unidades piloto reales, ordenado por score numérico y con `unknown` al final.",
         "Exponer y consumir contribuciones reales del composite score para sustituir los pesos placeholder.",
-        "A\u00f1adir comparaciones mensuales de indicadores cuando existan snapshots comparables.",
-        "Implementar deep-link desde `View all alerts` al Alerts Center filtrado por regi\u00f3n, periodo y estado activo.",
-        "Reemplazar placeholders de notificaci\u00f3n/cuenta por estados funcionales o placeholders aprobados por los sprints de admin/notificaciones."
+        "Añadir comparaciones mensuales de indicadores cuando existan snapshots comparables.",
+        "Implementar deep-link desde `View all alerts` al Alerts Center filtrado por región, periodo y estado activo.",
+        "Reemplazar placeholders de notificación/cuenta por estados funcionales o placeholders aprobados por los sprints de admin/notificaciones."
       ],
-      "deliverable": "Region Explorer sin placeholders silenciosos y con degradaci\u00f3n expl\u00edcita cuando falten datos.",
+      "deliverable": "Region Explorer sin placeholders silenciosos y con degradación explícita cuando falten datos.",
       "acceptance": [
         "AC1: `/region` muestra mapa subnacional real para pilotos con payloads disponibles y no afirma cobertura distrital cuando falta.",
         "AC2: El ranking subnacional usa datos reales de piloto y conserva `No data`/`unknown` para unidades sin snapshot.",
-        "AC3: El m\u00f3dulo `Why this region is at risk` consume contribuciones del backend o muestra un estado pendiente validado por tests.",
-        "AC4: Las tarjetas de indicadores muestran comparaci\u00f3n mensual solo cuando existe snapshot comparable y no fabrican deltas.",
-        "AC5: `View all alerts` abre la vista de alertas filtrada por regi\u00f3n, periodo y estado activo.",
-        "AC6: Low-bandwidth mantiene toda la informaci\u00f3n esencial en tablas sin mapas pesados ni animaciones.",
-        "AC7: La documentaci\u00f3n de `/region` distingue implementado, pendiente por falta de datos y alcance futuro ya cubierto por Sprint 25/Sprint 46."
+        "AC3: El módulo `Why this region is at risk` consume contribuciones del backend o muestra un estado pendiente validado por tests.",
+        "AC4: Las tarjetas de indicadores muestran comparación mensual solo cuando existe snapshot comparable y no fabrican deltas.",
+        "AC5: `View all alerts` abre la vista de alertas filtrada por región, periodo y estado activo.",
+        "AC6: Low-bandwidth mantiene toda la información esencial en tablas sin mapas pesados ni animaciones.",
+        "AC7: La documentación de `/region` distingue implementado, pendiente por falta de datos y alcance futuro ya cubierto por Sprint 25/Sprint 46."
       ],
       "scope": [
         "frontend/**",
@@ -3916,6 +3916,58 @@
         "AC5: Programacion, plantillas y distribucion quedan bloqueadas o simuladas claramente hasta tener contratos y permisos.",
         "AC6: Las descargas y compartidos quedan auditados cuando exista adapter aprobado.",
         "AC7: Documentacion de `/reports` distingue implementado, pendiente por falta de contrato y alcance futuro."
+      ],
+      "scope": [
+        "frontend/**",
+        "tests/frontend/**",
+        "src/mwangaza/api/**",
+        "tests/api/**",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-60-about-methodology-completion",
+      "name": "Sprint 60 - About and Methodology Completion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.1",
+      "estimated_hours": 6,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-55-mwangaza-1-0-release"
+      ],
+      "objective": "Rellenar los placeholders de `/about` con metodologia, fuentes, estado documental, tema persistente, enlaces legales/contacto y metadata versionada.",
+      "user_stories": [
+        {
+          "id": "HU60.1",
+          "story": "Como evaluador quiero entender metodologia, fuentes, cobertura y limites con enlaces verificables."
+        },
+        {
+          "id": "HU60.2",
+          "story": "Como usuario quiero que preferencias visuales, documentacion legal y contacto esten disponibles sin confundirse con datos operativos."
+        }
+      ],
+      "tasks": [
+        "Implementar Light/Dark theme persistente y ocultar decoracion en low-bandwidth.",
+        "Anadir ilustracion/sidebar polish y comportamiento del logo como enlace a `/overview`.",
+        "Crear fichas de fuente con dataset, proveedor, unidad, resolucion, frecuencia, baseline, transformaciones, limitaciones y enlaces.",
+        "Exponer metadata de version de app, metodologia, pipeline y estado documental desde backend o config publica.",
+        "Implementar paginas o modales de Privacy Policy, Terms of Use y Contact/GitHub.",
+        "Conectar `Refresh status` a un endpoint ligero que no recalcule Earth Engine.",
+        "Completar pagina de metodologia con calculos de indicadores, score, calidad, forecast y exposicion."
+      ],
+      "deliverable": "About completo con metodologia verificable, preferencias persistentes y enlaces legales/contacto reales.",
+      "acceptance": [
+        "AC1: `/about` explica producto, capacidades, fuentes, flujo metodologico, contexto, cobertura, limites y estado del sistema.",
+        "AC2: Theme switch persiste localmente y no rompe low-bandwidth.",
+        "AC3: Cada fuente abre detalle verificable o enlace documental aprobado.",
+        "AC4: Privacy, Terms y Contact tienen contenido real o quedan bloqueados por spec aprobado.",
+        "AC5: Refresh status consulta solo estado documental/configuracion, no GEE ni recalculo de indicadores.",
+        "AC6: La version de app/metodologia procede de config o backend y no esta hardcodeada si existe contrato.",
+        "AC7: Documentacion de `/about` distingue implementado, pendiente por falta de contrato y alcance futuro."
       ],
       "scope": [
         "frontend/**",
