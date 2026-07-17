@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-27-indicator-trends - Sprint 27 - Indicator Trends** - estado: `review_pending`.
+Feature: **sprint-28-active-alerts - Sprint 28 - Active Alerts** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-27-indicator-trends - Sprint 27 - Indicator Trends** - estado:
 
 ## Siguiente accion
 
-- Smoke test humano de tendencias en Streamlit y cerrar con `node .harness/spec.mjs done sprint-27-indicator-trends` si las series recientes se muestran correctamente.
+- Smoke test humano en Streamlit: validar filtros de alertas activas, evidencia/accion principal y que el drilldown de region no re-renderiza la pagina principal. Cerrar con `node .harness/spec.mjs done sprint-28-active-alerts` si pasa.
 
 ## Ultimo resultado
 
@@ -16,8 +16,8 @@ Feature: **sprint-27-indicator-trends - Sprint 27 - Indicator Trends** - estado:
 |--:|--|--|--:|--:|
 | 1 | OK | - | - | - |
 
-Validaciones ejecutadas:
+Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.services.test_live_gee_dashboard tests.ui.test_dashboard_shell`
+- `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-27-indicator-trends`
+- `node .harness\gates.mjs sprint-28-active-alerts`

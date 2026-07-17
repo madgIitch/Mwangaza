@@ -9,3 +9,8 @@ alerts keep their event history.
 
 Stored records include score, severity, quality flag, evidence metadata and
 recommendations.
+
+The dashboard active-alert view reads only `status='active'` rows by default.
+It keeps resolved alerts out of the operational list, orders active rows by
+severity, quality, period end and score, and exposes evidence/recommendations as
+summaries rather than raw JSON.

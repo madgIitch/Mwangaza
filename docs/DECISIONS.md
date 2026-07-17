@@ -297,3 +297,12 @@ Contexto: se aprobó el spec `sprint-27-indicator-trends` (Sprint 27 - Indicator
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-28-active-alerts -->
+## 2026-07-17 · sprint-28-active-alerts aprobado
+
+Contexto: se aprobó el spec `sprint-28-active-alerts` (Sprint 28 - Active Alerts).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

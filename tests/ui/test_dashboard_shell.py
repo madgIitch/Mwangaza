@@ -420,6 +420,82 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.alerts[0].region, "KEN")
         self.assertEqual(data.alerts[0].severity, "warning")
         self.assertIn("66", data.alerts[0].title)
+        self.assertEqual(data.alerts[0].status, "active")
+        self.assertEqual(data.alerts[0].region_type, "country")
+        self.assertEqual(data.alerts[0].priority_rank, 1)
+        self.assertEqual(data.alerts[0].recommended_action, data.alerts[0].action)
+        self.assertIn(("Model Version", "composite-risk-v1"), data.alerts[0].evidence)
+
+    def test_active_alerts_hide_resolved_and_sort_by_severity_quality_date_score(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            snapshots = (
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="warning",
+                    score=70.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-15T00:00:00Z",
+                ),
+                _risk_snapshot(
+                    region_id="ken",
+                    risk_level="emergency",
+                    score=82.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-08T00:00:00Z",
+                ),
+                _risk_snapshot(
+                    region_id="eth",
+                    risk_level="watch",
+                    score=49.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-16T00:00:00Z",
+                ),
+            )
+            (cache_dir / "risk.json").write_text(
+                json.dumps({"payload": [snapshot.to_dict() for snapshot in snapshots]}),
+                encoding="utf-8",
+            )
+            repo = AlertRepository(Path(tmp) / "alerts.sqlite")
+            try:
+                resolved = repo.upsert_alert(snapshots[0], recommend_actions(snapshots[0]))
+                repo.resolve_alert(resolved.alert_id, reason="superseded")
+                repo.upsert_alert(snapshots[1], recommend_actions(snapshots[1]))
+                repo.upsert_alert(snapshots[2], recommend_actions(snapshots[2]))
+            finally:
+                repo.close()
+
+            data = load_dashboard_shell_data(
+                cache_dir=cache_dir,
+                data_dir=Path(tmp),
+                alert_db_path=Path(tmp) / "alerts.sqlite",
+            )
+
+        self.assertEqual([alert.region_id for alert in data.alerts], ["ken", "eth"])
+        self.assertEqual([alert.priority_rank for alert in data.alerts], [1, 2])
+        self.assertTrue(all(alert.status == "active" for alert in data.alerts))
+        self.assertNotIn("som", {alert.region_id for alert in data.alerts})
+
+    def test_active_alert_panel_renders_filters_evidence_actions_and_unknown_separate_from_green(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn('data-alert-filter="severity"', html)
+        self.assertIn('data-alert-filter="region"', html)
+        self.assertIn('data-alert-filter="type"', html)
+        self.assertIn("function applyAlertFilters", html)
+        self.assertIn("alertPanel.innerHTML = alertsHtml(profile.alerts)", html)
+        self.assertNotIn("alertsPanel.outerHTML", html)
+        self.assertIn('data-alert-panel', html)
+        self.assertIn('data-region-type="country"', html)
+        self.assertIn('class="alert-evidence"', html)
+        self.assertIn("Model Version: demo-risk-v1", html)
+        self.assertIn("Prepare early action checklist.", html)
+        self.assertIn('.alert-item[data-severity="unknown"]', html)
+        self.assertIn(".alert-item[data-severity=\"normal\"]", html)
+        self.assertNotIn('.alert-item[data-severity="unknown"] { border-left-color: var(--mwa-green); }', html)
+        self.assertIn("No active alerts available for this region.", html)
+        self.assertIn("No alerts match the selected filters.", html)
 
     def test_loader_error_renders_safe_fallback_without_trace(self) -> None:
         fake = FakeStreamlit()

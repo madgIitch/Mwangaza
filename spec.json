@@ -1993,7 +1993,7 @@
     {
       "id": "sprint-28-active-alerts",
       "name": "Sprint 28 - Active Alerts",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.6",
       "estimated_hours": 4,
@@ -2021,12 +2021,12 @@
       ],
       "deliverable": "Panel operativo de alertas activas.",
       "acceptance": [
-        "AC1: Las alertas se ordenan por severidad, calidad y fecha.",
-        "AC2: Los filtros incluyen nivel, país y tipo de región.",
-        "AC3: Cada tarjeta muestra evidencia resumida y acción principal sugerida.",
-        "AC4: Alertas resueltas no aparecen salvo filtro explícito.",
-        "AC5: Unknown no se mezcla con green.",
-        "AC6: La lista tiene estados empty, loading y error."
+        "Las alertas se ordenan por severidad, calidad y fecha.",
+        "Los filtros incluyen nivel, país y tipo de región.",
+        "Cada tarjeta muestra evidencia resumida y acción principal sugerida.",
+        "Alertas resueltas no aparecen salvo filtro explícito.",
+        "Unknown no se mezcla con green.",
+        "La lista tiene estados empty, loading y error."
       ],
       "scope": [
         "app.py",
@@ -2047,19 +2047,15 @@
         "src/mwangaza/api/**",
         "src/mwangaza/contracts/**",
         "src/mwangaza/db/**",
-        "tests/api/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/api/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T00:54:45.623Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T00:54:52.478Z"
     },
     {
       "id": "sprint-29-historical-comparison",

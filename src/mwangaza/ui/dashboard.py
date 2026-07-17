@@ -585,6 +585,27 @@ html, body, [data-testid="stAppViewContainer"] {{
   display: grid;
   gap: 8px;
 }}
+.alert-filters {{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}}
+.alert-filters label {{
+  display: grid;
+  gap: 4px;
+  color: var(--mwa-muted);
+  font-size: 11px;
+  font-weight: 700;
+}}
+.alert-filters select {{
+  width: 100%;
+  border: 1px solid var(--mwa-border);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: #fff;
+  color: var(--mwa-text);
+}}
 .alert-item {{
   border: 1px solid var(--mwa-border);
   border-left: 4px solid var(--mwa-yellow);
@@ -593,6 +614,20 @@ html, body, [data-testid="stAppViewContainer"] {{
 }}
 .alert-item[data-severity="critical"] {{ border-left-color: var(--mwa-red); }}
 .alert-item[data-severity="warning"] {{ border-left-color: var(--mwa-orange); }}
+.alert-item[data-severity="normal"] {{ border-left-color: var(--mwa-green); }}
+.alert-item[data-severity="unknown"] {{ border-left-color: #98a2b3; }}
+.alert-heading {{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}}
+.alert-rank {{
+  flex: 0 0 auto;
+  color: var(--mwa-muted);
+  font-size: 11px;
+  font-weight: 700;
+}}
 .alert-item h3 {{
   margin: 0;
   font-size: 14px;
@@ -600,6 +635,17 @@ html, body, [data-testid="stAppViewContainer"] {{
 .alert-item p, .recommendations li {{
   color: var(--mwa-muted);
   font-size: 12px;
+}}
+.alert-evidence {{
+  display: grid;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 0;
+  list-style: none;
+}}
+.alert-evidence li {{
+  color: var(--mwa-muted);
+  font-size: 11px;
 }}
 .alert-action {{
   display: inline-block;
@@ -748,7 +794,10 @@ html, body, [data-testid="stAppViewContainer"] {{
       <aside class="side-column">
         <section class="panel" id="alerts">
           <div class="panel-header"><h2>Active Alerts</h2></div>
-          <div class="panel-body">{alerts}</div>
+          <div class="panel-body">
+            {_render_alert_filters(data)}
+            <div data-alert-panel>{alerts}</div>
+          </div>
         </section>
         <section class="panel" id="reports">
           <div class="panel-header"><h2>Early Action Recommendations</h2></div>
@@ -802,6 +851,8 @@ html, body, [data-testid="stAppViewContainer"] {{
   const metricsGrid = root.querySelector("[data-region-metrics]");
   const trendsGrid = root.querySelector("[data-region-trends]");
   const navButtons = Array.from(root.querySelectorAll("[data-nav-target]"));
+  const alertPanel = root.querySelector("[data-alert-panel]");
+  const alertFilters = Array.from(root.querySelectorAll("[data-alert-filter]"));
 
   function escapeHtml(value) {{
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({{
@@ -821,10 +872,35 @@ html, body, [data-testid="stAppViewContainer"] {{
   }}
 
   function alertsHtml(alerts) {{
-    if (!alerts.length) return '<p class="footer-note">No active alerts available for this region.</p>';
-    return alerts.map((alert) => `<article class="alert-item" data-severity="${{escapeHtml(alert.severity)}}">`
-      + `<h3>${{escapeHtml(alert.title)}}</h3><p>${{escapeHtml(alert.region)}} - ${{escapeHtml(alert.period)}}</p>`
+    if (!alerts.length) return '<p class="footer-note" data-alert-empty>No active alerts available for this region.</p>';
+    const items = alerts.map((alert) => `<article class="alert-item" data-severity="${{escapeHtml(alert.severity)}}" data-region-id="${{escapeHtml(alert.region_id)}}" data-region-type="${{escapeHtml(alert.region_type)}}">`
+      + `<div class="alert-heading"><h3>${{escapeHtml(alert.title)}}</h3><span class="alert-rank">#${{escapeHtml(alert.priority_rank || "")}}</span></div>`
+      + `<p>${{escapeHtml(alert.region)}} - ${{escapeHtml(alert.period)}} | Quality: ${{escapeHtml(alert.quality_flag)}}</p>`
+      + evidenceHtml(alert.evidence)
       + `<span class="alert-action">${{escapeHtml(alert.action)}}</span></article>`).join("");
+    return `<div class="alert-list">${{items}}</div><p class="footer-note" data-alert-filter-empty hidden>No alerts match the selected filters.</p>`;
+  }}
+
+  function evidenceHtml(items) {{
+    if (!items || !items.length) return "";
+    return `<ul class="alert-evidence">${{items.map((item) => `<li>${{escapeHtml(item[0])}}: ${{escapeHtml(item[1])}}</li>`).join("")}}</ul>`;
+  }}
+
+  function applyAlertFilters() {{
+    const severity = root.querySelector('[data-alert-filter="severity"]')?.value || "all";
+    const region = root.querySelector('[data-alert-filter="region"]')?.value || "all";
+    const type = root.querySelector('[data-alert-filter="type"]')?.value || "all";
+    const items = Array.from(alertPanel?.querySelectorAll(".alert-item") || []);
+    let visible = 0;
+    items.forEach((item) => {{
+      const show = (severity === "all" || item.dataset.severity === severity)
+        && (region === "all" || item.dataset.regionId === region)
+        && (type === "all" || item.dataset.regionType === type);
+      item.hidden = !show;
+      if (show) visible += 1;
+    }});
+    const empty = alertPanel?.querySelector("[data-alert-filter-empty]");
+    if (empty) empty.hidden = visible !== 0 || items.length === 0;
   }}
 
   function pilotHtml(units) {{
@@ -863,12 +939,14 @@ html, body, [data-testid="stAppViewContainer"] {{
         + `<p>Status: ${{escapeHtml(profile.status)}} | Loaded payload drilldown</p>`
         + `<h3>Subnational pilot</h3>`
         + pilotHtml(profile.pilot_units)
-        + `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
+        + alertsHtml(profile.alerts);
     }}
     if (metricsGrid) metricsGrid.innerHTML = profile.metrics.map(metricHtml).join("");
     if (trendsGrid) trendsGrid.innerHTML = trendHtml(profile.trends || []);
-    const alertsPanel = root.querySelector("#alerts .alert-list, #alerts .footer-note");
-    if (alertsPanel) alertsPanel.outerHTML = `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
+    if (alertPanel) {{
+      alertPanel.innerHTML = alertsHtml(profile.alerts);
+      applyAlertFilters();
+    }}
     const recommendations = root.querySelector("#reports .recommendations");
     if (recommendations) recommendations.innerHTML = recommendationsHtml(profile.recommendations);
   }}
@@ -944,6 +1022,7 @@ html, body, [data-testid="stAppViewContainer"] {{
       target.scrollIntoView({{ block: "start", behavior: "smooth" }});
     }});
   }});
+  alertFilters.forEach((filter) => filter.addEventListener("change", applyAlertFilters));
   selector?.addEventListener("change", () => {{
     const path = paths.find((item) => item.dataset.regionId === selector.value);
     if (path) selectRegion(path);
@@ -1024,23 +1103,79 @@ def _render_html(st: Any, html: str) -> None:
 
 def _render_alerts(data: DashboardShellData) -> str:
     if not data.alerts:
-        return '<p class="footer-note">No active alerts available in the current shell view.</p>'
+        return '<p class="footer-note" data-alert-empty>No active alerts available in the current shell view.</p>'
     return '<div class="alert-list">{items}</div>'.format(
         items="\n".join(
-            '<article class="alert-item" data-severity="{severity}">'
-            "<h3>{title}</h3>"
-            "<p>{region} - {period}</p>"
+            '<article class="alert-item" data-severity="{severity}" data-region-id="{region_id}" '
+            'data-region-type="{region_type}">'
+            '<div class="alert-heading"><h3>{title}</h3><span class="alert-rank">#{rank}</span></div>'
+            "<p>{region} - {period} | Quality: {quality}</p>"
+            "{evidence}"
             '<span class="alert-action">{action}</span>'
             "</article>".format(
                 severity=escape(alert.severity),
+                region_id=escape(alert.region_id),
+                region_type=escape(alert.region_type),
                 title=escape(alert.title),
+                rank=alert.priority_rank or "",
                 region=escape(alert.region),
                 period=escape(alert.period),
+                quality=escape(alert.quality_flag),
+                evidence=_render_alert_evidence(alert.evidence),
                 action=escape(alert.action),
             )
             for alert in data.alerts
         )
+    ) + '<p class="footer-note" data-alert-filter-empty hidden>No alerts match the selected filters.</p>'
+
+
+def _render_alert_filters(data: DashboardShellData) -> str:
+    severity_options = _alert_filter_options(
+        "severity",
+        (("all", "All levels"),) + tuple((severity, severity.title()) for severity in _ordered_alert_values(data.alerts, "severity")),
     )
+    region_options = _alert_filter_options(
+        "region",
+        (("all", "All countries"),)
+        + tuple((alert.region_id, alert.region) for alert in data.alerts if alert.region_id),
+    )
+    type_options = _alert_filter_options(
+        "type",
+        (("all", "All region types"),)
+        + tuple((kind, kind.title()) for kind in _ordered_alert_values(data.alerts, "region_type")),
+    )
+    return (
+        '<div class="alert-filters" aria-label="Active alert filters">'
+        f'<label>Level{severity_options}</label>'
+        f'<label>Country{region_options}</label>'
+        f'<label>Type{type_options}</label>'
+        "</div>"
+    )
+
+
+def _alert_filter_options(name: str, options: tuple[tuple[str, str], ...]) -> str:
+    seen: set[str] = set()
+    rendered: list[str] = []
+    for value, label in options:
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        rendered.append(f'<option value="{escape(value)}">{escape(label)}</option>')
+    return f'<select data-alert-filter="{escape(name)}">{"".join(rendered)}</select>'
+
+
+def _ordered_alert_values(alerts: tuple[Any, ...], field: str) -> tuple[str, ...]:
+    priority = {
+        "critical": 0,
+        "warning": 1,
+        "watch": 2,
+        "normal": 3,
+        "unknown": 4,
+        "country": 0,
+        "pilot": 1,
+    }
+    values = {str(getattr(alert, field, "")) for alert in alerts if getattr(alert, field, "")}
+    return tuple(sorted(values, key=lambda item: (priority.get(item, 99), item)))
 
 
 def _render_region_options(data: DashboardShellData) -> str:
@@ -1116,20 +1251,35 @@ def _render_pilot_units(units: tuple[Any, ...]) -> str:
 
 def _render_profile_alerts(alerts: tuple[Any, ...]) -> str:
     if not alerts:
-        return '<p class="footer-note">No active alerts available for this region.</p>'
+        return '<p class="footer-note" data-alert-empty>No active alerts available for this region.</p>'
     return "\n".join(
-        '<article class="alert-item" data-severity="{severity}">'
-        "<h3>{title}</h3>"
-        "<p>{region} - {period}</p>"
+        '<article class="alert-item" data-severity="{severity}" data-region-id="{region_id}" '
+        'data-region-type="{region_type}">'
+        '<div class="alert-heading"><h3>{title}</h3><span class="alert-rank">#{rank}</span></div>'
+        "<p>{region} - {period} | Quality: {quality}</p>"
+        "{evidence}"
         '<span class="alert-action">{action}</span>'
         "</article>".format(
             severity=escape(alert.severity),
+            region_id=escape(alert.region_id),
+            region_type=escape(alert.region_type),
             title=escape(alert.title),
+            rank=alert.priority_rank or "",
             region=escape(alert.region),
             period=escape(alert.period),
+            quality=escape(alert.quality_flag),
+            evidence=_render_alert_evidence(alert.evidence),
             action=escape(alert.action),
         )
         for alert in alerts
+    )
+
+
+def _render_alert_evidence(items: tuple[tuple[str, str], ...]) -> str:
+    if not items:
+        return ""
+    return '<ul class="alert-evidence">{items}</ul>'.format(
+        items="".join(f"<li>{escape(label)}: {escape(value)}</li>" for label, value in items)
     )
 
 
@@ -1232,13 +1382,20 @@ def _metric_dict(metric: Any) -> dict[str, str]:
     }
 
 
-def _alert_dict(alert: Any) -> dict[str, str]:
+def _alert_dict(alert: Any) -> dict[str, Any]:
     return {
         "region": alert.region,
+        "region_id": alert.region_id,
+        "region_type": alert.region_type,
         "severity": alert.severity,
         "title": alert.title,
         "period": alert.period,
         "action": alert.action,
+        "quality_flag": alert.quality_flag,
+        "evidence": list(alert.evidence),
+        "priority_rank": str(alert.priority_rank or ""),
+        "alert_type": alert.alert_type,
+        "status": alert.status,
     }
 
 

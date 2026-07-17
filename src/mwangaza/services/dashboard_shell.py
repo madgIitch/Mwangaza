@@ -53,6 +53,16 @@ class AlertSummary:
     period: str
     action: str
     region_id: str = ""
+    alert_type: str = "drought"
+    status: str = "active"
+    score: float | None = None
+    quality_flag: str = "unknown"
+    evidence: tuple[tuple[str, str], ...] = ()
+    recommended_action: str = ""
+    priority_rank: int = 0
+    region_type: str = "country"
+    period_start: str = ""
+    period_end: str = ""
 
 
 @dataclass(frozen=True)
@@ -261,7 +271,7 @@ def _dashboard_data_from_payloads(
     is_simulated = _all_simulated([payload for payload in (risk, snapshot, *signals) if payload])
     source = source_simulated if is_simulated else source_observed
     message = message_simulated if is_simulated else message_observed
-    alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
+    alerts = active_alerts or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts, trend_payloads=cached_payloads)
     trends = _trends_for_region(cached_payloads, selected_region_id)
@@ -337,7 +347,7 @@ def _temporal_period_from_payloads(
         snapshot.get("region_id") if snapshot else None,
         *(signal.get("region_id") for signal in signals),
     )
-    alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
+    alerts = active_alerts or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     partial = _is_partial_period(payloads)
     return TemporalPeriod(
@@ -584,19 +594,11 @@ def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             """
-            SELECT region_id, severity, period_start, period_end, score, quality_flag
+            SELECT region_id, alert_type, period_start, period_end, severity, status,
+              score, quality_flag, evidence_json, recommendations_json
             FROM alerts
             WHERE status='active'
-            ORDER BY
-              CASE severity
-                WHEN 'emergency' THEN 0
-                WHEN 'critical' THEN 1
-                WHEN 'warning' THEN 2
-                WHEN 'watch' THEN 3
-                ELSE 4
-              END,
-              period_end DESC
-            LIMIT 5
+            LIMIT 50
             """
         ).fetchall()
     except sqlite3.Error:
@@ -606,17 +608,27 @@ def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
             conn.close()
         except UnboundLocalError:
             pass
-    return tuple(
+    alerts = tuple(
         AlertSummary(
             region=_region_label(str(row["region_id"])),
             severity=_severity(str(row["severity"])),
             title=_alert_title(str(row["severity"]), row["score"]),
             period=_period_label(str(row["period_start"]), str(row["period_end"])),
-            action="View details",
+            action=_primary_recommendation(row["recommendations_json"]) or "View details",
             region_id=str(row["region_id"]).lower(),
+            alert_type=str(row["alert_type"] or "drought"),
+            status=str(row["status"] or "active"),
+            score=_safe_float(row["score"]),
+            quality_flag=str(row["quality_flag"] or "unknown"),
+            evidence=_evidence_items(row["evidence_json"]),
+            recommended_action=_primary_recommendation(row["recommendations_json"]),
+            region_type=_region_type(str(row["region_id"])),
+            period_start=str(row["period_start"] or ""),
+            period_end=str(row["period_end"] or ""),
         )
         for row in rows
     )
+    return _prioritized_alerts(alerts)
 
 
 def _alerts_for_region(alerts: tuple[AlertSummary, ...], region_id: str) -> tuple[AlertSummary, ...]:
@@ -630,7 +642,8 @@ def _alerts_from_risk(risk: dict[str, Any] | None) -> tuple[AlertSummary, ...]:
     level = _risk_level(risk)
     if level in {"low", "unknown"}:
         return ()
-    return (
+    recommendations = _recommendations_from_risk(risk)
+    return _prioritized_alerts((
         AlertSummary(
             region=_region_label(_first_text(risk.get("region_id"))),
             severity=_severity(level),
@@ -639,10 +652,19 @@ def _alerts_from_risk(risk: dict[str, Any] | None) -> tuple[AlertSummary, ...]:
                 _first_text(risk.get("period_start")),
                 _first_text(risk.get("period_end")),
             ),
-            action="View details",
+            action=recommendations[0] if recommendations else "View details",
             region_id=_first_text(risk.get("region_id")).lower(),
+            alert_type="drought",
+            status="active",
+            score=_safe_score(risk),
+            quality_flag=_first_text(risk.get("quality_flag")) or "unknown",
+            evidence=_risk_evidence_items(risk),
+            recommended_action=recommendations[0] if recommendations else "",
+            region_type=_region_type(_first_text(risk.get("region_id"))),
+            period_start=_first_text(risk.get("period_start")),
+            period_end=_first_text(risk.get("period_end")),
         ),
-    )
+    ))
 
 
 def _recommendations_from_risk(risk: dict[str, Any] | None) -> tuple[str, ...]:
@@ -659,6 +681,8 @@ def _recommendations_from_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[str,
     if not alerts:
         return ()
     top = alerts[0]
+    if top.recommended_action:
+        return (top.recommended_action,)
     if top.severity == "critical":
         return ("Activate urgent coordination review.",)
     if top.severity == "warning":
@@ -666,6 +690,121 @@ def _recommendations_from_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[str,
     if top.severity == "watch":
         return ("Prepare early action checklist.",)
     return ()
+
+
+def _prioritized_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[AlertSummary, ...]:
+    ordered = sorted(alerts, key=_alert_sort_key)
+    return tuple(
+        AlertSummary(
+            alert.region,
+            alert.severity,
+            alert.title,
+            alert.period,
+            alert.action,
+            alert.region_id,
+            alert.alert_type,
+            alert.status,
+            alert.score,
+            alert.quality_flag,
+            alert.evidence,
+            alert.recommended_action,
+            index,
+            alert.region_type,
+            alert.period_start,
+            alert.period_end,
+        )
+        for index, alert in enumerate(ordered, start=1)
+    )
+
+
+def _alert_sort_key(alert: AlertSummary) -> tuple[int, int, str, float]:
+    severity_order = {"critical": 0, "warning": 1, "watch": 2, "normal": 3, "unknown": 4}
+    quality_order = {"ok": 0, "degraded": 1, "insufficient_history": 2}
+    return (
+        severity_order.get(alert.severity, 4),
+        quality_order.get(alert.quality_flag, 3),
+        _reverse_sort_text(alert.period_end),
+        -(alert.score or -1.0),
+    )
+
+
+def _reverse_sort_text(value: str) -> str:
+    return "".join(chr(0x10FFFF - ord(char)) for char in value)
+
+
+def _region_type(region_id: str) -> str:
+    target = region_id.lower()
+    for region in list_regions(include_pilots=True):
+        if region.id == target:
+            if region.level == PILOT_LEVEL:
+                return "pilot"
+            if region.level == COUNTRY_LEVEL:
+                return "country"
+            return region.level
+    return "unknown"
+
+
+def _primary_recommendation(raw_json: object) -> str:
+    try:
+        payload = json.loads(str(raw_json or "[]"))
+    except (TypeError, ValueError):
+        return ""
+    if not isinstance(payload, list):
+        return ""
+    for item in payload:
+        if isinstance(item, dict):
+            action = item.get("action")
+            if isinstance(action, str) and action.strip():
+                return action.strip()
+    return ""
+
+
+def _evidence_items(raw_json: object) -> tuple[tuple[str, str], ...]:
+    try:
+        payload = json.loads(str(raw_json or "{}"))
+    except (TypeError, ValueError):
+        return ()
+    if not isinstance(payload, dict):
+        return ()
+    return _metadata_evidence_items(payload)
+
+
+def _risk_evidence_items(risk: dict[str, Any]) -> tuple[tuple[str, str], ...]:
+    metadata = risk.get("metadata", {})
+    payload = dict(metadata) if isinstance(metadata, dict) else {}
+    payload.update(
+        {
+            "score": risk.get("composite_score"),
+            "quality": risk.get("quality_flag"),
+            "model_version": payload.get("model_version"),
+        }
+    )
+    return _metadata_evidence_items(payload)
+
+
+def _metadata_evidence_items(payload: dict[str, Any]) -> tuple[tuple[str, str], ...]:
+    blocked = ("secret", "key", "token", "credential", "password", "private", "email")
+    preferred = ("score", "quality", "quality_flag", "model_version", "source", "updated_at")
+    items: list[tuple[str, str]] = []
+    for key in preferred + tuple(sorted(payload)):
+        if key in {existing_key for existing_key, _ in items}:
+            continue
+        if any(part in key.lower() for part in blocked):
+            continue
+        value = payload.get(key)
+        if value in (None, "", [], {}):
+            continue
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            text = f"{value:.2f}".rstrip("0").rstrip(".")
+        elif isinstance(value, str):
+            text = value.strip()
+        else:
+            continue
+        if text:
+            items.append((key.replace("_", " ").title(), text[:80]))
+        if len(items) == 3:
+            break
+    return tuple(items)
 
 
 def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> tuple[TrendSeries, ...]:
@@ -826,32 +965,53 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         RegionMetric("Data quality", "Good", "", "normal", "Most indicators available"),
         RegionMetric("Exposed population", "1.2M", "est.", "watch", "Exposure estimate"),
     )
-    alerts = (
+    alerts = _prioritized_alerts((
         AlertSummary(
             "Somalia",
             "critical",
             "Drought risk escalation",
             "Jul 2026",
-            "View details",
+            "Activate urgent coordination review.",
             region_id="som",
+            score=78.0,
+            quality_flag="ok",
+            evidence=(("Model Version", "demo-risk-v1"), ("Source", "Demo fixture")),
+            recommended_action="Activate urgent coordination review.",
+            region_type="country",
+            period_start="2026-07-01T00:00:00Z",
+            period_end="2026-07-15T00:00:00Z",
         ),
         AlertSummary(
             "Northern Kenya",
             "warning",
             "Rainfall deficit watch",
             "Jul 2026",
-            "View details",
+            "Pre-position livestock feed.",
             region_id="ken",
+            score=64.0,
+            quality_flag="ok",
+            evidence=(("Model Version", "demo-risk-v1"), ("Source", "Demo fixture")),
+            recommended_action="Pre-position livestock feed.",
+            region_type="country",
+            period_start="2026-07-01T00:00:00Z",
+            period_end="2026-07-15T00:00:00Z",
         ),
         AlertSummary(
             "Ethiopia",
             "watch",
             "Vegetation stress emerging",
             "Jul 2026",
-            "View details",
+            "Prepare early action checklist.",
             region_id="eth",
+            score=43.0,
+            quality_flag="degraded",
+            evidence=(("Model Version", "demo-risk-v1"), ("Quality", "degraded")),
+            recommended_action="Prepare early action checklist.",
+            region_type="country",
+            period_start="2026-07-01T00:00:00Z",
+            period_end="2026-07-15T00:00:00Z",
         ),
-    )
+    ))
     recommendations = (
         "Prioritize water trucking readiness in high-risk districts.",
         "Pre-position livestock feed in pastoral corridors.",
