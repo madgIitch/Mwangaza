@@ -112,3 +112,8 @@
 - API publica v1 de solo lectura con regiones, snapshot latest, alertas, forecasts y OpenAPI.
 - Paginacion, errores saneados y garantia de no ejecutar live GEE en endpoints v1.
 - Validado con API tests, compile, suite completa y gate del harness.
+## 2026-07-17T12:40:00Z - #sprint-34-audit-trail Sprint 34 - Audit Trail -> review_pending
+
+- AuditRepository append-only con metadata saneada.
+- Lifecycle de alertas, cambios de configuracion y filtros por region/run/tipo.
+- Validado con audit tests, compile, suite completa y gate del harness.

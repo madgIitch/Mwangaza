@@ -876,3 +876,24 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-34-audit-trail -->
+## sprint-34-audit-trail · Sprint 34 - Audit Trail
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/audit/**`
+  - `src/mwangaza/db/migrations/**`
+  - `tests/audit/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

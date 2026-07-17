@@ -351,3 +351,12 @@ Contexto: se aprobó el spec `sprint-33-public-api` (Sprint 33 - Public API).
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-34-audit-trail -->
+## 2026-07-17 · sprint-34-audit-trail aprobado
+
+Contexto: se aprobó el spec `sprint-34-audit-trail` (Sprint 34 - Audit Trail).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

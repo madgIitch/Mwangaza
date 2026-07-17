@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-33-public-api - Sprint 33 - Public API** - estado: `review_pending`.
+Feature: **sprint-34-audit-trail - Sprint 34 - Audit Trail** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-33-public-api - Sprint 33 - Public API** - estado: `review_pen
 
 ## Siguiente accion
 
-- Smoke API local: llamar `/openapi.json`, `/api/v1/regions`, `/api/v1/snapshots/latest` y verificar respuestas JSON. Cerrar con `node .harness/spec.mjs done sprint-33-public-api` si pasa.
+- Smoke manual opcional: crear eventos en SQLite local y consultar por run/region. Cerrar con `node .harness/spec.mjs done sprint-34-audit-trail` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-33-public-api - Sprint 33 - Public API** - estado: `review_pen
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.api.test_public_api`
+- `uv run python -m unittest tests.audit.test_audit_trail`
 - `uv run python -m compileall -q src tests app.py`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-33-public-api`
+- `node .harness\gates.mjs sprint-34-audit-trail`
