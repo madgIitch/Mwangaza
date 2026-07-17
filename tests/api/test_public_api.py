@@ -1,14 +1,24 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
+import os
 import unittest
 from unittest.mock import patch
 
 from mwangaza.api.app import app
 
+api_app = importlib.import_module("mwangaza.api.app")
+
 
 class PublicApiTests(unittest.TestCase):
+    def setUp(self) -> None:
+        api_app._DASHBOARD_CACHE = None
+
+    def tearDown(self) -> None:
+        api_app._DASHBOARD_CACHE = None
+
     def test_v1_regions_is_paginated_and_versioned(self) -> None:
         status, headers, payload = _request("/api/v1/regions", b"limit=2&offset=1")
 
@@ -20,7 +30,8 @@ class PublicApiTests(unittest.TestCase):
         self.assertIn("cache-control", headers)
 
     def test_latest_snapshot_uses_visible_export_contract(self) -> None:
-        status, _headers, payload = _request("/api/v1/snapshots/latest")
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
 
         self.assertEqual(status, 200)
         self.assertEqual(payload["schema_version"], "mwangaza.api.v1")
@@ -29,8 +40,9 @@ class PublicApiTests(unittest.TestCase):
         self.assertTrue(payload["snapshot"]["rows"])
 
     def test_alerts_and_forecasts_endpoints_exist(self) -> None:
-        alerts_status, _headers, alerts = _request("/api/v1/alerts", b"limit=1")
-        forecasts_status, _headers, forecasts = _request("/api/v1/forecasts")
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            alerts_status, _headers, alerts = _request("/api/v1/alerts", b"limit=1")
+            forecasts_status, _headers, forecasts = _request("/api/v1/forecasts")
 
         self.assertEqual(alerts_status, 200)
         self.assertEqual(alerts["limit"], 1)
@@ -40,11 +52,41 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(forecasts["items"], [])
 
     def test_v1_endpoints_do_not_call_live_gee_loader(self) -> None:
-        with patch("mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads") as live:
+        with (
+            patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}),
+            patch("mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads") as live,
+        ):
             _request("/api/v1/snapshots/latest")
             _request("/api/v1/alerts")
 
         live.assert_not_called()
+
+    def test_live_api_mode_uses_dashboard_loader_without_forcing_demo(self) -> None:
+        from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+
+        demo = load_dashboard_shell_data("demo")
+        with (
+            patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "live"}),
+            patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo) as loader,
+        ):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
+
+        self.assertEqual(status, 200)
+        self.assertIn(payload["data_mode"], {"live", "cache", "demo"})
+        loader.assert_called_with()
+
+    def test_live_api_mode_reuses_dashboard_loader_cache_across_endpoints(self) -> None:
+        from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+
+        demo = load_dashboard_shell_data("demo")
+        with (
+            patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "live"}),
+            patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo) as loader,
+        ):
+            _request("/api/v1/snapshots/latest")
+            _request("/api/v1/alerts")
+
+        self.assertEqual(loader.call_count, 1)
 
     def test_errors_are_structured_and_sanitized(self) -> None:
         status, _headers, payload = _request("/api/v1/regions", b"limit=not-an-int")

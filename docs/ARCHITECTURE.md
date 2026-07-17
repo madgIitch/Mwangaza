@@ -1017,3 +1017,45 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-40-pwa-installability -->
+## sprint-40-pwa-installability · Sprint 40 - React PWA Migration
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `package.json`
+  - `package-lock.json`
+  - `pnpm-lock.yaml`
+  - `vite.config.*`
+  - `tsconfig*.json`
+  - `eslint.config.*`
+  - `tests/frontend/**`
+  - `pwa/**`
+  - `assets/icons/**`
+  - `src/mwangaza/ui/pwa/**`
+  - `tests/pwa/**`
+  - `app.py`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/ui/**`
+  - `tests/api/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Contratos API y fixtures demo definidos para React.
+- **external_contracts:** React/Vite como frontend canonico; FastAPI permanece backend.
+- **edge_cases:** Responsive, low-bandwidth, i18n y payload parcial cubiertos.
+- **ui_states:** Paridad visible con Streamlit definida.
+

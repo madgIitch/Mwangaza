@@ -1,8 +1,8 @@
 {
   "gates": [
-    { "name": "lint", "cmd": "set PYTHONPATH=src&& py -m compileall -q src tests app.py", "blocking": true },
-    { "name": "typecheck", "cmd": "set PYTHONPATH=src&& py -m compileall -q src tests app.py", "blocking": true },
-    { "name": "test", "cmd": "set PYTHONPATH=src&& py -m unittest discover -s tests", "blocking": true },
+    { "name": "lint", "cmd": "set PYTHONPATH=src&& set UV_CACHE_DIR=.cache/uv&& set PYTHONPYCACHEPREFIX=.cache/pycache-gates-lint&& uv run python -m compileall -q src tests app.py", "blocking": true },
+    { "name": "typecheck", "cmd": "set PYTHONPATH=src&& set UV_CACHE_DIR=.cache/uv&& set PYTHONPYCACHEPREFIX=.cache/pycache-gates-typecheck&& uv run python -m compileall -q src tests app.py", "blocking": true },
+    { "name": "test", "cmd": "set PYTHONPATH=src&& set UV_CACHE_DIR=.cache/uv&& set PYTHONPYCACHEPREFIX=.cache/pycache-gates-test&& uv run python -m unittest discover -s tests", "blocking": true },
     { "name": "diff-scope", "blocking": true }
   ]
 }

@@ -405,3 +405,16 @@ Contexto: se aprobó el spec `sprint-39-low-bandwidth-mode` (Sprint 39 - Low-Ban
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-40-pwa-installability -->
+## 2026-07-17 · sprint-40-pwa-installability aprobado
+
+Contexto: se aprobó el spec `sprint-40-pwa-installability` (Sprint 40 - React PWA Migration).
+
+Decisiones registradas:
+
+- **auth_secrets:** Sin secretos ni GEE directo en navegador.
+- **rollback_compat:** `app.py` queda como shim documentado.
+- **tests:** Cobertura frontend y gates JS definidos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

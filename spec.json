@@ -2774,16 +2774,16 @@
     },
     {
       "id": "sprint-40-pwa-installability",
-      "name": "Sprint 40 - PWA Installability",
-      "status": "pending",
+      "name": "Sprint 40 - React PWA Migration",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.8.4",
-      "estimated_hours": 5,
+      "estimated_hours": 12,
       "demo_critical": false,
       "dependencies": [
         "sprint-39-low-bandwidth-mode"
       ],
-      "objective": "Permitir instalar la experiencia web como acceso móvil.",
+      "objective": "Migrar completamente el dashboard actual de Streamlit a una aplicacion JavaScript/React instalable como PWA, consumiendo la API publica y manteniendo FastAPI/Python como backend.",
       "user_stories": [
         {
           "id": "HU40.1",
@@ -2792,29 +2792,49 @@
         {
           "id": "HU40.2",
           "story": "Como mantenedor quiero evitar prometer funcionalidad offline que no existe."
+        },
+        {
+          "id": "HU40.3",
+          "story": "Como desarrollador quiero sustituir Streamlit por un frontend React mantenible, testeable y desacoplado de Python."
         }
       ],
       "tasks": [
-        "Crear manifest.",
-        "Añadir iconos.",
-        "Configurar service worker limitado.",
-        "Definir pantalla offline.",
-        "Validar installability."
+        "Crear aplicacion React + Vite + TypeScript bajo `frontend/`.",
+        "Migrar completamente las vistas actuales de Streamlit al frontend JS: dashboard, mapa/tabla lite, drilldown, alertas, reportes, export, forecast diagnostics, i18n y modo low-bandwidth.",
+        "Consumir los contratos existentes de `/api/v1/**` sin llamadas directas a Earth Engine desde el navegador.",
+        "Crear manifest, iconos, service worker limitado y pantalla offline.",
+        "Retirar Streamlit como frontend principal y dejar `app.py` como shim de compatibilidad o aviso de migracion.",
+        "Añadir tests y build/typecheck/lint del frontend."
       ],
-      "deliverable": "PWA instalable con shell y mensaje offline.",
+      "deliverable": "Frontend React/Vite PWA que reemplaza Streamlit como experiencia principal.",
       "acceptance": [
-        "AC1: El manifest contiene nombre, short_name, iconos, start_url y display standalone.",
-        "AC2: La app puede instalarse en navegador compatible.",
-        "AC3: El service worker cachea únicamente assets seguros y shell, no datos sensibles indefinidamente.",
-        "AC4: Sin conexión se muestra el último timestamp disponible y una advertencia.",
-        "AC5: No se afirma que los datos sean live en modo offline.",
-        "AC6: Lighthouse o prueba equivalente no reporta errores críticos de manifest."
+        "AC1: El dashboard principal ya no depende de Streamlit para la experiencia de usuario; la app React/Vite renderiza las pantallas equivalentes usando datos de `/api/v1/**` o fixtures demo.",
+        "AC2: El manifest contiene nombre, short_name, iconos, start_url y display standalone, y la app puede instalarse en navegador compatible.",
+        "AC3: El service worker cachea unicamente assets seguros y shell, no datos sensibles indefinidamente.",
+        "AC4: Sin conexion se muestra el ultimo timestamp disponible y una advertencia; no se afirma que los datos sean live en modo offline.",
+        "AC5: La migracion conserva las capacidades visibles ya implementadas: riesgo regional, drilldown, alertas activas, comparacion historica, exposicion potencial, reportes/export, forecast diagnostics, i18n y modo low-bandwidth.",
+        "AC6: Los tests automatizados del frontend verifican render principal, low-bandwidth, i18n, offline shell y consumo de contratos API; el build/typecheck/lint JS termina con codigo 0.",
+        "AC7: `app.py` deja de ser el frontend canonico y queda como shim documentado o aviso de migracion; la documentacion y comandos de desarrollo apuntan al frontend JS.",
+        "AC8: Lighthouse o prueba equivalente no reporta errores criticos de manifest/installability."
       ],
       "scope": [
+        "frontend/**",
+        "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "vite.config.*",
+        "tsconfig*.json",
+        "eslint.config.*",
+        "tests/frontend/**",
         "pwa/**",
         "assets/icons/**",
         "src/mwangaza/ui/pwa/**",
         "tests/pwa/**",
+        "app.py",
+        "src/mwangaza/api/**",
+        "src/mwangaza/ui/**",
+        "tests/api/**",
+        "tests/ui/**",
         "pyproject.toml",
         "requirements*.txt",
         "Makefile",
@@ -2826,7 +2846,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T14:24:23.353Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:1d63e80c97cc00fb3ecc8f5230c7732cdc9fd16e68cf5041b29ce04b1eeecb09",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T14:24:28.419Z"
     },
     {
       "id": "sprint-41-admin-configuration",

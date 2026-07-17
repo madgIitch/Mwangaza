@@ -1,11 +1,10 @@
-.PHONY: lint typecheck test
+.PHONY: lint typecheck test frontend-lint frontend-typecheck frontend-test frontend-build
 
 ifeq ($(OS),Windows_NT)
 SHELL := powershell.exe
 .SHELLFLAGS := -NoProfile -ExecutionPolicy Bypass -Command
-WIN_LOCALAPPDATA := $(subst \,/,$(LOCALAPPDATA))
-PYTHON ?= $(shell powershell.exe -NoProfile -Command "(Get-ChildItem -Path '$(WIN_LOCALAPPDATA)/Python/pythoncore-*/python.exe' | Select-Object -First 1 -ExpandProperty FullName).Replace('\','/')")
-PYTHONPATH_ENV = $$env:PYTHONPATH='src';
+PYTHON ?= uv run python
+PYTHONPATH_ENV = $$env:PYTHONPATH='src'; $$env:UV_CACHE_DIR='.cache/uv';
 RUNPY = & $(PYTHON)
 else
 PYTHON ?= python
@@ -14,10 +13,22 @@ RUNPY = $(PYTHON)
 endif
 
 lint:
-	$(PYTHONPATH_ENV) $(RUNPY) -m compileall -q src tests app.py
+	$(PYTHONPATH_ENV) $$env:PYTHONPYCACHEPREFIX='.cache/pycache-lint'; $(RUNPY) -m compileall -q src tests app.py
 
 typecheck:
-	$(PYTHONPATH_ENV) $(RUNPY) -m compileall -q src tests app.py
+	$(PYTHONPATH_ENV) $$env:PYTHONPYCACHEPREFIX='.cache/pycache-typecheck'; $(RUNPY) -m compileall -q src tests app.py
 
 test:
-	$(PYTHONPATH_ENV) $(RUNPY) -m unittest discover -s tests
+	$(PYTHONPATH_ENV) $$env:PYTHONPYCACHEPREFIX='.cache/pycache-test'; $(RUNPY) -m unittest discover -s tests
+
+frontend-lint:
+	npm run lint
+
+frontend-typecheck:
+	npm run typecheck
+
+frontend-test:
+	npm test
+
+frontend-build:
+	npm run build

@@ -7,17 +7,23 @@
 
 ## Estilo de codigo
 
-Lenguaje/framework principal: Python 3.11+, con dashboard Streamlit, API ASGI servible por Uvicorn y modulos de dominio bajo `src/mwangaza`.
+Lenguaje/framework principal: Python 3.11+ para backend/API y React + Vite + TypeScript para el frontend canonico. Streamlit queda como shim de compatibilidad.
 
-Gestor de paquetes: `pip` con instalacion editable desde `pyproject.toml`.
+Gestor de paquetes: `pip` con instalacion editable desde `pyproject.toml` y `npm` para el frontend PWA.
 
 Comandos locales:
 
 - Instalar: `python -m pip install -e .`
-- Lint: `make lint` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python lint`)
-- Typecheck/build: `make typecheck` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python typecheck`)
-- Test: `make test` (en Windows resuelve Python desde `%LOCALAPPDATA%`; en Linux CI se invoca como `make PYTHON=python test`)
-- Dev server dashboard: `streamlit run app.py`
+- Instalar frontend: `npm install`
+- Lint backend: `make lint`
+- Typecheck backend: `make typecheck`
+- Test backend: `make test`
+- Lint frontend: `npm run lint`
+- Typecheck frontend: `npm run typecheck`
+- Test frontend: `npm test`
+- Build frontend: `npm run build`
+- Dev server dashboard canonico: `npm run dev`
+- Dev server shim legado: `streamlit run app.py`
 - Dev server API: `uvicorn mwangaza.api.app:app --reload`
 - Refresh stub: `python -m mwangaza.data.refresh --dry-run`
 
@@ -26,7 +32,8 @@ Estructura relevante:
 - `src/mwangaza/`: paquete importable y codigo de dominio.
 - `src/mwangaza/api/`: entrypoint ASGI y contratos HTTP.
 - `src/mwangaza/data/`: entrypoints de refresco y futuros adaptadores de datos.
-- `src/mwangaza/ui/`: dashboard Streamlit.
+- `frontend/`: dashboard React/Vite/PWA canonico.
+- `src/mwangaza/ui/`: dashboard Streamlit legado y utilidades historicas.
 - `tests/`: tests de contrato y regresion.
 - `smoke_tests/`: smoke tests manuales para integraciones prod-like con datos reales.
 
