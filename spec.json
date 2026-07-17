@@ -2394,7 +2394,7 @@
     {
       "id": "sprint-34-audit-trail",
       "name": "Sprint 34 - Audit Trail",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.7.1",
       "estimated_hours": 4,
@@ -2422,12 +2422,12 @@
       ],
       "deliverable": "Trazabilidad append-only del sistema.",
       "acceptance": [
-        "AC1: Los eventos incluyen actor, tipo, entidad, timestamp, run_id y metadata.",
-        "AC2: Crear, elevar, degradar y resolver una alerta produce eventos separados.",
-        "AC3: Cambiar configuración registra versión anterior y nueva sin secretos.",
-        "AC4: La aplicación no ofrece borrado de eventos.",
-        "AC5: La consulta permite filtrar por región, run y tipo.",
-        "AC6: Un evento puede enlazarse al snapshot y modelo usados."
+        "Los eventos incluyen actor, tipo, entidad, timestamp, run_id y metadata saneada.",
+        "Crear, elevar, degradar y resolver una alerta produce eventos separados.",
+        "Cambiar configuracion registra version anterior y nueva sin secretos.",
+        "No existe metodo publico ni endpoint para borrar eventos de auditoria.",
+        "La consulta filtra por region, run y tipo con limite maximo.",
+        "Un evento puede enlazarse a snapshot y modelo mediante `snapshot_id` y `model_version`."
       ],
       "scope": [
         "src/mwangaza/audit/**",
@@ -2444,7 +2444,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:42:45.775Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:42:49.143Z"
     },
     {
       "id": "sprint-35-notification-simulator",
