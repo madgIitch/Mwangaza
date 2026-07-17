@@ -1924,7 +1924,7 @@
     {
       "id": "sprint-27-indicator-trends",
       "name": "Sprint 27 - Indicator Trends",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.5",
       "estimated_hours": 5,
