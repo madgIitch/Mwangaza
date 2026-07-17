@@ -2581,7 +2581,7 @@
     {
       "id": "sprint-37-forecast-confidence",
       "name": "Sprint 37 - Forecast Confidence",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.1",
       "estimated_hours": 4,
@@ -2609,12 +2609,12 @@
       ],
       "deliverable": "Previsión con intervalo y elegibilidad de alerta preventiva.",
       "acceptance": [
-        "AC1: Cada forecast incluye intervalo inferior y superior.",
-        "AC2: El modelo debe superar el baseline ingenuo bajo la métrica configurada para ser elegible.",
-        "AC3: Una alerta preventiva requiere caída prevista y confianza mínima.",
-        "AC4: La UI muestra forecast como estimación, no hecho.",
-        "AC5: Modelos no elegibles permanecen visibles en diagnostics pero no disparan alertas.",
-        "AC6: Se persiste la razón de elegibilidad o rechazo."
+        "Cada punto forecast evaluado incluye intervalo inferior y superior.",
+        "El modelo solo es elegible si supera baseline ingenuo bajo MAE configurado.",
+        "Una alerta preventiva requiere caida prevista y confianza minima.",
+        "La UI/diagnostico describe forecast como estimacion, no hecho.",
+        "Modelos no elegibles quedan visibles en diagnostics pero no disparan alertas.",
+        "La razon de elegibilidad o rechazo se conserva en el resultado."
       ],
       "scope": [
         "src/mwangaza/forecasting/confidence.py",
@@ -2633,19 +2633,15 @@
         ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:50:38.562Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:50:42.423Z"
     },
     {
       "id": "sprint-38-multilingual-interface",
