@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import unittest
+from unittest.mock import patch
+
+from mwangaza.api.app import app
+
+
+class PublicApiTests(unittest.TestCase):
+    def test_v1_regions_is_paginated_and_versioned(self) -> None:
+        status, headers, payload = _request("/api/v1/regions", b"limit=2&offset=1")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["schema_version"], "mwangaza.api.v1")
+        self.assertEqual(payload["limit"], 2)
+        self.assertEqual(payload["offset"], 1)
+        self.assertEqual(len(payload["items"]), 2)
+        self.assertIn("cache-control", headers)
+
+    def test_latest_snapshot_uses_visible_export_contract(self) -> None:
+        status, _headers, payload = _request("/api/v1/snapshots/latest")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["schema_version"], "mwangaza.api.v1")
+        self.assertEqual(payload["snapshot"]["region_id"], "som")
+        self.assertIn("source_metadata", payload["snapshot"])
+        self.assertTrue(payload["snapshot"]["rows"])
+
+    def test_alerts_and_forecasts_endpoints_exist(self) -> None:
+        alerts_status, _headers, alerts = _request("/api/v1/alerts", b"limit=1")
+        forecasts_status, _headers, forecasts = _request("/api/v1/forecasts")
+
+        self.assertEqual(alerts_status, 200)
+        self.assertEqual(alerts["limit"], 1)
+        self.assertEqual(len(alerts["items"]), 1)
+        self.assertEqual(forecasts_status, 200)
+        self.assertFalse(forecasts["available"])
+        self.assertEqual(forecasts["items"], [])
+
+    def test_v1_endpoints_do_not_call_live_gee_loader(self) -> None:
+        with patch("mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads") as live:
+            _request("/api/v1/snapshots/latest")
+            _request("/api/v1/alerts")
+
+        live.assert_not_called()
+
+    def test_errors_are_structured_and_sanitized(self) -> None:
+        status, _headers, payload = _request("/api/v1/regions", b"limit=not-an-int")
+
+        self.assertEqual(status, 400)
+        self.assertEqual(set(payload), {"error"})
+        self.assertEqual(payload["error"]["code"], "invalid_request")
+        self.assertNotIn("Traceback", json.dumps(payload))
+        self.assertNotIn("C:\\", json.dumps(payload))
+
+    def test_openapi_contains_v1_examples_and_health_still_exists(self) -> None:
+        openapi_status, _headers, openapi = _request("/openapi.json")
+        health_status, _headers, health = _request("/health")
+
+        self.assertEqual(openapi_status, 200)
+        self.assertIn("/api/v1/regions", openapi["paths"])
+        self.assertIn("x-example", openapi["paths"]["/api/v1/regions"]["get"])
+        self.assertEqual(health_status, 200)
+        self.assertIn("gee", health)
+
+
+def _request(path: str, query_string: bytes = b"") -> tuple[int, dict[str, str], dict[str, object]]:
+    messages: list[dict[str, object]] = []
+
+    async def receive() -> dict[str, object]:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message: dict[str, object]) -> None:
+        messages.append(message)
+
+    asyncio.run(app({"type": "http", "path": path, "query_string": query_string}, receive, send))
+    start = messages[0]
+    body = messages[1]
+    headers = {
+        key.decode("ascii"): value.decode("ascii")
+        for key, value in start.get("headers", [])  # type: ignore[union-attr]
+    }
+    return int(start["status"]), headers, json.loads(body["body"])  # type: ignore[arg-type]
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-32-data-export - Sprint 32 - Data Export** - estado: `review_pending`.
+Feature: **sprint-33-public-api - Sprint 33 - Public API** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-32-data-export - Sprint 32 - Data Export** - estado: `review_p
 
 ## Siguiente accion
 
-- Smoke visual: confirmar que el panel de exportacion comunica snapshot visible, limite y geometria omitida. Cerrar con `node .harness/spec.mjs done sprint-32-data-export` si pasa.
+- Smoke API local: llamar `/openapi.json`, `/api/v1/regions`, `/api/v1/snapshots/latest` y verificar respuestas JSON. Cerrar con `node .harness/spec.mjs done sprint-33-public-api` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-32-data-export - Sprint 32 - Data Export** - estado: `review_p
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.exports.test_visible_export`
-- `uv run python -m unittest tests.ui.test_dashboard_shell`
+- `uv run python -m unittest tests.api.test_public_api`
+- `uv run python -m compileall -q src tests app.py`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-32-data-export`
+- `node .harness\gates.mjs sprint-33-public-api`

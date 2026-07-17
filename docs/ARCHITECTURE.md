@@ -854,3 +854,25 @@ Objetivo no negociable:
   - `src/mwangaza/db/**`
   - `tests/api/**`
 
+<!-- harness:sprint-33-public-api -->
+## sprint-33-public-api · Sprint 33 - Public API
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/contracts/**`
+  - `src/mwangaza/db/**`
+  - `tests/api/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

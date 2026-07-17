@@ -342,3 +342,12 @@ Contexto: se aprobó el spec `sprint-32-data-export` (Sprint 32 - Data Export).
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-33-public-api -->
+## 2026-07-17 · sprint-33-public-api aprobado
+
+Contexto: se aprobó el spec `sprint-33-public-api` (Sprint 33 - Public API).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

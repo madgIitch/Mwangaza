@@ -107,3 +107,8 @@
 - Exportacion segura CSV/JSON del snapshot visible.
 - Schema, metadata, nulls, saneamiento, limite de filas y geometria opcional.
 - Validado con export tests, UI, suite completa y gate del harness.
+## 2026-07-17T12:25:00Z - #sprint-33-public-api Sprint 33 - Public API -> review_pending
+
+- API publica v1 de solo lectura con regiones, snapshot latest, alertas, forecasts y OpenAPI.
+- Paginacion, errores saneados y garantia de no ejecutar live GEE en endpoints v1.
+- Validado con API tests, compile, suite completa y gate del harness.
