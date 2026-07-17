@@ -2521,7 +2521,7 @@
     {
       "id": "sprint-36-forecast-model",
       "name": "Sprint 36 - Forecast Model",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.0",
       "estimated_hours": 7,
@@ -2549,12 +2549,12 @@
       ],
       "deliverable": "Previsión de hasta tres períodos con modelo explicable.",
       "acceptance": [
-        "AC1: El modelo por defecto es reproducible y no requiere GPU.",
-        "AC2: No se entrena si la serie no alcanza longitud mínima.",
-        "AC3: El forecast incluye fecha de entrenamiento, horizonte y versión.",
-        "AC4: El backtest calcula al menos MAE y error relativo seguro.",
-        "AC5: Una previsión no sustituye a la observación actual.",
-        "AC6: Tests fijan semilla y no dependen de red."
+        "El modelo por defecto es determinista, reproducible y no requiere GPU ni red.",
+        "No se entrena si la serie tiene menos de cuatro puntos validos.",
+        "El forecast incluye fecha de entrenamiento, horizonte, version e indicador.",
+        "El backtest calcula MAE y error relativo seguro sin dividir por cero.",
+        "La prevision se etiqueta como experimental y no sustituye a la observacion actual.",
+        "Tests usan series fijas y no dependen de red."
       ],
       "scope": [
         "src/mwangaza/forecasting/**",
@@ -2570,7 +2570,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:48:13.036Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:48:17.591Z"
     },
     {
       "id": "sprint-37-forecast-confidence",
