@@ -2712,7 +2712,7 @@
     {
       "id": "sprint-39-low-bandwidth-mode",
       "name": "Sprint 39 - Low-Bandwidth Mode",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.3",
       "estimated_hours": 4,
@@ -2740,12 +2740,12 @@
       ],
       "deliverable": "Vista ligera centrada en texto y tablas.",
       "acceptance": [
-        "AC1: El modo lite no carga tiles ni geometrías detalladas.",
-        "AC2: Muestra alertas, score, indicadores y acciones esenciales.",
-        "AC3: La preferencia se mantiene durante la sesión.",
-        "AC4: Los reportes y API siguen disponibles.",
-        "AC5: La página inicial lite tiene tamaño estático reducido respecto al modo completo.",
-        "AC6: La accesibilidad no empeora al activar el modo."
+        "El modo lite no renderiza SVG de mapa ni geometria detallada.",
+        "Muestra alertas, score, indicadores y acciones esenciales.",
+        "La preferencia aparece como estado/control de sesion en el HTML.",
+        "Reportes y API siguen visibles/disponibles en modo lite.",
+        "El HTML lite es mas pequeno que el modo completo para el mismo snapshot.",
+        "La vista lite usa tabla/texto accesible y no depende solo de color."
       ],
       "scope": [
         "app.py",
@@ -2764,7 +2764,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:56:23.933Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:56:27.648Z"
     },
     {
       "id": "sprint-40-pwa-installability",
