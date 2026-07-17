@@ -15,7 +15,7 @@ The shell follows the approved visual reference and the local `mwangaza-mockup/`
 layout direction without embedding mock data or future-only interactions:
 
 - top status bar with brand, source, last update and freshness;
-- left navigation with `Overview`, `Region`, `Alerts`, `Reports` and `About`;
+- left navigation with `Overview`, `Regions`, `Alerts`, `Reports` and `About`;
 - regional risk choropleth, active alerts, regional metrics and recommendations;
 - country drilldown and subnational pilot panel backed by loaded dashboard payloads;
 - active alert filters by severity, country and region type, with the global

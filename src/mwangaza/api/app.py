@@ -278,6 +278,7 @@ def _regional_risk(data: Any) -> list[dict[str, Any]]:
                 "period_end": getattr(region, "period_end", ""),
                 "selected": bool(getattr(region, "selected", False)),
                 "source_mode": getattr(region, "source_mode", ""),
+                "ui_geometry": getattr(region, "ui_geometry", None),
             }
         )
     return regions

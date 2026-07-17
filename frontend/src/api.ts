@@ -183,7 +183,8 @@ function regionsFromSnapshot(snapshot: PublicSnapshotResponse, dataMode: Dashboa
       score: numericValue(region.score),
       level: normalizeRiskLevel(region.level, region.color_level),
       quality: region.quality || "unknown",
-      period: periodLabel(region.period_start, region.period_end)
+      period: periodLabel(region.period_start, region.period_end),
+      uiGeometry: region.ui_geometry ?? undefined
     }));
   }
   const selectedId = snapshot.snapshot.region_id;

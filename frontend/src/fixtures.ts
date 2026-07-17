@@ -1,4 +1,15 @@
-import type { DashboardData } from "./types";
+import type { DashboardData, GeoJsonGeometry } from "./types";
+
+const uiGeometryByRegion: Record<string, GeoJsonGeometry> = {
+  ken: { type: "Polygon", coordinates: [[[34.2, -4.4], [41.3, -4.4], [41.3, 4.8], [34.2, 4.8], [34.2, -4.4]]] },
+  eth: { type: "Polygon", coordinates: [[[33.6, 3.5], [47.4, 3.5], [47.4, 14.3], [33.6, 14.3], [33.6, 3.5]]] },
+  som: { type: "Polygon", coordinates: [[[41.4, -1.4], [50.9, -1.4], [50.9, 11.7], [41.4, 11.7], [41.4, -1.4]]] },
+  sdn: { type: "Polygon", coordinates: [[[22.5, 9.2], [37.9, 9.2], [37.9, 21.6], [22.5, 21.6], [22.5, 9.2]]] },
+  ssd: { type: "Polygon", coordinates: [[[24.6, 3.9], [35.4, 3.9], [35.4, 11.8], [24.6, 11.8], [24.6, 3.9]]] },
+  uga: { type: "Polygon", coordinates: [[[29.9, -1.2], [34.7, -1.2], [34.7, 3.9], [29.9, 3.9], [29.9, -1.2]]] },
+  dji: { type: "Polygon", coordinates: [[[41.9, 11.1], [43.3, 11.1], [43.3, 12.6], [41.9, 12.6], [41.9, 11.1]]] },
+  eri: { type: "Polygon", coordinates: [[[36.9, 12.7], [42.7, 12.7], [42.7, 17.6], [36.9, 17.6], [36.9, 12.7]]] }
+};
 
 export const demoDashboard: DashboardData = {
   project: "Mwangaza",
@@ -9,10 +20,10 @@ export const demoDashboard: DashboardData = {
   message: "Data is current",
   selectedRegionId: "som",
   regions: [
-    { id: "som", name: "Somalia", score: 82, level: "critical", quality: "ok", period: "2026-07-01 to 2026-07-15" },
-    { id: "ken", name: "Northern Kenya", score: 64, level: "warning", quality: "ok", period: "2026-07-01 to 2026-07-15" },
-    { id: "eth", name: "Ethiopia", score: 43, level: "watch", quality: "degraded", period: "2026-07-01 to 2026-07-15" },
-    { id: "uga", name: "Uganda", score: 22, level: "normal", quality: "ok", period: "2026-07-01 to 2026-07-15" }
+    { id: "som", name: "Somalia", score: 82, level: "critical", quality: "ok", period: "2026-07-01 to 2026-07-15", uiGeometry: uiGeometryByRegion.som },
+    { id: "ken", name: "Northern Kenya", score: 64, level: "warning", quality: "ok", period: "2026-07-01 to 2026-07-15", uiGeometry: uiGeometryByRegion.ken },
+    { id: "eth", name: "Ethiopia", score: 43, level: "watch", quality: "degraded", period: "2026-07-01 to 2026-07-15", uiGeometry: uiGeometryByRegion.eth },
+    { id: "uga", name: "Uganda", score: 22, level: "normal", quality: "ok", period: "2026-07-01 to 2026-07-15", uiGeometry: uiGeometryByRegion.uga }
   ],
   metrics: [
     { label: "NDVI anomaly", value: "-0.18", unit: "z", severity: "warning", detail: "Vegetation stress" },
@@ -77,7 +88,7 @@ export const demoDashboard: DashboardData = {
   }
 };
 
-demoDashboard.profiles = demoDashboard.regions.slice(0, 3).map((region) => ({
+demoDashboard.profiles = demoDashboard.regions.map((region) => ({
   id: region.id,
   name: region.name,
   metrics: region.id === "som" ? demoDashboard.metrics : demoDashboard.metrics.map((metric) => ({

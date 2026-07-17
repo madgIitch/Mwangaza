@@ -1,20 +1,94 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadApiDashboard } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
 import { demoDashboard } from "../../frontend/src/fixtures";
 
 describe("React PWA dashboard", () => {
+  beforeEach(() => {
+    window.history.pushState({}, "", "/");
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it("renders the main operational dashboard without Streamlit", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 
     expect(screen.getByRole("heading", { name: "Mwangaza" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Regional risk" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Regions" })).toBeInTheDocument();
     expect(screen.getByText("Drought risk escalation")).toBeInTheDocument();
     expect(screen.getByText("mwangaza-executive-report-som-2026-07-15.pdf")).toBeInTheDocument();
     expect(screen.getByText(/Forecasts are not available yet/)).toBeInTheDocument();
+  });
+
+  it("renders Region Explorer as an internal app screen on /region", () => {
+    window.history.pushState({}, "", "/region");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Region Explorer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Somalia Risk Map" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Regions map")).toBeInTheDocument();
+    expect(screen.getByText("Why this region is at risk")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Subnational ranking" })).toBeInTheDocument();
+    expect(screen.getByText("Methodology page pending")).toBeInTheDocument();
+  });
+
+  it("uses page routes instead of hash anchors in the sidebar", () => {
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/region");
+    expect(screen.getByRole("link", { name: "Active alerts" })).toHaveAttribute("href", "/alerts");
+    expect(screen.getByRole("link", { name: "Reports and export" })).toHaveAttribute("href", "/reports");
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+  });
+
+  it("removes legacy hash anchors from the browser URL", () => {
+    window.history.pushState({}, "", "/#regional-risk");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(window.location.pathname).toBe("/");
+    expect(window.location.hash).toBe("");
+    expect(screen.getByRole("heading", { name: "Regions" })).toBeInTheDocument();
+  });
+
+  it("renders alerts as a standalone page route instead of scrolling inside Overview", () => {
+    window.history.pushState({}, "", "/alerts");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Active alerts" })).toBeInTheDocument();
+    expect(screen.getByText("Page shell pending")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Regions" })).not.toBeInTheDocument();
+  });
+
+  it("does not draw provisional geography while the public API is loading on /region", () => {
+    window.history.pushState({}, "", "/region");
+    const loadingRegionData = {
+      ...demoDashboard,
+      dataMode: "cache" as const,
+      source: "Loading public API",
+      regions: demoDashboard.regions.map(({ id, name, score, level, quality, period }) => ({
+        id,
+        name,
+        score,
+        level,
+        quality,
+        period
+      }))
+    };
+
+    render(<App initialData={loadingRegionData} skipApiLoad />);
+
+    expect(screen.getByText("Map geometry pending")).toBeInTheDocument();
+    expect(document.querySelector(".region-svg-map")).not.toBeInTheDocument();
   });
 
   it("renders a low-bandwidth table shell", () => {
@@ -29,7 +103,7 @@ describe("React PWA dashboard", () => {
   it("switches i18n labels", () => {
     render(<App initialData={demoDashboard} initialLanguage="sw" skipApiLoad />);
 
-    expect(screen.getByRole("heading", { name: "Hatari ya kikanda" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Maeneo" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tahadhari hai" })).toBeInTheDocument();
   });
 

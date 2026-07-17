@@ -39,6 +39,7 @@ class PublicApiTests(unittest.TestCase):
         self.assertIn("source_metadata", payload["snapshot"])
         self.assertIn("regional_risk", payload["snapshot"])
         self.assertTrue(payload["snapshot"]["regional_risk"])
+        self.assertIn("ui_geometry", payload["snapshot"]["regional_risk"][0])
         self.assertTrue(payload["snapshot"]["rows"])
 
     def test_alerts_and_forecasts_endpoints_exist(self) -> None:

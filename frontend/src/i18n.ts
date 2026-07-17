@@ -3,9 +3,11 @@ import type { Language } from "./types";
 const labels: Record<Language, Record<string, string>> = {
   en: {
     overview: "Overview",
-    regionalRisk: "Regional risk",
+    regions: "Regions",
+    regionalRisk: "Regions",
     selectedRegion: "Selected region",
     activeAlerts: "Active alerts",
+    about: "About",
     historicalComparison: "Historical comparison",
     exposure: "Potential exposure",
     reports: "Reports and export",
@@ -19,9 +21,11 @@ const labels: Record<Language, Record<string, string>> = {
   },
   es: {
     overview: "Resumen",
-    regionalRisk: "Riesgo regional",
+    regions: "Regiones",
+    regionalRisk: "Regiones",
     selectedRegion: "Region seleccionada",
     activeAlerts: "Alertas activas",
+    about: "Acerca de",
     historicalComparison: "Comparacion historica",
     exposure: "Exposicion potencial",
     reports: "Reportes y export",
@@ -35,9 +39,11 @@ const labels: Record<Language, Record<string, string>> = {
   },
   sw: {
     overview: "Muhtasari",
-    regionalRisk: "Hatari ya kikanda",
+    regions: "Maeneo",
+    regionalRisk: "Maeneo",
     selectedRegion: "Eneo lililochaguliwa",
     activeAlerts: "Tahadhari hai",
+    about: "Kuhusu",
     historicalComparison: "Ulinganisho wa historia",
     exposure: "Waliopo hatarini",
     reports: "Ripoti na export",

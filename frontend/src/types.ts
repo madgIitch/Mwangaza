@@ -17,6 +17,12 @@ export interface RegionRisk {
   level: Severity;
   quality: string;
   period: string;
+  uiGeometry?: GeoJsonGeometry;
+}
+
+export interface GeoJsonGeometry {
+  type: string;
+  coordinates: unknown;
 }
 
 export interface Alert {
@@ -118,6 +124,7 @@ export interface PublicSnapshotResponse {
       period_end: string;
       selected: boolean;
       source_mode: string;
+      ui_geometry?: GeoJsonGeometry | null;
     }>;
     source_metadata: Record<string, unknown>;
   };
