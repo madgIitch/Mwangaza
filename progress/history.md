@@ -6,6 +6,9 @@
 ## 2026-07-17T00:34:00Z - #sprint-26-temporal-slider Sprint 26 - Temporal Slider -> review_pending
 - 1 intento - agente codex
 
+## 2026-07-17T03:55:00Z - #sprint-29-historical-comparison Sprint 29 - Historical Comparison -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-17T03:20:00Z - #sprint-28-active-alerts Sprint 28 - Active Alerts -> review_pending
 - 1 intento - agente codex
 

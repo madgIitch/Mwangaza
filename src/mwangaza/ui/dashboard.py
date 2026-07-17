@@ -581,6 +581,46 @@ html, body, [data-testid="stAppViewContainer"] {{
   color: var(--mwa-muted);
   font-size: 12px;
 }}
+.historical-panel .panel-body {{
+  display: grid;
+  gap: 10px;
+}}
+.historical-controls {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}}
+.historical-controls label {{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--mwa-border);
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: var(--mwa-muted);
+  font-size: 11px;
+}}
+.historical-table {{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}}
+.historical-table th,
+.historical-table td {{
+  border-bottom: 1px solid var(--mwa-border-soft);
+  padding: 7px 6px;
+  text-align: left;
+  vertical-align: top;
+}}
+.historical-table th {{
+  color: var(--mwa-muted);
+  font-weight: 700;
+}}
+.historical-narrative {{
+  margin: 0;
+  color: var(--mwa-muted);
+  font-size: 12px;
+}}
 .alert-list {{
   display: grid;
   gap: 8px;
@@ -790,6 +830,10 @@ html, body, [data-testid="stAppViewContainer"] {{
           <div class="panel-header"><h2>Indicator Trends</h2></div>
           <div class="panel-body" data-region-trends>{trends}</div>
         </section>
+        <section class="panel historical-panel" id="historical">
+          <div class="panel-header"><h2>Historical Comparison</h2></div>
+          <div class="panel-body" data-region-historical>{_render_historical_comparison(data.historical_comparison)}</div>
+        </section>
       </div>
       <aside class="side-column">
         <section class="panel" id="alerts">
@@ -850,6 +894,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   const detail = root.querySelector("[data-region-detail]");
   const metricsGrid = root.querySelector("[data-region-metrics]");
   const trendsGrid = root.querySelector("[data-region-trends]");
+  const historicalPanel = root.querySelector("[data-region-historical]");
   const navButtons = Array.from(root.querySelectorAll("[data-nav-target]"));
   const alertPanel = root.querySelector("[data-alert-panel]");
   const alertFilters = Array.from(root.querySelectorAll("[data-alert-filter]"));
@@ -929,6 +974,40 @@ html, body, [data-testid="stAppViewContainer"] {{
       + `</article>`).join("");
   }}
 
+  function historicalHtml(comparison) {{
+    if (!comparison || !comparison.periods || !comparison.periods.length) {{
+      return '<p class="footer-note">No sufficient same-window historical observations are available.</p>';
+    }}
+    const controls = comparison.periods.map((period, index) => `<label><input type="checkbox" data-historical-period="${{escapeHtml(period.period_key)}}" ${{period.selected ? "checked" : ""}} ${{index >= 3 ? "disabled" : ""}}> ${{escapeHtml(period.label)}}</label>`).join("");
+    const rows = (comparison.rows || []).map((row) => `<tr data-history-row="${{escapeHtml(row.period_key)}}">`
+      + `<td>${{escapeHtml(row.period_key.slice(0, 10))}}</td><td>${{escapeHtml(row.label)}}</td>`
+      + `<td>${{escapeHtml(row.current_value)}} ${{escapeHtml(row.unit)}}</td>`
+      + `<td>${{escapeHtml(row.historical_value)}} ${{escapeHtml(row.unit)}}</td>`
+      + `<td>${{escapeHtml(row.difference)}} ${{escapeHtml(row.unit)}}</td>`
+      + `<td>${{escapeHtml(row.data_version)}}</td></tr>`).join("");
+    return `<p class="footer-note">Season window: ${{escapeHtml(comparison.season_window)}} | Current: ${{escapeHtml(comparison.current_period)}} | Version: ${{escapeHtml(comparison.current_data_version)}}</p>`
+      + `<div class="historical-controls">${{controls}}</div>`
+      + `<table class="historical-table"><thead><tr><th>Period</th><th>Indicator</th><th>Current</th><th>Historical</th><th>Difference</th><th>Data version</th></tr></thead><tbody>${{rows}}</tbody></table>`
+      + `<p class="historical-narrative">${{escapeHtml(comparison.ranking)}}</p>`
+      + `<p class="historical-narrative">${{escapeHtml(comparison.narrative)}}</p>`;
+  }}
+
+  function bindHistoricalControls() {{
+    if (!historicalPanel) return;
+    const controls = Array.from(historicalPanel.querySelectorAll("[data-historical-period]"));
+    const apply = () => {{
+      const checked = controls.filter((item) => item.checked).map((item) => item.dataset.historicalPeriod);
+      controls.forEach((item) => {{
+        item.disabled = !item.checked && checked.length >= 3;
+      }});
+      Array.from(historicalPanel.querySelectorAll("[data-history-row]")).forEach((row) => {{
+        row.hidden = !checked.includes(row.dataset.historyRow);
+      }});
+    }};
+    controls.forEach((item) => item.addEventListener("change", apply));
+    apply();
+  }}
+
   function renderProfile(regionId) {{
     const profile = profiles[regionId];
     if (!profile) return;
@@ -943,6 +1022,10 @@ html, body, [data-testid="stAppViewContainer"] {{
     }}
     if (metricsGrid) metricsGrid.innerHTML = profile.metrics.map(metricHtml).join("");
     if (trendsGrid) trendsGrid.innerHTML = trendHtml(profile.trends || []);
+    if (historicalPanel) {{
+      historicalPanel.innerHTML = historicalHtml(profile.historical_comparison);
+      bindHistoricalControls();
+    }}
     if (alertPanel) {{
       alertPanel.innerHTML = alertsHtml(profile.alerts);
       applyAlertFilters();
@@ -1023,6 +1106,7 @@ html, body, [data-testid="stAppViewContainer"] {{
     }});
   }});
   alertFilters.forEach((filter) => filter.addEventListener("change", applyAlertFilters));
+  bindHistoricalControls();
   selector?.addEventListener("change", () => {{
     const path = paths.find((item) => item.dataset.regionId === selector.value);
     if (path) selectRegion(path);
@@ -1305,6 +1389,61 @@ def _render_trends(series: tuple[Any, ...]) -> str:
     )
 
 
+def _render_historical_comparison(comparison: Any | None) -> str:
+    payload = _historical_dict(comparison)
+    if payload is None or not payload["periods"]:
+        return '<p class="footer-note">No sufficient same-window historical observations are available.</p>'
+    controls = "".join(
+        '<label><input type="checkbox" data-historical-period="{period_key}"{checked}{disabled}> {label}</label>'.format(
+            period_key=escape(period["period_key"]),
+            checked=" checked" if period["selected"] else "",
+            disabled=" disabled" if index >= 3 and not period["selected"] else "",
+            label=escape(period["label"]),
+        )
+        for index, period in enumerate(payload["periods"])
+    )
+    selected = {period["period_key"] for period in payload["periods"] if period["selected"]}
+    rows = "".join(
+        '<tr data-history-row="{period_key}"{hidden}>'
+        "<td>{period}</td><td>{indicator}</td><td>{current} {unit}</td>"
+        "<td>{historical} {unit}</td><td>{difference} {unit}</td><td>{version}</td></tr>".format(
+            period_key=escape(row["period_key"]),
+            hidden="" if row["period_key"] in selected else " hidden",
+            period=escape(row["period_key"][:10]),
+            indicator=escape(row["label"]),
+            current=escape(row["current_value"]),
+            historical=escape(row["historical_value"]),
+            difference=escape(row["difference"]),
+            unit=escape(row["unit"]),
+            version=escape(row["data_version"]),
+        )
+        for row in payload["rows"]
+    )
+    return (
+        '<p class="footer-note">Season window: {season} | Current: {current} | Version: {version}</p>'
+        '<div class="historical-controls">{controls}</div>'
+        '<table class="historical-table"><thead><tr><th>Period</th><th>Indicator</th>'
+        "<th>Current</th><th>Historical</th><th>Difference</th><th>Data version</th></tr></thead>"
+        "<tbody>{rows}</tbody></table>"
+        '<p class="historical-narrative">{ranking}</p>'
+        '<p class="historical-narrative">{narrative}</p>'
+    ).format(
+        season=escape(payload["season_window"]),
+        current=escape(payload["current_period"]),
+        version=escape(payload["current_data_version"]),
+        controls=controls,
+        rows=rows,
+        ranking=escape(payload["ranking"]),
+        narrative=escape(payload["narrative"]),
+    )
+
+
+def _format_history_value(value: Any) -> str:
+    if isinstance(value, int | float):
+        return f"{value:.2f}".rstrip("0").rstrip(".")
+    return str(value)
+
+
 def _selected_region_profile(data: DashboardShellData) -> Any | None:
     for profile in data.region_profiles:
         if profile.region_id == data.selected_region_id:
@@ -1333,6 +1472,7 @@ def _temporal_periods_json(data: DashboardShellData) -> str:
             "alerts": [_alert_dict(alert) for alert in period.alerts],
             "recommendations": list(period.recommendations),
             "profiles": _profiles_dict(period.region_profiles),
+            "historical_comparison": _historical_dict(period.historical_comparison),
         }
         for period in _temporal_periods_for_view(data)
     ]
@@ -1350,6 +1490,7 @@ def _profiles_dict(region_profiles: tuple[Any, ...]) -> dict[str, Any]:
             "alerts": [_alert_dict(alert) for alert in profile.alerts],
             "recommendations": list(profile.recommendations),
             "trends": [_trend_dict(series) for series in profile.trends],
+            "historical_comparison": _historical_dict(profile.historical_comparison),
             "pilot_units": [
                 {
                     "pilot_id": unit.pilot_id,
@@ -1369,6 +1510,43 @@ def _profiles_dict(region_profiles: tuple[Any, ...]) -> dict[str, Any]:
             ],
         }
         for profile in region_profiles
+    }
+
+
+def _historical_dict(comparison: Any | None) -> dict[str, Any] | None:
+    if comparison is None:
+        return None
+    return {
+        "region_id": comparison.region_id,
+        "season_window": comparison.season_window,
+        "current_period": comparison.current_period,
+        "current_data_version": comparison.current_data_version,
+        "ranking": comparison.ranking,
+        "narrative": comparison.narrative,
+        "status": comparison.status,
+        "periods": [
+            {
+                "period_key": period.period_key,
+                "label": period.label,
+                "selected": period.selected,
+                "data_version": period.data_version,
+            }
+            for period in comparison.periods
+        ],
+        "rows": [
+            {
+                "period_key": row.period_key,
+                "indicator": row.indicator,
+                "label": row.label,
+                "unit": row.unit,
+                "current_value": _format_history_value(row.current_value),
+                "historical_value": _format_history_value(row.historical_value),
+                "difference": _format_history_value(row.difference),
+                "data_version": row.data_version,
+                "quality_flag": row.quality_flag,
+            }
+            for row in comparison.rows
+        ],
     }
 
 
@@ -1518,6 +1696,7 @@ def _temporal_periods_for_view(data: DashboardShellData) -> tuple[Any, ...]:
             alerts=data.alerts,
             recommendations=data.recommendations,
             region_profiles=data.region_profiles,
+            historical_comparison=data.historical_comparison,
         ),
     )
 
@@ -1572,6 +1751,7 @@ class _SinglePeriodView:
         alerts: tuple[Any, ...],
         recommendations: tuple[str, ...],
         region_profiles: tuple[Any, ...],
+        historical_comparison: Any | None = None,
     ) -> None:
         self.period_key = period_key
         self.label = label
@@ -1585,6 +1765,7 @@ class _SinglePeriodView:
         self.alerts = alerts
         self.recommendations = recommendations
         self.region_profiles = region_profiles
+        self.historical_comparison = historical_comparison
 
 
 def _period_label(period_start: str, period_end: str) -> str:

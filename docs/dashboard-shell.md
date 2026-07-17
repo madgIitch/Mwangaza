@@ -25,6 +25,8 @@ layout direction without embedding mock data or future-only interactions:
 - indicator trend charts for NDVI, rainfall and LST, derived from loaded payload
   series and rendered with observed values, documented baseline line when
   available, explicit gaps and quality/anomaly details;
+- historical comparison for the selected region, limited to same-window
+  seasonal periods already present in live/cache/demo payloads;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,
@@ -48,6 +50,13 @@ When multiple payload periods are loaded from cache or live output, the dashboar
 groups them by `period_end`, selects the most recent period by default and marks
 periods with incomplete signal coverage as `partial`. The browser-side period
 selector only switches among those embedded cuts.
+
+The historical comparison panel compares the current selected region with prior
+payload periods only when the start and end month/day match exactly. Rows with
+`no_data`, `insufficient_history` or non-numeric values are excluded. Users can
+select up to three comparable periods in the browser; the current period remains
+the reference. The narrative is intentionally limited to observed satellite
+differences and does not infer causes, measured impacts or affected population.
 
 Loader failures render a safe fallback shell. The fallback intentionally omits exception text, traceback, local paths and secret-like values.
 

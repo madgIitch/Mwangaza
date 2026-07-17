@@ -103,6 +103,40 @@ class TrendSeries:
 
 
 @dataclass(frozen=True)
+class HistoricalComparisonPeriod:
+    period_key: str
+    label: str
+    selected: bool
+    data_version: str
+
+
+@dataclass(frozen=True)
+class HistoricalComparisonRow:
+    period_key: str
+    indicator: str
+    label: str
+    unit: str
+    current_value: float
+    historical_value: float
+    difference: float
+    data_version: str
+    quality_flag: str
+
+
+@dataclass(frozen=True)
+class HistoricalComparison:
+    region_id: str
+    season_window: str
+    current_period: str
+    current_data_version: str
+    periods: tuple[HistoricalComparisonPeriod, ...]
+    rows: tuple[HistoricalComparisonRow, ...]
+    ranking: str
+    narrative: str
+    status: str
+
+
+@dataclass(frozen=True)
 class RegionProfile:
     region_id: str
     label: str
@@ -112,6 +146,7 @@ class RegionProfile:
     pilot_units: tuple[PilotUnit, ...] = ()
     status: Freshness = "current"
     trends: tuple[TrendSeries, ...] = ()
+    historical_comparison: HistoricalComparison | None = None
 
 
 @dataclass(frozen=True)
@@ -129,6 +164,7 @@ class TemporalPeriod:
     recommendations: tuple[str, ...]
     region_profiles: tuple[RegionProfile, ...]
     trends: tuple[TrendSeries, ...] = ()
+    historical_comparison: HistoricalComparison | None = None
 
 
 @dataclass(frozen=True)
@@ -146,6 +182,7 @@ class DashboardShellData:
     region_profiles: tuple[RegionProfile, ...] = ()
     temporal_periods: tuple[TemporalPeriod, ...] = ()
     trends: tuple[TrendSeries, ...] = ()
+    historical_comparison: HistoricalComparison | None = None
 
 
 def load_dashboard_shell_data(
@@ -275,6 +312,7 @@ def _dashboard_data_from_payloads(
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts, trend_payloads=cached_payloads)
     trends = _trends_for_region(cached_payloads, selected_region_id)
+    historical_comparison = _historical_comparison_for_region(cached_payloads, selected_region_id)
 
     return DashboardShellData(
         project=PROJECT_NAME,
@@ -300,6 +338,7 @@ def _dashboard_data_from_payloads(
         region_profiles=region_profiles,
         temporal_periods=temporal_periods,
         trends=trends,
+        historical_comparison=historical_comparison,
     )
 
 
@@ -322,7 +361,13 @@ def _temporal_periods_from_payloads(
     periods: list[TemporalPeriod] = []
     for key in keys:
         period_payloads = _payloads_for_period(payloads, key)
-        period = _temporal_period_from_payloads(period_payloads, active_alerts, mode=mode, period_key=key)
+        period = _temporal_period_from_payloads(
+            period_payloads,
+            active_alerts,
+            mode=mode,
+            period_key=key,
+            history_payloads=payloads,
+        )
         if period is not None:
             periods.append(period)
     return tuple(periods)
@@ -334,6 +379,7 @@ def _temporal_period_from_payloads(
     *,
     mode: DataMode,
     period_key: str,
+    history_payloads: tuple[dict[str, Any], ...] | None = None,
 ) -> TemporalPeriod | None:
     selected_region_id = _selected_region_id(payloads)
     risk = _latest_risk_snapshot(payloads, region_id=selected_region_id)
@@ -350,6 +396,7 @@ def _temporal_period_from_payloads(
     alerts = active_alerts or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     partial = _is_partial_period(payloads)
+    comparison_payloads = history_payloads or payloads
     return TemporalPeriod(
         period_key=period_key,
         label=_period_key_label(period_key),
@@ -366,8 +413,9 @@ def _temporal_period_from_payloads(
         metrics=_metrics_from_materialized(risk, signals),
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
-        region_profiles=_region_profiles_from_payloads(payloads, active_alerts, trend_payloads=payloads),
-        trends=_trends_for_region(payloads, (region_id or "som").lower()),
+        region_profiles=_region_profiles_from_payloads(payloads, active_alerts, trend_payloads=comparison_payloads),
+        trends=_trends_for_region(comparison_payloads, (region_id or "som").lower()),
+        historical_comparison=_historical_comparison_for_region(comparison_payloads, (region_id or "som").lower()),
     )
 
 
@@ -467,6 +515,7 @@ def _region_profiles_from_payloads(
         signals = _signals_for_view(payloads, snapshot, region_id=region_id)
         alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
         recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
+        comparison_payloads = trend_payloads or payloads
         profiles.append(
             RegionProfile(
                 region_id=region_id,
@@ -474,9 +523,10 @@ def _region_profiles_from_payloads(
                 metrics=_metrics_from_materialized(risk, signals),
                 alerts=alerts,
                 recommendations=recommendations or ("No action recommendations are available yet.",),
-                trends=_trends_for_region(trend_payloads or payloads, region_id),
+                trends=_trends_for_region(comparison_payloads, region_id),
                 pilot_units=_pilot_units_for_parent(region_id, payloads),
                 status="empty" if risk is None and not signals else "current",
+                historical_comparison=_historical_comparison_for_region(comparison_payloads, region_id),
             )
         )
     return tuple(profiles)
@@ -856,6 +906,191 @@ def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> 
     return tuple(series)
 
 
+def _historical_comparison_for_region(
+    payloads: tuple[dict[str, Any], ...],
+    region_id: str,
+) -> HistoricalComparison | None:
+    target = region_id.lower()
+    signals = [
+        payload
+        for payload in payloads
+        if payload.get("payload_type") in {"indicator_observation", "anomaly"}
+        and _first_text(payload.get("region_id")).lower() == target
+        and payload.get("indicator") in {"ndvi", "rainfall_mm", "lst_c"}
+        and _payload_period_key(payload)
+        and _valid_historical_signal(payload)
+    ]
+    if not signals:
+        return None
+
+    current_period = max(_payload_period_key(signal) for signal in signals)
+    current_signals = [signal for signal in signals if _payload_period_key(signal) == current_period]
+    current_season = _season_key(current_signals[0]) if current_signals else ""
+    if not current_season:
+        return None
+
+    same_window = [signal for signal in signals if _season_key(signal) == current_season]
+    current_by_indicator = {
+        str(signal.get("indicator")): signal
+        for signal in current_signals
+        if _season_key(signal) == current_season
+    }
+    if not current_by_indicator:
+        return None
+
+    by_period: dict[str, dict[str, dict[str, Any]]] = {}
+    for signal in same_window:
+        period_key = _payload_period_key(signal)
+        if period_key == current_period:
+            continue
+        indicator = str(signal.get("indicator"))
+        if indicator not in current_by_indicator:
+            continue
+        by_period.setdefault(period_key, {})[indicator] = signal
+
+    candidate_periods = tuple(sorted(by_period, reverse=True))
+    selected_periods = candidate_periods[:3]
+    rows: list[HistoricalComparisonRow] = []
+    for period_key in selected_periods:
+        for indicator in ("rainfall_mm", "ndvi", "lst_c"):
+            historical = by_period[period_key].get(indicator)
+            current = current_by_indicator.get(indicator)
+            if historical is None or current is None:
+                continue
+            current_value = _safe_float(current.get("value"))
+            historical_value = _safe_float(historical.get("value"))
+            if current_value is None or historical_value is None:
+                continue
+            rows.append(
+                HistoricalComparisonRow(
+                    period_key=period_key,
+                    indicator=indicator,
+                    label=_indicator_label(indicator),
+                    unit=_first_text(current.get("unit"), historical.get("unit")),
+                    current_value=current_value,
+                    historical_value=historical_value,
+                    difference=current_value - historical_value,
+                    data_version=_data_version(current, historical),
+                    quality_flag=_first_text(current.get("quality_flag"), historical.get("quality_flag")) or "ok",
+                )
+            )
+
+    periods = tuple(
+        HistoricalComparisonPeriod(
+            period_key=period_key,
+            label=_period_key_label(period_key),
+            selected=period_key in selected_periods,
+            data_version=_period_data_version(by_period[period_key].values()),
+        )
+        for period_key in candidate_periods
+    )
+    status = "empty" if not periods else "partial" if not rows or len(periods) < 3 else "current"
+    return HistoricalComparison(
+        region_id=target,
+        season_window=_season_window_label(current_signals[0]),
+        current_period=_period_key_label(current_period),
+        current_data_version=_period_data_version(current_by_indicator.values()),
+        periods=periods,
+        rows=tuple(rows),
+        ranking=_dryness_ranking(same_window, current_period),
+        narrative=_historical_narrative(tuple(rows), len(periods)),
+        status=status,
+    )
+
+
+def _valid_historical_signal(signal: dict[str, Any]) -> bool:
+    quality = _first_text(signal.get("quality_flag")).lower()
+    return quality not in {"no_data", "insufficient_history"} and _safe_float(signal.get("value")) is not None
+
+
+def _season_key(signal: dict[str, Any]) -> str:
+    start = _first_text(signal.get("period_start"))
+    end = _first_text(signal.get("period_end"), signal.get("newest_updated_at"))
+    if len(start) < 10 or len(end) < 10:
+        return ""
+    return f"{start[5:10]}:{end[5:10]}"
+
+
+def _season_window_label(signal: dict[str, Any]) -> str:
+    key = _season_key(signal)
+    if not key:
+        return "Unknown seasonal window"
+    start, end = key.split(":", 1)
+    return f"{start} to {end}"
+
+
+def _indicator_label(indicator: str) -> str:
+    return {
+        "ndvi": "NDVI",
+        "rainfall_mm": "Rainfall",
+        "lst_c": "LST",
+    }.get(indicator, indicator)
+
+
+def _data_version(*signals: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for signal in signals:
+        metadata = signal.get("metadata", {})
+        source = _first_text(signal.get("source"))
+        version = ""
+        if isinstance(metadata, dict):
+            version = _first_text(
+                metadata.get("baseline_version"),
+                metadata.get("model_version"),
+                metadata.get("collection_id"),
+                metadata.get("source_version"),
+            )
+        text = " ".join(part for part in (source, version) if part)
+        if text and text not in parts:
+            parts.append(text[:120])
+    return " vs ".join(parts) if parts else "Loaded dashboard payloads"
+
+
+def _period_data_version(signals: Any) -> str:
+    versions = [_data_version(signal) for signal in signals if isinstance(signal, dict)]
+    unique = tuple(dict.fromkeys(version for version in versions if version))
+    return " | ".join(unique[:3]) if unique else "Loaded dashboard payloads"
+
+
+def _dryness_ranking(signals: list[dict[str, Any]], current_period: str) -> str:
+    rainfall = [
+        signal
+        for signal in signals
+        if signal.get("indicator") == "rainfall_mm"
+        and _valid_historical_signal(signal)
+        and _payload_period_key(signal)
+    ]
+    by_period = {str(_payload_period_key(signal)): signal for signal in rainfall}
+    current = by_period.get(current_period)
+    if current is None or len(by_period) < 2:
+        return "Dryness ranking unavailable: comparable rainfall history is insufficient."
+    ordered = sorted(
+        by_period.items(),
+        key=lambda item: (_safe_float(item[1].get("value")) or 0.0, item[0]),
+    )
+    rank = next(index for index, (period_key, _) in enumerate(ordered, start=1) if period_key == current_period)
+    return f"Current rainfall ranks #{rank} of {len(ordered)} comparable periods; lower rainfall is drier."
+
+
+def _historical_narrative(rows: tuple[HistoricalComparisonRow, ...], period_count: int) -> str:
+    if not rows:
+        return "No sufficient same-window historical observations are available for a comparison."
+    rainfall_rows = [row for row in rows if row.indicator == "rainfall_mm"]
+    if rainfall_rows:
+        lower = sum(1 for row in rainfall_rows if row.difference < 0)
+        direction = "lower" if lower else "not lower"
+        return (
+            f"Observed rainfall is {direction} than {lower} of {len(rainfall_rows)} selected same-window "
+            "periods; this describes satellite observations only and does not infer impacts."
+        )
+    row = rows[0]
+    direction = "higher" if row.difference > 0 else "lower" if row.difference < 0 else "similar"
+    return (
+        f"Observed {row.label} is {direction} than {row.period_key[:10]} within the same seasonal window; "
+        "this does not infer causes or impacts."
+    )
+
+
 def _baseline_value(signal: dict[str, Any]) -> float | None:
     metadata = signal.get("metadata", {})
     candidates: list[Any] = []
@@ -1020,6 +1255,9 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
     som_trends = _demo_trends("som")
     ken_trends = _demo_trends("ken")
     eth_trends = _demo_trends("eth")
+    som_history = _demo_historical_comparison("som")
+    ken_history = _demo_historical_comparison("ken")
+    eth_history = _demo_historical_comparison("eth")
     return DashboardShellData(
         project=PROJECT_NAME,
         tagline=TAGLINE,
@@ -1032,6 +1270,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         alerts=alerts,
         recommendations=recommendations,
         trends=som_trends,
+        historical_comparison=som_history,
         region_profiles=(
             RegionProfile(
                 "som",
@@ -1056,6 +1295,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                     ),
                 ),
                 trends=som_trends,
+                historical_comparison=som_history,
             ),
             RegionProfile(
                 "ken",
@@ -1087,6 +1327,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                     ),
                 ),
                 trends=ken_trends,
+                historical_comparison=ken_history,
             ),
             RegionProfile(
                 "eth",
@@ -1102,8 +1343,75 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 (alerts[2],),
                 ("Prepare early action checklist.",),
                 trends=eth_trends,
+                historical_comparison=eth_history,
             ),
         ),
+    )
+
+
+def _demo_historical_comparison(region_id: str) -> HistoricalComparison:
+    specs = {
+        "som": (18.0, (31.0, 24.0, 20.0), 0.18, 29.4),
+        "ken": (22.0, (30.0, 25.0, 28.0), 0.21, 28.9),
+        "eth": (35.0, (42.0, 38.0, 33.0), 0.28, 25.8),
+    }
+    current_rain, historical_rain, current_ndvi, current_lst = specs.get(region_id, specs["som"])
+    periods = (
+        HistoricalComparisonPeriod("2025-07-15T00:00:00Z", "2025-07-15", True, "Demo fixture demo-history-v1"),
+        HistoricalComparisonPeriod("2024-07-15T00:00:00Z", "2024-07-15", True, "Demo fixture demo-history-v1"),
+        HistoricalComparisonPeriod("2023-07-15T00:00:00Z", "2023-07-15", True, "Demo fixture demo-history-v1"),
+    )
+    rows: list[HistoricalComparisonRow] = []
+    for period, rainfall in zip(periods, historical_rain, strict=True):
+        rows.append(
+            HistoricalComparisonRow(
+                period.period_key,
+                "rainfall_mm",
+                "Rainfall",
+                "mm",
+                current_rain,
+                rainfall,
+                current_rain - rainfall,
+                "Demo fixture demo-history-v1",
+                "ok",
+            )
+        )
+        rows.append(
+            HistoricalComparisonRow(
+                period.period_key,
+                "ndvi",
+                "NDVI",
+                "index",
+                current_ndvi,
+                current_ndvi + 0.05,
+                -0.05,
+                "Demo fixture demo-history-v1",
+                "ok",
+            )
+        )
+        rows.append(
+            HistoricalComparisonRow(
+                period.period_key,
+                "lst_c",
+                "LST",
+                "C",
+                current_lst,
+                current_lst - 0.8,
+                0.8,
+                "Demo fixture demo-history-v1",
+                "ok",
+            )
+        )
+    return HistoricalComparison(
+        region_id=region_id,
+        season_window="07-01 to 07-15",
+        current_period="2026-07-15",
+        current_data_version="Demo fixture demo-history-v1",
+        periods=periods,
+        rows=tuple(rows),
+        ranking="Current rainfall ranks #1 of 4 comparable periods; lower rainfall is drier.",
+        narrative=_historical_narrative(tuple(rows), len(periods)),
+        status="current",
     )
 
 

@@ -742,3 +742,31 @@ Objetivo no negociable:
   - `src/mwangaza/db/**`
   - `tests/api/**`
 
+<!-- harness:sprint-29-historical-comparison -->
+## sprint-29-historical-comparison · Sprint 29 - Historical Comparison
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+

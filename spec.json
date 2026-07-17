@@ -2060,7 +2060,7 @@
     {
       "id": "sprint-29-historical-comparison",
       "name": "Sprint 29 - Historical Comparison",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.6.0",
       "estimated_hours": 5,
@@ -2088,12 +2088,12 @@
       ],
       "deliverable": "Panel de comparación histórica por región.",
       "acceptance": [
-        "AC1: La comparación usa exactamente la misma ventana estacional.",
-        "AC2: La UI muestra las versiones de datos comparadas.",
-        "AC3: La narrativa describe diferencias observadas y no atribuye impactos no medidos.",
-        "AC4: Años con datos insuficientes se excluyen.",
-        "AC5: El usuario puede seleccionar hasta tres períodos.",
-        "AC6: El ranking indica si el actual está entre los episodios más secos de la serie disponible."
+        "La comparacion usa exactamente la misma ventana estacional.",
+        "La UI muestra las versiones de datos comparadas.",
+        "La narrativa describe diferencias observadas y no atribuye impactos no medidos.",
+        "Anos con datos insuficientes se excluyen.",
+        "El usuario puede seleccionar hasta tres periodos.",
+        "El ranking indica si el actual esta entre los episodios mas secos de la serie disponible."
       ],
       "scope": [
         "app.py",
@@ -2115,19 +2115,15 @@
         "src/mwangaza/gee/**",
         "src/mwangaza/contracts/**",
         "tests/data/**",
-        "tests/fixtures/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/fixtures/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T01:23:40.813Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T01:23:46.618Z"
     },
     {
       "id": "sprint-30-exposure-estimation",

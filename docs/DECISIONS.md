@@ -306,3 +306,12 @@ Contexto: se aprobó el spec `sprint-28-active-alerts` (Sprint 28 - Active Alert
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-29-historical-comparison -->
+## 2026-07-17 · sprint-29-historical-comparison aprobado
+
+Contexto: se aprobó el spec `sprint-29-historical-comparison` (Sprint 29 - Historical Comparison).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

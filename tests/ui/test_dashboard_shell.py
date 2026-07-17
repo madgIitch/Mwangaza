@@ -295,6 +295,95 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("quality=no_data", html)
         self.assertIn("Historical baseline when available", html)
 
+    def test_historical_comparison_uses_same_window_excludes_insufficient_data_and_ranks_dryness(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            payloads = [
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end="2026-07-15T00:00:00Z",
+                    value=18.0,
+                    baseline=30.0,
+                    quality_flag="ok",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end="2025-07-15T00:00:00Z",
+                    value=24.0,
+                    baseline=30.0,
+                    quality_flag="ok",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end="2024-07-15T00:00:00Z",
+                    value=16.0,
+                    baseline=30.0,
+                    quality_flag="ok",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end="2023-07-15T00:00:00Z",
+                    value=12.0,
+                    baseline=30.0,
+                    quality_flag="insufficient_history",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end="2025-06-30T00:00:00Z",
+                    value=4.0,
+                    baseline=20.0,
+                    quality_flag="ok",
+                ),
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        comparison = data.historical_comparison
+        self.assertIsNotNone(comparison)
+        assert comparison is not None
+        self.assertEqual(comparison.season_window, "07-01 to 07-15")
+        self.assertEqual([period.label for period in comparison.periods], ["2025-07-15", "2024-07-15"])
+        self.assertNotIn("2023-07-15T00:00:00Z", {period.period_key for period in comparison.periods})
+        self.assertEqual(comparison.ranking, "Current rainfall ranks #2 of 3 comparable periods; lower rainfall is drier.")
+        self.assertIn("satellite observations only", comparison.narrative)
+        self.assertNotIn("caused", comparison.narrative.lower())
+        self.assertNotIn("affected people", comparison.narrative.lower())
+
+    def test_historical_comparison_ui_shows_versions_and_limits_selection_to_three_periods(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            payloads = [
+                _signal_payload(
+                    region_id="som",
+                    indicator="rainfall_mm",
+                    period_end=f"{year}-07-15T00:00:00Z",
+                    value=value,
+                    baseline=30.0,
+                    quality_flag="ok",
+                )
+                for year, value in ((2026, 18.0), (2025, 24.0), (2024, 16.0), (2023, 28.0), (2022, 31.0))
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            html = build_dashboard_shell_html(load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp)))
+
+        self.assertIn("Historical Comparison", html)
+        self.assertIn("Season window: 07-01 to 07-15", html)
+        self.assertIn("Version: MODIS/061/MOD13Q1", html)
+        self.assertIn('data-historical-period="2025-07-15T00:00:00Z" checked', html)
+        self.assertIn('data-historical-period="2022-07-15T00:00:00Z" disabled', html)
+        self.assertIn("checked.length >= 3", html)
+        self.assertIn("Current rainfall ranks #2 of 5 comparable periods", html)
+        self.assertIn("does not infer impacts", html)
+
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
