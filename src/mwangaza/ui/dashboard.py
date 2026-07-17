@@ -16,6 +16,7 @@ SAFE_ERROR_MESSAGE = "Dashboard data could not be loaded. Showing a safe fallbac
 
 
 def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = False) -> str:
+    shell_id = _shell_dom_id(data)
     nav = "\n".join(
         f'<a class="nav-item{" is-active" if item.active else ""}" href="#{escape(item.key)}">'
         f"{escape(item.label)}</a>"
@@ -674,7 +675,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   }}
 }}
 </style>
-<div class="mwa-shell">
+<div class="mwa-shell" data-shell-id="{escape(shell_id)}">
   <header class="topbar">
     <div class="brand-row">
       <div class="brand-mark" aria-hidden="true"></div>
@@ -764,14 +765,22 @@ html, body, [data-testid="stAppViewContainer"] {{
     <div>IGAD regional drought operations</div>
   </footer>
 </div>
-<script type="application/json" data-region-profiles>{region_profiles_json}</script>
-<script type="application/json" data-temporal-periods>{temporal_periods_json}</script>
+<script type="application/json" data-region-profiles="{escape(shell_id)}">{region_profiles_json}</script>
+<script type="application/json" data-temporal-periods="{escape(shell_id)}">{temporal_periods_json}</script>
 <script>
 (() => {{
-  const root = document.querySelector(".mwa-shell");
-  const dataScript = document.querySelector("[data-region-profiles]");
-  const temporalScript = document.querySelector("[data-temporal-periods]");
-  if (!root || root.dataset.mwangazaInteractive === "1") return;
+  const currentScript = document.currentScript;
+  const temporalScript = currentScript?.previousElementSibling;
+  const dataScript = temporalScript?.previousElementSibling;
+  const shellId = dataScript?.getAttribute("data-region-profiles") || "";
+  const root = Array.from(document.querySelectorAll(".mwa-shell"))
+    .find((candidate) => candidate.dataset.shellId === shellId);
+  if (
+    !root
+    || dataScript?.getAttribute("data-region-profiles") !== shellId
+    || temporalScript?.getAttribute("data-temporal-periods") !== shellId
+  ) return;
+  if (root.dataset.mwangazaInteractive === "1") return;
   root.dataset.mwangazaInteractive = "1";
   let profiles = dataScript?.textContent ? JSON.parse(dataScript.textContent) : {{}};
   const periods = temporalScript?.textContent ? JSON.parse(temporalScript.textContent) : [];
@@ -1416,3 +1425,8 @@ def _period_label(period_start: str, period_end: str) -> str:
 
 def _format_map_score(score: float) -> str:
     return f"{score:.2f}".rstrip("0").rstrip(".")
+
+
+def _shell_dom_id(data: DashboardShellData) -> str:
+    raw = f"{data.data_status.mode}-{data.selected_region_id}-{data.data_status.last_updated}"
+    return "mwa-" + "".join(char.lower() if char.isalnum() else "-" for char in raw).strip("-")

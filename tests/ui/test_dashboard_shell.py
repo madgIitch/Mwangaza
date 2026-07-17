@@ -344,7 +344,7 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(html.count('class="regional-risk-map"'), 1)
         self.assertNotIn("<iframe", html.lower())
         match = re.search(
-            r'<script type="application/json" data-region-profiles>(.*?)</script>',
+            r'<script type="application/json" data-region-profiles="[^"]+">(.*?)</script>',
             html,
             re.S,
         )
@@ -357,6 +357,18 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(profiles["som"]["pilot_units"][0]["pilot_id"], "somalia-pilot")
         self.assertEqual(profiles["ken"]["pilot_units"][0]["pilot_id"], "northern-kenya-pilot")
         self.assertEqual(profiles["eth"]["pilot_units"], [])
+
+    def test_interaction_script_is_scoped_to_current_shell_instance(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn('data-shell-id="mwa-', html)
+        self.assertIn('data-region-profiles="mwa-', html)
+        self.assertIn('data-temporal-periods="mwa-', html)
+        self.assertIn("currentScript?.previousElementSibling", html)
+        self.assertIn('document.querySelectorAll(".mwa-shell")', html)
+        self.assertNotIn('document.querySelector(".mwa-shell")', html)
+        self.assertNotIn('document.querySelector("[data-region-profiles]")', html)
+        self.assertNotIn('document.querySelector("[data-temporal-periods]")', html)
 
     def test_subnational_pilot_panel_labels_non_pilot_regions_as_national_only(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
