@@ -2646,7 +2646,7 @@
     {
       "id": "sprint-38-multilingual-interface",
       "name": "Sprint 38 - Multilingual Interface",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.2",
       "estimated_hours": 6,
@@ -2674,12 +2674,12 @@
       ],
       "deliverable": "Dashboard multilingüe con fallback seguro.",
       "acceptance": [
-        "AC1: Los idiomas disponibles son `en`, `sw` y `so`.",
-        "AC2: Cambiar idioma actualiza navegación, etiquetas, niveles y recomendaciones predefinidas.",
-        "AC3: Los nombres oficiales de datasets no se traducen de forma engañosa.",
-        "AC4: Una clave ausente usa inglés y registra warning.",
-        "AC5: CI falla si una clave obligatoria falta en un catálogo.",
-        "AC6: El idioma no modifica valores, fechas ISO de API ni lógica."
+        "Los idiomas disponibles son exactamente `en`, `sw` y `so`.",
+        "Cambiar idioma traduce navegacion, etiquetas de estado, niveles y recomendaciones predefinidas.",
+        "Nombres de datasets, fuentes, valores, fechas ISO y API no se traducen.",
+        "Una clave ausente usa ingles y registra warning.",
+        "`validate_catalogs` falla si una clave obligatoria falta en un catalogo.",
+        "El idioma no modifica valores numericos ni fechas del dashboard."
       ],
       "scope": [
         "locales/**",
@@ -2699,19 +2699,15 @@
         ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:53:32.553Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:53:37.109Z"
     },
     {
       "id": "sprint-39-low-bandwidth-mode",
