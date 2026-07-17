@@ -101,6 +101,7 @@ def _route_v1(path: str, query_string: bytes) -> dict[str, Any]:
                 "region_label": export.region_label,
                 "period": export.period,
                 "rows": export.rows,
+                "regional_risk": _regional_risk(data),
                 "source_metadata": export.source_metadata,
             },
         }
@@ -246,7 +247,8 @@ def _payload_summary(path: str, payload: dict[str, Any]) -> str:
     if path == "/api/v1/snapshots/latest":
         snapshot = payload.get("snapshot", {})
         rows = snapshot.get("rows", []) if isinstance(snapshot, dict) else []
-        return f"mode={payload.get('data_mode')} region={snapshot.get('region_id')} rows={len(rows)}"
+        regional = snapshot.get("regional_risk", []) if isinstance(snapshot, dict) else []
+        return f"mode={payload.get('data_mode')} region={snapshot.get('region_id')} rows={len(rows)} regional={len(regional)}"
     if path == "/api/v1/alerts":
         return f"total={payload.get('total')} returned={len(payload.get('items', []))}"
     if path == "/api/v1/forecasts":
@@ -259,3 +261,23 @@ def _payload_summary(path: str, payload: dict[str, Any]) -> str:
 def _log(event: str, **fields: Any) -> None:
     serialized = " ".join(f"{key}={value}" for key, value in fields.items())
     print(f"[mwangaza.api] {event} {serialized}".rstrip(), flush=True)
+
+
+def _regional_risk(data: Any) -> list[dict[str, Any]]:
+    regions = []
+    for region in getattr(getattr(data, "risk_map", None), "regions", ()):
+        regions.append(
+            {
+                "id": getattr(region, "region_id", ""),
+                "name": getattr(region, "name", ""),
+                "score": getattr(region, "score", None),
+                "level": getattr(region, "risk_level", "unknown"),
+                "color_level": getattr(region, "color_level", "unknown"),
+                "quality": getattr(region, "quality_flag", "unknown"),
+                "period_start": getattr(region, "period_start", ""),
+                "period_end": getattr(region, "period_end", ""),
+                "selected": bool(getattr(region, "selected", False)),
+                "source_mode": getattr(region, "source_mode", ""),
+            }
+        )
+    return regions

@@ -37,6 +37,8 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(payload["schema_version"], "mwangaza.api.v1")
         self.assertEqual(payload["snapshot"]["region_id"], "som")
         self.assertIn("source_metadata", payload["snapshot"])
+        self.assertIn("regional_risk", payload["snapshot"])
+        self.assertTrue(payload["snapshot"]["regional_risk"])
         self.assertTrue(payload["snapshot"]["rows"])
 
     def test_alerts_and_forecasts_endpoints_exist(self) -> None:

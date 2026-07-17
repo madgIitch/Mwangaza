@@ -107,6 +107,18 @@ export interface PublicSnapshotResponse {
       quality?: string;
       source?: string;
     }>;
+    regional_risk?: Array<{
+      id: string;
+      name: string;
+      score: number | null;
+      level: string;
+      color_level: string;
+      quality: string;
+      period_start: string;
+      period_end: string;
+      selected: boolean;
+      source_mode: string;
+    }>;
     source_metadata: Record<string, unknown>;
   };
 }

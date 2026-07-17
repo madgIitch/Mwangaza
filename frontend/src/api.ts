@@ -77,6 +77,7 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
     regionId: snapshot.snapshot.region_id,
     period: snapshot.snapshot.period,
     rows: snapshot.snapshot.rows.length,
+    regionalRisk: snapshot.snapshot.regional_risk?.length ?? 0,
     metrics: metrics.length,
     regions: regions.length
   });
@@ -173,6 +174,17 @@ function sourceFromSnapshot(snapshot: PublicSnapshotResponse): string {
 function regionsFromSnapshot(snapshot: PublicSnapshotResponse, dataMode: DashboardData["dataMode"]): RegionRisk[] {
   if (dataMode === "demo") {
     return demoDashboard.regions;
+  }
+  const regionalRisk = snapshot.snapshot.regional_risk ?? [];
+  if (regionalRisk.length) {
+    return regionalRisk.map((region) => ({
+      id: region.id,
+      name: region.name || region.id.toUpperCase(),
+      score: numericValue(region.score),
+      level: normalizeRiskLevel(region.level, region.color_level),
+      quality: region.quality || "unknown",
+      period: periodLabel(region.period_start, region.period_end)
+    }));
   }
   const selectedId = snapshot.snapshot.region_id;
   const selectedName = snapshot.snapshot.region_label || selectedId.toUpperCase();
@@ -281,6 +293,33 @@ function numericValue(value: string | number | null | undefined): number | null 
 
 function qualityLabel(value: string | undefined): string {
   return value && value !== "unknown" ? value : "unknown";
+}
+
+function normalizeRiskLevel(level: string, colorLevel: string): RegionRisk["level"] {
+  const normalized = level === "emergency" ? "critical" : level;
+  if (normalized === "normal" || normalized === "watch" || normalized === "warning" || normalized === "critical") {
+    return normalized;
+  }
+  if (colorLevel === "green") {
+    return "normal";
+  }
+  if (colorLevel === "yellow") {
+    return "watch";
+  }
+  if (colorLevel === "orange") {
+    return "warning";
+  }
+  if (colorLevel === "red") {
+    return "critical";
+  }
+  return "unknown";
+}
+
+function periodLabel(periodStart: string, periodEnd: string): string {
+  if (periodStart && periodEnd) {
+    return `${periodStart.slice(0, 10)} to ${periodEnd.slice(0, 10)}`;
+  }
+  return periodEnd ? periodEnd.slice(0, 10) : "No live snapshot";
 }
 
 function metricsFromSnapshot(snapshot: PublicSnapshotResponse): Metric[] | null {

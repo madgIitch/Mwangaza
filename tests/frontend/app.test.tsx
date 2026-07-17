@@ -47,7 +47,7 @@ describe("React PWA dashboard", () => {
       if (url.startsWith("/api/v1/snapshots/latest")) {
         return jsonResponse({
           schema_version: "mwangaza.api.v1",
-          data_mode: "demo",
+          data_mode: "live",
           snapshot: {
             region_id: "som",
             region_label: "Somalia",
@@ -60,6 +60,32 @@ describe("React PWA dashboard", () => {
               quality: "critical",
               source: "Google Earth Engine live query"
             }],
+            regional_risk: [
+              {
+                id: "som",
+                name: "Somalia",
+                score: 81,
+                level: "emergency",
+                color_level: "red",
+                quality: "ok",
+                period_start: "2026-07-01T00:00:00Z",
+                period_end: "2026-07-15T00:00:00Z",
+                selected: true,
+                source_mode: "live"
+              },
+              {
+                id: "ken",
+                name: "Kenya",
+                score: 52,
+                level: "watch",
+                color_level: "yellow",
+                quality: "ok",
+                period_start: "2026-07-01T00:00:00Z",
+                period_end: "2026-07-15T00:00:00Z",
+                selected: false,
+                source_mode: "live"
+              }
+            ],
             source_metadata: { source: "test" }
           }
         });
@@ -97,6 +123,8 @@ describe("React PWA dashboard", () => {
     expect(data.alerts[0].title).toBe("API alert");
     expect(data.metrics[0].value).toBe("81");
     expect(data.metrics[0].detail).toBe("Google Earth Engine live query");
+    expect(data.regions[0]).toMatchObject({ id: "som", score: 81, level: "critical" });
+    expect(data.regions[1]).toMatchObject({ id: "ken", score: 52, level: "watch" });
   });
 
   it("has an installable manifest shape", () => {
