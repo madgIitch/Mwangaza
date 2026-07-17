@@ -2128,7 +2128,7 @@
     {
       "id": "sprint-30-exposure-estimation",
       "name": "Sprint 30 - Exposure Estimation",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.6.1",
       "estimated_hours": 6,
@@ -2156,12 +2156,12 @@
       ],
       "deliverable": "Estimación de exposición claramente etiquetada.",
       "acceptance": [
-        "AC1: La métrica se denomina `potentially_exposed`, nunca `affected`.",
-        "AC2: Cada valor incluye fuente, año, resolución y método.",
-        "AC3: Datos demo o sintéticos se marcan explícitamente.",
-        "AC4: No se combinan poblaciones de años distintos sin aviso.",
-        "AC5: Sin dataset válido se oculta la cifra y no se inventa.",
-        "AC6: La UI muestra rango o redondeo apropiado para la precisión disponible."
+        "La metrica publica se denomina `potentially_exposed` y no aparece ningun campo o etiqueta `affected` para la estimacion.",
+        "Cada estimacion disponible incluye fuente, ano, resolucion, metodo, calidad y marca `is_demo`.",
+        "Los datos demo o sinteticos se etiquetan explicitamente en el contrato y en la UI.",
+        "Si se combinan fuentes de anos distintos, la estimacion queda marcada con warning visible y no se presenta como comparable directa.",
+        "Sin dataset valido, la cifra queda oculta/no disponible y el sistema no inventa valores.",
+        "La UI muestra valores redondeados o rangos coherentes con la precision disponible."
       ],
       "scope": [
         "src/mwangaza/data/**",
@@ -2183,19 +2183,15 @@
         "src/mwangaza/ui/**",
         "src/mwangaza/services/**",
         "assets/**",
-        "tests/ui/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/ui/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T11:25:43.773Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T11:25:47.010Z"
     },
     {
       "id": "sprint-31-executive-pdf-report",
