@@ -897,3 +897,29 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-35-notification-simulator -->
+## sprint-35-notification-simulator · Sprint 35 - Notification Simulator
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/notifications/**`
+  - `templates/notifications/**`
+  - `tests/notifications/**`
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

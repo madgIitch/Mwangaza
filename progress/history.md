@@ -117,3 +117,8 @@
 - AuditRepository append-only con metadata saneada.
 - Lifecycle de alertas, cambios de configuracion y filtros por region/run/tipo.
 - Validado con audit tests, compile, suite completa y gate del harness.
+## 2026-07-17T12:55:00Z - #sprint-35-notification-simulator Sprint 35 - Notification Simulator -> review_pending
+
+- Outbox simulado multicanal con masking, dedupe y no-red por defecto.
+- Dashboard con preview simulada.
+- Validado con notification tests, UI, suite completa y gate del harness.

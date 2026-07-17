@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-34-audit-trail - Sprint 34 - Audit Trail** - estado: `review_pending`.
+Feature: **sprint-35-notification-simulator - Sprint 35 - Notification Simulator** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-34-audit-trail - Sprint 34 - Audit Trail** - estado: `review_p
 
 ## Siguiente accion
 
-- Smoke manual opcional: crear eventos en SQLite local y consultar por run/region. Cerrar con `node .harness/spec.mjs done sprint-34-audit-trail` si pasa.
+- Smoke visual: confirmar preview simulada y ausencia de datos de destinatario reales. Cerrar con `node .harness/spec.mjs done sprint-35-notification-simulator` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-34-audit-trail - Sprint 34 - Audit Trail** - estado: `review_p
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.audit.test_audit_trail`
-- `uv run python -m compileall -q src tests app.py`
+- `uv run python -m unittest tests.notifications.test_notification_simulator`
+- `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-34-audit-trail`
+- `node .harness\gates.mjs sprint-35-notification-simulator`

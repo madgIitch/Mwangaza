@@ -7,6 +7,7 @@ from html import escape
 from typing import Any
 
 from mwangaza.exports import build_visible_export, safe_export_filename
+from mwangaza.notifications import NotificationOutbox, simulate_notifications_for_alert
 from mwangaza.reports import build_executive_report_context, safe_report_filename
 from mwangaza.services.dashboard_shell import (
     DashboardShellData,
@@ -54,6 +55,7 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
         f"<li>{escape(recommendation)}</li>" for recommendation in data.recommendations
     )
     report_action = _render_report_action(data)
+    notification_preview = _render_notification_preview(data)
     mode_chips = "\n".join(
         '<span class="mode-chip{active}" data-mode="{mode}">{label}</span>'.format(
             active=" is-active" if data.data_status.mode == mode else "",
@@ -858,6 +860,7 @@ html, body, [data-testid="stAppViewContainer"] {{
         <section class="panel" id="about">
           <div class="panel-header"><h2>About</h2></div>
           <div class="panel-body">
+            {notification_preview}
             <p class="footer-note">
               Prototype dashboard shell. Observed, cached and demo data are labelled separately.
             </p>
@@ -1398,6 +1401,30 @@ def _render_export_action(data: DashboardShellData) -> str:
     ).format(
         csv=escape(safe_export_filename(export, "csv")),
         json=escape(safe_export_filename(export, "json")),
+    )
+
+
+def _render_notification_preview(data: DashboardShellData) -> str:
+    if not data.alerts:
+        return '<p class="footer-note" data-notification-preview>No simulated notification preview available.</p>'
+    outbox = NotificationOutbox()
+    items = simulate_notifications_for_alert(data.alerts[0], outbox=outbox)
+    if not items:
+        return '<p class="footer-note" data-notification-preview>Alert severity does not create notifications.</p>'
+    item = items[0]
+    return (
+        '<div class="notification-preview" data-notification-preview>'
+        "<h3>Simulated notification preview</h3>"
+        "<p><strong>{channel}</strong> to {recipient} | {status}</p>"
+        "<p>{content}</p>"
+        "<p class=\"footer-note\">Outbox items: {count}; real adapters disabled by default.</p>"
+        "</div>"
+    ).format(
+        channel=escape(item.channel),
+        recipient=escape(item.recipient_masked),
+        status=escape(item.status),
+        content=escape(item.content),
+        count=len(outbox.list_items()),
     )
 
 

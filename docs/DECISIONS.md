@@ -360,3 +360,12 @@ Contexto: se aprobó el spec `sprint-34-audit-trail` (Sprint 34 - Audit Trail).
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-35-notification-simulator -->
+## 2026-07-17 · sprint-35-notification-simulator aprobado
+
+Contexto: se aprobó el spec `sprint-35-notification-simulator` (Sprint 35 - Notification Simulator).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
