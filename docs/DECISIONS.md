@@ -378,3 +378,12 @@ Contexto: se aprobó el spec `sprint-36-forecast-model` (Sprint 36 - Forecast Mo
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-37-forecast-confidence -->
+## 2026-07-17 · sprint-37-forecast-confidence aprobado
+
+Contexto: se aprobó el spec `sprint-37-forecast-confidence` (Sprint 37 - Forecast Confidence).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

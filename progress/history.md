@@ -127,3 +127,8 @@
 - Forecast baseline experimental determinista.
 - Backtest con MAE y error relativo seguro.
 - Validado con forecast tests, compile, suite completa y gate del harness.
+## 2026-07-17T13:25:00Z - #sprint-37-forecast-confidence Sprint 37 - Forecast Confidence -> review_pending
+
+- Intervalos, confianza, elegibilidad y gate de alerta preventiva.
+- Dashboard marca forecasts como estimaciones experimentales.
+- Validado con confidence tests, UI, suite completa y gate del harness.

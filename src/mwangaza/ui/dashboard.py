@@ -864,6 +864,9 @@ html, body, [data-testid="stAppViewContainer"] {{
             <p class="footer-note">
               Prototype dashboard shell. Observed, cached and demo data are labelled separately.
             </p>
+            <p class="footer-note" data-forecast-diagnostic>
+              Forecasts are experimental estimates with confidence gates; they are not observed facts.
+            </p>
           </div>
         </section>
       </aside>

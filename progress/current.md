@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-36-forecast-model - Sprint 36 - Forecast Model** - estado: `review_pending`.
+Feature: **sprint-37-forecast-confidence - Sprint 37 - Forecast Confidence** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-36-forecast-model - Sprint 36 - Forecast Model** - estado: `re
 
 ## Siguiente accion
 
-- Revisar que Sprint 37 agregue confianza antes de mostrar forecast como decision support. Cerrar con `node .harness/spec.mjs done sprint-36-forecast-model` si pasa.
+- Smoke visual: confirmar texto de forecast experimental en About. Cerrar con `node .harness/spec.mjs done sprint-37-forecast-confidence` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-36-forecast-model - Sprint 36 - Forecast Model** - estado: `re
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.forecasting.test_forecast_model`
-- `uv run python -m compileall -q src tests app.py`
+- `uv run python -m unittest tests.forecasting.test_confidence`
+- `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-36-forecast-model`
+- `node .harness\gates.mjs sprint-37-forecast-confidence`
