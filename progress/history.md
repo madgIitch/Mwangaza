@@ -1,5 +1,8 @@
 # Historial de sesiones
 
+## 2026-07-16T22:45:00Z - #sprint-25-subnational-pilot Sprint 25 - Subnational Pilot -> review_pending
+- 1 intento - agente codex
+
 ## 2026-07-16T20:31:00Z - #sprint-24-country-drilldown Sprint 24 - Country Drilldown -> review_pending
 - 1 intento - agente codex
 

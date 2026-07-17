@@ -1793,7 +1793,7 @@
     {
       "id": "sprint-25-subnational-pilot",
       "name": "Sprint 25 - Subnational Pilot",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.3",
       "estimated_hours": 6,
@@ -1821,12 +1821,12 @@
       ],
       "deliverable": "Drilldown subnacional funcional en dos pilotos.",
       "acceptance": [
-        "AC1: Solo regiones marcadas como piloto ofrecen drilldown subnacional en 1.0.",
-        "AC2: Cada unidad muestra parent, nivel administrativo y fuente de geometría.",
-        "AC3: El ranking ordena por score y no por color textual.",
-        "AC4: Cobertura insuficiente se muestra como unknown.",
-        "AC5: La UI explica que el resto del IGAD se ofrece a nivel nacional.",
-        "AC6: La arquitectura permite añadir nuevas regiones mediante catálogo y pipeline, sin cambiar la UI."
+        "Solo regiones marcadas como piloto ofrecen drilldown subnacional en 1.0.",
+        "Cada unidad subnacional muestra parent, nivel administrativo/piloto y fuente de geometría.",
+        "El ranking ordena por score numérico y no por color textual.",
+        "Cobertura insuficiente o datos no concluyentes se muestran como `unknown`, nunca como `green`.",
+        "La UI explica que el resto del IGAD se ofrece a nivel nacional.",
+        "La arquitectura permite añadir nuevas regiones mediante catálogo y pipeline, sin cambiar la UI."
       ],
       "scope": [
         "app.py",
@@ -1848,19 +1848,15 @@
         "src/mwangaza/gee/**",
         "src/mwangaza/contracts/**",
         "tests/data/**",
-        "tests/fixtures/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "tests/fixtures/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-16T22:27:35.768Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:9e63f1b7937563ea97ab31d56a7b7355f6eae4682b87c91e2e26ec6d53b30b45",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-16T22:27:42.280Z"
     },
     {
       "id": "sprint-26-temporal-slider",

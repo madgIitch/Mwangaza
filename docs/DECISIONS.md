@@ -270,3 +270,12 @@ Contexto: se aprobó el spec `sprint-24-country-drilldown` (Sprint 24 - Country 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-25-subnational-pilot -->
+## 2026-07-16 · sprint-25-subnational-pilot aprobado
+
+Contexto: se aprobó el spec `sprint-25-subnational-pilot` (Sprint 25 - Subnational Pilot).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -135,6 +135,14 @@ class DashboardShellTests(unittest.TestCase):
                     _json_payload(
                         _risk_snapshot(region_id="ken", risk_level="emergency", score=82.0, is_simulated=False)
                     ),
+                    _json_payload(
+                        _risk_snapshot(
+                            region_id="somalia-pilot",
+                            risk_level="warning",
+                            score=64.0,
+                            is_simulated=False,
+                        )
+                    ),
                 ],
             ),
         ):
@@ -147,6 +155,10 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(by_region["ken"].color_level, "red")
         self.assertIn("49.8", {metric.value for metric in data.metrics})
         self.assertEqual([profile.region_id for profile in data.region_profiles], ["som", "ken"])
+        somalia = next(profile for profile in data.region_profiles if profile.region_id == "som")
+        self.assertEqual(somalia.pilot_units[0].pilot_id, "somalia-pilot")
+        self.assertEqual(somalia.pilot_units[0].score, 64.0)
+        self.assertEqual(somalia.pilot_units[0].risk_level, "warning")
         kenya = next(profile for profile in data.region_profiles if profile.region_id == "ken")
         self.assertEqual(kenya.alerts[0].region, "KEN")
         self.assertIn("Activate urgent coordination review", kenya.recommendations[0])
@@ -214,6 +226,18 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("ken", profiles)
         self.assertEqual(profiles["ken"]["metrics"][0]["label"], "NDVI anomaly")
         self.assertEqual(profiles["som"]["alerts"][0]["region"], "Somalia")
+        self.assertEqual(profiles["som"]["pilot_units"][0]["pilot_id"], "somalia-pilot")
+        self.assertEqual(profiles["ken"]["pilot_units"][0]["pilot_id"], "northern-kenya-pilot")
+        self.assertEqual(profiles["eth"]["pilot_units"], [])
+
+    def test_subnational_pilot_panel_labels_non_pilot_regions_as_national_only(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn("Subnational pilot", html)
+        self.assertIn("Somalia Pilot Area", html)
+        self.assertIn("Northern Kenya Pilot Area", html)
+        self.assertIn("IGAD coverage remains national here.", html)
+        self.assertIn("data-pilot-id", html)
 
     def test_materialized_cache_accepts_powershell_utf8_bom(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

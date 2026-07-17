@@ -332,6 +332,30 @@ html, body, [data-testid="stAppViewContainer"] {{
   color: var(--mwa-muted);
   font-size: 12px;
 }}
+.pilot-ranking {{
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}}
+.pilot-unit {{
+  border: 1px solid var(--mwa-border);
+  border-left: 4px solid #8c9690;
+  border-radius: 8px;
+  padding: 9px;
+}}
+.pilot-unit[data-risk-level="watch"] {{ border-left-color: var(--mwa-yellow); }}
+.pilot-unit[data-risk-level="warning"] {{ border-left-color: var(--mwa-orange); }}
+.pilot-unit[data-risk-level="emergency"] {{ border-left-color: var(--mwa-red); }}
+.pilot-unit strong {{
+  display: block;
+  font-size: 13px;
+}}
+.pilot-unit span {{
+  display: block;
+  margin-top: 3px;
+  color: var(--mwa-muted);
+  font-size: 12px;
+}}
 .legend {{
   display: flex;
   flex-wrap: wrap;
@@ -549,6 +573,17 @@ html, body, [data-testid="stAppViewContainer"] {{
       + `<span class="alert-action">${{escapeHtml(alert.action)}}</span></article>`).join("");
   }}
 
+  function pilotHtml(units) {{
+    if (!units.length) {{
+      return '<p class="footer-note">Subnational pilot is not enabled for this country in 1.0; IGAD coverage remains national here.</p>';
+    }}
+    return '<div class="pilot-ranking">' + units.map((unit) => `<article class="pilot-unit" data-pilot-id="${{escapeHtml(unit.pilot_id)}}" data-risk-level="${{escapeHtml(unit.risk_level)}}">`
+      + `<strong>#${{escapeHtml(unit.rank)}} ${{escapeHtml(unit.name)}}</strong>`
+      + `<span>Parent: ${{escapeHtml(unit.parent_label)}} | Level: ${{escapeHtml(unit.level)}} | Geometry: ${{escapeHtml(unit.geometry_source)}}</span>`
+      + `<span>Score: ${{escapeHtml(unit.score ?? "No data")}} | Risk: ${{escapeHtml(unit.risk_level)}} | Quality: ${{escapeHtml(unit.quality_flag)}}</span>`
+      + `<span>${{escapeHtml(unit.coverage_note)}}</span></article>`).join("") + "</div>";
+  }}
+
   function recommendationsHtml(items) {{
     if (!items.length) return "<li>No action recommendations are available yet.</li>";
     return items.map((item) => `<li>${{escapeHtml(item)}}</li>`).join("");
@@ -562,6 +597,8 @@ html, body, [data-testid="stAppViewContainer"] {{
     if (detail) {{
       detail.innerHTML = `<h3>${{escapeHtml(profile.label)}}</h3>`
         + `<p>Status: ${{escapeHtml(profile.status)}} | Loaded payload drilldown</p>`
+        + `<h3>Subnational pilot</h3>`
+        + pilotHtml(profile.pilot_units)
         + `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
     }}
     if (metricsGrid) metricsGrid.innerHTML = profile.metrics.map(metricHtml).join("");
@@ -721,7 +758,40 @@ def _render_region_panel(data: DashboardShellData) -> str:
     return (
         f"<h3>{escape(profile.label)}</h3>"
         f"<p>Status: {escape(profile.status)} | Loaded payload drilldown</p>"
+        "<h3>Subnational pilot</h3>"
+        f"{_render_pilot_units(profile.pilot_units)}"
         f'<div class="alert-list">{_render_profile_alerts(profile.alerts)}</div>'
+    )
+
+
+def _render_pilot_units(units: tuple[Any, ...]) -> str:
+    if not units:
+        return (
+            '<p class="footer-note">'
+            "Subnational pilot is not enabled for this country in 1.0; IGAD coverage remains national here."
+            "</p>"
+        )
+    return '<div class="pilot-ranking">{items}</div>'.format(
+        items="\n".join(
+            '<article class="pilot-unit" data-pilot-id="{pilot_id}" data-risk-level="{risk_level}">'
+            "<strong>#{rank} {name}</strong>"
+            "<span>Parent: {parent} | Level: {level} | Geometry: {geometry}</span>"
+            "<span>Score: {score} | Risk: {risk_level} | Quality: {quality}</span>"
+            "<span>{coverage_note}</span>"
+            "</article>".format(
+                pilot_id=escape(unit.pilot_id),
+                rank=unit.rank,
+                name=escape(unit.name),
+                parent=escape(unit.parent_label),
+                level=escape(unit.level),
+                geometry=escape(unit.geometry_source),
+                score=escape("No data" if unit.score is None else _format_map_score(unit.score)),
+                risk_level=escape(unit.risk_level),
+                quality=escape(unit.quality_flag),
+                coverage_note=escape(unit.coverage_note),
+            )
+            for unit in units
+        )
     )
 
 
@@ -778,6 +848,23 @@ def _region_profiles_json(data: DashboardShellData) -> str:
                 for alert in profile.alerts
             ],
             "recommendations": list(profile.recommendations),
+            "pilot_units": [
+                {
+                    "pilot_id": unit.pilot_id,
+                    "name": unit.name,
+                    "parent_id": unit.parent_id,
+                    "parent_label": unit.parent_label,
+                    "level": unit.level,
+                    "coverage_type": unit.coverage_type,
+                    "geometry_source": unit.geometry_source,
+                    "score": unit.score,
+                    "risk_level": unit.risk_level,
+                    "quality_flag": unit.quality_flag,
+                    "coverage_note": unit.coverage_note,
+                    "rank": unit.rank,
+                }
+                for unit in profile.pilot_units
+            ],
         }
         for profile in data.region_profiles
     }

@@ -18,7 +18,7 @@ from mwangaza.data.rainfall import (
 )
 from mwangaza.gee.auth import check_gee_auth
 from mwangaza.quality import evaluate_data_quality
-from mwangaza.regions import COUNTRY_LEVEL, list_regions
+from mwangaza.regions import COUNTRY_LEVEL, PILOT_LEVEL, list_regions
 from mwangaza.risk import compute_composite_drought_score
 
 DEFAULT_SCALE_METERS = 5500
@@ -153,12 +153,13 @@ def load_live_gee_dashboard_payloads(
     target_region = (region_id or os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
     adapter = RealGeeRegionalAdapter(module, scale_meters=scale_meters)
     start, end = resolve_live_gee_period(adapter, period_start=period_start, period_end=period_end)
-    region_ids = (
-        (target_region,)
-        if region_id is not None
-        else _ordered_region_ids(target_region, _enabled_country_region_ids())
-    )
+    region_ids = (target_region,) if region_id is not None else dashboard_live_region_ids(target_region)
     return build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
+
+
+def dashboard_live_region_ids(selected_region_id: str | None = None) -> tuple[str, ...]:
+    target_region = (selected_region_id or os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
+    return _ordered_region_ids(target_region, _enabled_dashboard_region_ids())
 
 
 def resolve_live_gee_period(
@@ -282,6 +283,21 @@ def _enabled_country_region_ids() -> tuple[str, ...]:
     return tuple(country.id for country in countries if country.iso3 in enabled_iso3)
 
 
+def _enabled_dashboard_region_ids() -> tuple[str, ...]:
+    countries = _enabled_country_region_ids()
+    enabled_country_ids = set(countries)
+    try:
+        enabled_iso3 = set(load_settings().enabled_countries)
+    except ConfigurationError:
+        enabled_iso3 = {region.iso3 for region in list_regions(level=COUNTRY_LEVEL, include_pilots=False)}
+    pilots = tuple(
+        region.id
+        for region in list_regions(level=PILOT_LEVEL, include_pilots=True)
+        if region.iso3 in enabled_iso3 and region.parent_id in enabled_country_ids
+    )
+    return (*countries, *pilots)
+
+
 def _ordered_region_ids(selected_region_id: str, region_ids: tuple[str, ...]) -> tuple[str, ...]:
     selected = selected_region_id.lower()
     ordered = [selected]
@@ -314,6 +330,7 @@ __all__ = [
     "RealGeeRegionalAdapter",
     "build_live_gee_payloads",
     "build_live_gee_payloads_for_regions",
+    "dashboard_live_region_ids",
     "load_live_gee_dashboard_payloads",
     "resolve_live_gee_period",
 ]

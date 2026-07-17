@@ -8,6 +8,7 @@ Sprint 23 adds a deterministic IGAD choropleth map to the dashboard shell.
 - `mwangaza.maps.build_regional_risk_map_html(...)` renders deterministic SVG/HTML for Streamlit and tests.
 - `mwangaza.services.live_gee_dashboard.load_live_gee_dashboard_payloads(...)` queries Earth Engine for NDVI, rainfall and LST, then builds the dashboard risk payloads.
 - The dashboard calls GEE directly in `live` mode when credentials are configured, using the enabled IGAD countries from `MWANGAZA_ENABLED_COUNTRIES` and the latest common available date across the configured NDVI, rainfall and LST collections. If GEE is unavailable, it falls back to local cache and then demo data.
+- Live dashboard queries include the enabled country regions and the enabled subnational pilot regions from the region catalog. Pilot drilldown values come from the pilot region's own GEE risk snapshot; missing or nonconclusive pilot snapshots render as `unknown`/`No data` and do not inherit the national score.
 - Passing an explicit `region_id` keeps the live query scoped to that single bounded region for smoke tests and diagnostics.
 - `smoke_tests/sprint23_regional_risk_map_real_gee.py` uses the same live GEE path and writes dashboard cache payloads for repeatable manual validation.
 

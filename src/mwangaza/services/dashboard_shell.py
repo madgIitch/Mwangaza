@@ -12,6 +12,7 @@ from mwangaza.actions import recommend_actions
 from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import RiskSnapshot
 from mwangaza.maps import RegionalRiskMap, build_regional_risk_map, demo_regional_risk_map
+from mwangaza.regions import COUNTRY_LEVEL, PILOT_LEVEL, list_regions
 from mwangaza.services.live_gee_dashboard import load_live_gee_dashboard_payloads
 
 DataMode = Literal["live", "cache", "demo"]
@@ -55,12 +56,29 @@ class AlertSummary:
 
 
 @dataclass(frozen=True)
+class PilotUnit:
+    pilot_id: str
+    name: str
+    parent_id: str
+    parent_label: str
+    level: str
+    coverage_type: str
+    geometry_source: str
+    score: float | None
+    risk_level: str
+    quality_flag: str
+    coverage_note: str
+    rank: int
+
+
+@dataclass(frozen=True)
 class RegionProfile:
     region_id: str
     label: str
     metrics: tuple[RegionMetric, ...]
     alerts: tuple[AlertSummary, ...]
     recommendations: tuple[str, ...]
+    pilot_units: tuple[PilotUnit, ...] = ()
     status: Freshness = "current"
 
 
@@ -274,13 +292,15 @@ def _region_profiles_from_payloads(
     payloads: tuple[dict[str, Any], ...],
     active_alerts: tuple[AlertSummary, ...],
 ) -> tuple[RegionProfile, ...]:
-    region_ids = tuple(
+    all_region_ids = tuple(
         dict.fromkeys(
             region_id
             for region_id in (_first_text(payload.get("region_id")).lower() for payload in payloads)
             if region_id
         )
     )
+    country_ids = {region.id for region in list_regions(level=COUNTRY_LEVEL, include_pilots=False)}
+    region_ids = tuple(region_id for region_id in all_region_ids if region_id in country_ids) or all_region_ids
     profiles: list[RegionProfile] = []
     for region_id in region_ids:
         risk = _latest_risk_snapshot(payloads, region_id=region_id)
@@ -295,10 +315,62 @@ def _region_profiles_from_payloads(
                 metrics=_metrics_from_materialized(risk, signals),
                 alerts=alerts,
                 recommendations=recommendations or ("No action recommendations are available yet.",),
+                pilot_units=_pilot_units_for_parent(region_id, payloads),
                 status="empty" if risk is None and not signals else "current",
             )
         )
     return tuple(profiles)
+
+
+def _pilot_units_for_parent(parent_id: str, payloads: tuple[dict[str, Any], ...]) -> tuple[PilotUnit, ...]:
+    parent = parent_id.lower()
+    units: list[PilotUnit] = []
+    for pilot in list_regions(level=PILOT_LEVEL, include_pilots=True):
+        if pilot.parent_id != parent:
+            continue
+        risk = _latest_risk_snapshot(payloads, region_id=pilot.id)
+        score = _safe_score(risk)
+        quality = _first_text(risk.get("quality_flag") if risk else None) or "no_data"
+        risk_level = _risk_level(risk) if risk is not None and score is not None and quality == "ok" else "unknown"
+        units.append(
+            PilotUnit(
+                pilot_id=pilot.id,
+                name=pilot.name,
+                parent_id=parent,
+                parent_label=_region_label(parent),
+                level=pilot.level,
+                coverage_type=pilot.coverage_type,
+                geometry_source=f"{pilot.source} {pilot.source_version}",
+                score=score if quality == "ok" else None,
+                risk_level=risk_level,
+                quality_flag=quality if risk is not None and score is not None else "no_data",
+                coverage_note=str(
+                    pilot.metadata.get(
+                        "pilot_note",
+                        "Prototype pilot area only; not complete validated subnational coverage.",
+                    )
+                ),
+                rank=0,
+            )
+        )
+    ranked = sorted(units, key=lambda unit: unit.score if unit.score is not None else -1.0, reverse=True)
+    return tuple(
+        PilotUnit(
+            pilot_id=unit.pilot_id,
+            name=unit.name,
+            parent_id=unit.parent_id,
+            parent_label=unit.parent_label,
+            level=unit.level,
+            coverage_type=unit.coverage_type,
+            geometry_source=unit.geometry_source,
+            score=unit.score,
+            risk_level=unit.risk_level,
+            quality_flag=unit.quality_flag,
+            coverage_note=unit.coverage_note,
+            rank=index,
+        )
+        for index, unit in enumerate(ranked, start=1)
+    )
 
 
 def _latest_indicator_snapshot(
@@ -576,7 +648,29 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         alerts=alerts,
         recommendations=recommendations,
         region_profiles=(
-            RegionProfile("som", "Somalia", metrics, (alerts[0],), recommendations),
+            RegionProfile(
+                "som",
+                "Somalia",
+                metrics,
+                (alerts[0],),
+                recommendations,
+                (
+                    PilotUnit(
+                        "somalia-pilot",
+                        "Somalia Pilot Area",
+                        "som",
+                        "SOM",
+                        "pilot_area",
+                        "pilot_subnational",
+                        "Mwangaza prototype IGAD catalog prototype-0.1",
+                        78.0,
+                        "emergency",
+                        "ok",
+                        "Prototype pilot area only; not complete validated subnational coverage.",
+                        1,
+                    ),
+                ),
+            ),
             RegionProfile(
                 "ken",
                 "KEN",
@@ -590,6 +684,22 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 (alerts[1],),
                 ("Preposition supplies and brief partners.",),
+                (
+                    PilotUnit(
+                        "northern-kenya-pilot",
+                        "Northern Kenya Pilot Area",
+                        "ken",
+                        "KEN",
+                        "pilot_area",
+                        "pilot_subnational",
+                        "Mwangaza prototype IGAD catalog prototype-0.1",
+                        61.0,
+                        "warning",
+                        "ok",
+                        "Prototype pilot area only; not complete validated subnational coverage.",
+                        1,
+                    ),
+                ),
             ),
             RegionProfile(
                 "eth",
@@ -654,6 +764,13 @@ def _risk_level(risk: dict[str, Any]) -> str:
     if isinstance(metadata, dict) and metadata.get("risk_level_override") == "unknown":
         return "unknown"
     return str(risk.get("risk_level") or "unknown")
+
+
+def _safe_score(risk: dict[str, Any] | None) -> float | None:
+    if risk is None:
+        return None
+    score = risk.get("composite_score")
+    return float(score) if isinstance(score, int | float) and not isinstance(score, bool) else None
 
 
 def _severity(value: str) -> Severity:

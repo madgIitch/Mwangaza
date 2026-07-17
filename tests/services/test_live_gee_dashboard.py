@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from mwangaza.data.lst import LstCollectionConfig, LstQueryResult
 from mwangaza.data.ndvi import NdviCollectionConfig, NdviQueryResult
@@ -8,6 +9,7 @@ from mwangaza.data.rainfall import RainfallCollectionConfig, RainfallQueryResult
 from mwangaza.services.live_gee_dashboard import (
     build_live_gee_payloads,
     build_live_gee_payloads_for_regions,
+    dashboard_live_region_ids,
     resolve_live_gee_period,
 )
 
@@ -112,6 +114,28 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertEqual([risk["region_id"] for risk in risks], ["som", "ken"])
         self.assertEqual(len(payloads), 10)
         self.assertFalse(any(payload.get("is_simulated") is True for payload in payloads))
+
+    def test_dashboard_live_region_ids_include_enabled_pilot_regions(self) -> None:
+        with patch.dict("os.environ", {"MWANGAZA_ENABLED_COUNTRIES": "SOM,KEN"}):
+            region_ids = dashboard_live_region_ids("som")
+
+        self.assertEqual(region_ids[0], "som")
+        self.assertIn("ken", region_ids)
+        self.assertIn("somalia-pilot", region_ids)
+        self.assertIn("northern-kenya-pilot", region_ids)
+        self.assertNotIn("eth", region_ids)
+
+    def test_builds_live_payloads_for_pilot_regions(self) -> None:
+        payloads = build_live_gee_payloads_for_regions(
+            ("som", "somalia-pilot"),
+            "2026-07-01T00:00:00Z",
+            "2026-07-15T00:00:00Z",
+            adapter=FakeLiveGeeAdapter(),  # type: ignore[arg-type]
+        )
+
+        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+        self.assertEqual([risk["region_id"] for risk in risks], ["som", "somalia-pilot"])
+        self.assertEqual(len(payloads), 10)
 
 
 if __name__ == "__main__":
