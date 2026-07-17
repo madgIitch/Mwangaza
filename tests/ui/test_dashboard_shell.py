@@ -687,6 +687,25 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("min-width: 0", html)
         self.assertIn("max-width: 1366px", html)
 
+    def test_low_bandwidth_mode_renders_accessible_table_without_map_geometry(self) -> None:
+        with patch.dict(os.environ, {"MWANGAZA_LOW_BANDWIDTH": "1"}):
+            lite = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+        full = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertLess(len(lite), len(full))
+        self.assertIn('data-low-bandwidth="true"', lite)
+        self.assertIn("data-low-bandwidth-toggle", lite)
+        self.assertIn("<table>", lite)
+        self.assertIn("<th>Indicator</th>", lite)
+        self.assertIn("Composite score", lite)
+        self.assertIn("Drought risk escalation", lite)
+        self.assertIn("Prioritize water trucking readiness", lite)
+        self.assertIn("mwangaza-executive-report", lite)
+        self.assertIn("/api/v1/snapshots/latest", lite)
+        self.assertNotIn("<svg", lite)
+        self.assertNotIn("ui_geometry", lite)
+        self.assertNotIn("regional-risk-svg", lite)
+
 
 def _risk_snapshot(
     *,

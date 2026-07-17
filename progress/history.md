@@ -137,3 +137,8 @@
 - Catalogos `en`, `sw`, `so` con fallback ingles y warnings.
 - Dashboard traduce navegacion/modos sin modificar fuentes, fechas ni valores.
 - Validado con i18n tests, UI, suite completa y gate del harness.
+## 2026-07-17T13:55:00Z - #sprint-39-low-bandwidth-mode Sprint 39 - Low-Bandwidth Mode -> review_pending
+
+- Modo lite por `MWANGAZA_LOW_BANDWIDTH=1`.
+- Tabla accesible sin SVG/geometria, con reportes/export/API visibles.
+- Validado con UI, compile, suite completa y gate del harness.

@@ -23,6 +23,8 @@ SAFE_ERROR_MESSAGE = "Dashboard data could not be loaded. Showing a safe fallbac
 def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = False) -> str:
     shell_id = _shell_dom_id(data)
     language = normalize_language(os.environ.get("MWANGAZA_LANG", "en"))
+    if os.environ.get("MWANGAZA_LOW_BANDWIDTH") == "1":
+        return _render_low_bandwidth_shell(data, shell_id=shell_id, language=language, safe_error=safe_error)
     nav = "\n".join(
         f'<button class="nav-item{" is-active" if item.active else ""}" '
         f'type="button" data-nav-target="{escape(item.key)}">'
@@ -1149,6 +1151,58 @@ html, body, [data-testid="stAppViewContainer"] {{
 }})();
 </script>
 """
+
+
+def _render_low_bandwidth_shell(
+    data: DashboardShellData,
+    *,
+    shell_id: str,
+    language: str,
+    safe_error: bool,
+) -> str:
+    metrics = "".join(
+        "<tr><td>{label}</td><td>{value} {unit}</td><td>{severity}</td><td>{detail}</td></tr>".format(
+            label=escape(metric.label),
+            value=escape(metric.value),
+            unit=escape(metric.unit),
+            severity=escape(metric.severity),
+            detail=escape(metric.detail),
+        )
+        for metric in data.metrics
+    )
+    alerts = "".join(
+        "<li><strong>{severity}</strong> {title} - {region}. {action}</li>".format(
+            severity=escape(alert.severity),
+            title=escape(alert.title),
+            region=escape(alert.region),
+            action=escape(alert.action),
+        )
+        for alert in data.alerts
+    ) or "<li>No active alerts.</li>"
+    actions = "".join(f"<li>{escape(item)}</li>" for item in data.recommendations)
+    export = build_visible_export(data, max_rows=500, include_geometry=False)
+    report = build_executive_report_context(data, dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL", ""))
+    error = f"<p role=\"alert\">{escape(SAFE_ERROR_MESSAGE)}</p>" if safe_error else ""
+    return f"""<section class="mwa-lite" data-shell-id="{escape(shell_id)}" data-language="{escape(language)}" data-low-bandwidth="true">
+  <h1>{escape(data.project)}</h1>
+  <p>{escape(data.tagline)}</p>
+  {error}
+  <label>Low-bandwidth mode <input type="checkbox" checked data-low-bandwidth-toggle></label>
+  <p>Data source: {escape(data.data_status.source)} | Last update: {escape(data.data_status.last_updated)}</p>
+  <nav>{escape(_t("nav.overview", language))} | {escape(_t("nav.alerts", language))} | {escape(_t("nav.reports", language))}</nav>
+  <h2>Essential indicators</h2>
+  <table>
+    <thead><tr><th>Indicator</th><th>Value</th><th>Quality</th><th>Detail</th></tr></thead>
+    <tbody>{metrics}</tbody>
+  </table>
+  <h2>Active alerts</h2>
+  <ul>{alerts}</ul>
+  <h2>Actions</h2>
+  <ul>{actions}</ul>
+  <h2>Reports and API</h2>
+  <p>{escape(safe_report_filename(report))}</p>
+  <p>{escape(safe_export_filename(export, "json"))} | /api/v1/snapshots/latest</p>
+</section>"""
 
 
 def render_dashboard(

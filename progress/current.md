@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-38-multilingual-interface - Sprint 38 - Multilingual Interface** - estado: `review_pending`.
+Feature: **sprint-39-low-bandwidth-mode - Sprint 39 - Low-Bandwidth Mode** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-38-multilingual-interface - Sprint 38 - Multilingual Interface
 
 ## Siguiente accion
 
-- Smoke visual con `MWANGAZA_LANG=sw` y `MWANGAZA_LANG=so`. Cerrar con `node .harness/spec.mjs done sprint-38-multilingual-interface` si pasa.
+- Preparar Sprint 40 PWA/migracion con el modo lite como contrato base. Cerrar con `node .harness/spec.mjs done sprint-39-low-bandwidth-mode` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-38-multilingual-interface - Sprint 38 - Multilingual Interface
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.i18n.test_i18n`
 - `uv run python -m unittest tests.ui.test_dashboard_shell`
+- `uv run python -m compileall -q src tests app.py`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-38-multilingual-interface`
+- `node .harness\gates.mjs sprint-39-low-bandwidth-mode`

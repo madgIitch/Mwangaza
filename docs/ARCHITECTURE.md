@@ -994,3 +994,26 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-39-low-bandwidth-mode -->
+## sprint-39-low-bandwidth-mode · Sprint 39 - Low-Bandwidth Mode
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

@@ -396,3 +396,12 @@ Contexto: se aprobó el spec `sprint-38-multilingual-interface` (Sprint 38 - Mul
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-39-low-bandwidth-mode -->
+## 2026-07-17 · sprint-39-low-bandwidth-mode aprobado
+
+Contexto: se aprobó el spec `sprint-39-low-bandwidth-mode` (Sprint 39 - Low-Bandwidth Mode).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
