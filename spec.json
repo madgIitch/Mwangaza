@@ -3771,6 +3771,162 @@
         "progress/**"
       ],
       "spec_approved": false
+    },
+    {
+      "id": "sprint-57-overview-completion",
+      "name": "Sprint 57 - Overview Completion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.1",
+      "estimated_hours": 7,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-55-mwangaza-1-0-release"
+      ],
+      "objective": "Rellenar los placeholders de la pantalla `/overview` con controles, rutas y contratos API/PWA completos, manteniendo `/overview` como cockpit operativo independiente.",
+      "user_stories": [
+        {
+          "id": "HU57.1",
+          "story": "Como analista quiero que Overview muestre estado regional, alertas, region seleccionada, tendencias y acciones con datos procesados y rutas independientes."
+        },
+        {
+          "id": "HU57.2",
+          "story": "Como operador quiero que los controles pendientes indiquen explicitamente que falta contrato o pagina, sin simular funcionalidad."
+        }
+      ],
+      "tasks": [
+        "Implementar controles reales de mapa para home, zoom y selector de capas cuando exista estado de viewport/capas aprobado.",
+        "Anadir tooltips accesibles con score, indicadores, calidad, fuente y snapshot por region.",
+        "Implementar pagina de detalle de alerta y deep-links filtrados desde `View details` y `View all alerts`.",
+        "Conectar la generacion real de PDF ejecutivo y descargas CSV/JSON a endpoints aprobados.",
+        "Exponer comparaciones mensuales y series baseline suficientes para reemplazar placeholders de tarjetas y graficos.",
+        "Anadir locale Somali (`SO`) y selector segmentado EN/SW/SO sin alterar valores tecnicos.",
+        "Sustituir placeholders de notificaciones, avatar y cuenta por estados funcionales o placeholders aprobados por sprints de admin/notificaciones."
+      ],
+      "deliverable": "Overview sin placeholders silenciosos, con rutas de seccion independientes y degradacion explicita cuando falten contratos.",
+      "acceptance": [
+        "AC1: `/overview` y `/` renderizan el cockpit principal sin usar hashes ni autoscroll.",
+        "AC2: El mapa usa geometria real disponible o placeholder explicito, y nunca pinta regiones sin datos como verdes.",
+        "AC3: Los controles de mapa son funcionales o permanecen marcados como pendientes con tests.",
+        "AC4: Las alertas enlazan a paginas/detalles reales o placeholders aprobados, manteniendo filtros de periodo y region cuando existan.",
+        "AC5: Reporte PDF y export CSV/JSON ejecutan endpoints reales o muestran estado pendiente sin simular descarga.",
+        "AC6: Las tarjetas de indicadores solo muestran deltas mensuales cuando existe snapshot comparable.",
+        "AC7: Documentacion de `/overview` distingue implementado, pendiente por falta de contrato y alcance futuro."
+      ],
+      "scope": [
+        "frontend/**",
+        "tests/frontend/**",
+        "src/mwangaza/api/**",
+        "tests/api/**",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-58-alerts-center-completion",
+      "name": "Sprint 58 - Alerts Center Completion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.1",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-55-mwangaza-1-0-release"
+      ],
+      "objective": "Rellenar los placeholders de `/alerts` con contratos API/PWA completos para triage, detalle, notificaciones simuladas, ciclo de vida y resoluciones.",
+      "user_stories": [
+        {
+          "id": "HU58.1",
+          "story": "Como operador quiero filtrar, seleccionar y explicar alertas con IDs estables, evidencia y trazabilidad."
+        },
+        {
+          "id": "HU58.2",
+          "story": "Como responsable de coordinacion quiero exportar alertas filtradas, generar reportes y revisar comunicaciones simuladas sin enviar mensajes reales."
+        }
+      ],
+      "tasks": [
+        "Exponer IDs estables, issued_at, updated_at, status history y evidencia estructurada en la API de alertas.",
+        "Anadir endpoints o payloads para alertas preventivas, resueltas, degradadas y superseded.",
+        "Implementar export filtrado CSV/JSON/PDF y enlazarlo desde Alerts Center.",
+        "Implementar detalle de alerta y deep-links con filtros persistentes por region, periodo, severidad y estado.",
+        "Exponer outbox simulado con destinatarios enmascarados, estados y auditoria sin envio real.",
+        "Completar metadata de acciones recomendadas: actor, prioridad, horizonte, evidencia, region objetivo y version de catalogo.",
+        "Implementar alert settings solo cuando existan permisos/admin aprobados."
+      ],
+      "deliverable": "Alerts Center con datos completos o placeholders explicitos, sin simular envios ni configuraciones no aprobadas.",
+      "acceptance": [
+        "AC1: `/alerts` muestra filtros, resumen, tabla, detalle, acciones, outbox, lifecycle y resolved/recent con datos reales cuando existan.",
+        "AC2: Las filas usan IDs estables del backend y no IDs generados por UI cuando el contrato los provea.",
+        "AC3: Export y PDF operan sobre filtros activos o muestran estado pendiente validado por tests.",
+        "AC4: Notification outbox indica siempre simulated y no envia mensajes sin adaptador aprobado.",
+        "AC5: Preventive/resolved/superseded se distinguen de alertas observadas activas.",
+        "AC6: Deep-links desde Overview y Region conservan region, periodo y estado cuando existan.",
+        "AC7: Documentacion de `/alerts` distingue implementado, pendiente por falta de contrato y alcance futuro."
+      ],
+      "scope": [
+        "frontend/**",
+        "tests/frontend/**",
+        "src/mwangaza/api/**",
+        "tests/api/**",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-59-reports-center-completion",
+      "name": "Sprint 59 - Reports Center Completion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.1",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-55-mwangaza-1-0-release"
+      ],
+      "objective": "Rellenar los placeholders de `/reports` con contratos API/PWA completos para generacion, preview, descarga, programacion y distribucion de reportes.",
+      "user_stories": [
+        {
+          "id": "HU59.1",
+          "story": "Como responsable de coordinacion quiero generar y revisar reportes por region, periodo y plantilla antes de compartirlos."
+        },
+        {
+          "id": "HU59.2",
+          "story": "Como analista quiero auditar descargas, exportaciones y distribuciones con IDs estables y trazabilidad."
+        }
+      ],
+      "tasks": [
+        "Exponer registros estables de reportes con ID, generated_at, template_id, idioma, autor, estado y snapshot base.",
+        "Implementar generacion real de PDF, preview paginado, descarga y controles de impresion.",
+        "Conectar endpoints de export CSV/JSON y guardar historial filtrado de exportaciones.",
+        "Implementar reportes programados y gestion de plantillas cuando existan permisos aprobados.",
+        "Exponer canales de distribucion, masking, audit trail y estado de descarga por partner.",
+        "Sustituir el preview placeholder por render PDF o HTML fiel al reporte aprobado.",
+        "Anadir deep-links desde Overview, Region y Alerts conservando region, periodo y filtros."
+      ],
+      "deliverable": "Reports Center con generacion y export reales o placeholders explicitos, sin simular descargas, envios ni auditoria.",
+      "acceptance": [
+        "AC1: `/reports` muestra filtros, tabs, resumen, cola de reportes, detalle, exportaciones recientes, preview y paneles laterales.",
+        "AC2: Las filas usan IDs y timestamps estables del backend cuando el contrato los provea.",
+        "AC3: PDF, CSV y JSON ejecutan endpoints reales o muestran estado pendiente validado por tests.",
+        "AC4: El preview no se presenta como PDF real hasta que exista render aprobado.",
+        "AC5: Programacion, plantillas y distribucion quedan bloqueadas o simuladas claramente hasta tener contratos y permisos.",
+        "AC6: Las descargas y compartidos quedan auditados cuando exista adapter aprobado.",
+        "AC7: Documentacion de `/reports` distingue implementado, pendiente por falta de contrato y alcance futuro."
+      ],
+      "scope": [
+        "frontend/**",
+        "tests/frontend/**",
+        "src/mwangaza/api/**",
+        "tests/api/**",
+        "docs/**",
+        "spec/**",
+        "progress/**"
+      ],
+      "spec_approved": false
     }
   ]
 }

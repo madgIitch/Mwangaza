@@ -3,7 +3,7 @@ import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { loadApiDashboardDetails, loadApiDashboardSnapshot } from "./api";
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
-import type { DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TrendSeries } from "./types";
+import type { Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -118,6 +118,7 @@ export function App({
     [data.alerts]
   );
   const route = window.location.pathname;
+  const isOverviewRoute = route === "/" || route === "/overview";
 
   return (
     <div className="app-shell" data-low-bandwidth={lowBandwidth ? "true" : "false"}>
@@ -130,7 +131,7 @@ export function App({
           </div>
         </div>
         <nav>
-          <a data-active={route === "/" ? "true" : "false"} href="/">{t(language, "overview")}</a>
+          <a data-active={isOverviewRoute ? "true" : "false"} href="/overview">{t(language, "overview")}</a>
           <a data-active={route === "/region" ? "true" : "false"} href="/region">{t(language, "regions")}</a>
           <a data-active={route === "/alerts" ? "true" : "false"} href="/alerts">{t(language, "activeAlerts")}</a>
           <a data-active={route === "/reports" ? "true" : "false"} href="/reports">{t(language, "reports")}</a>
@@ -170,9 +171,9 @@ export function App({
         )}
 
         {route === "/alerts" ? (
-          <StandalonePage title={t(language, "activeAlerts")} detail="Dedicated alerts page pending. This route is separate from Overview and will host alert filtering." />
+          <AlertsCenter data={data} activeAlerts={activeAlerts} />
         ) : route === "/reports" ? (
-          <StandalonePage title={t(language, "reports")} detail="Dedicated reports page pending. This route is separate from Overview and will host exports." />
+          <ReportsCenter data={data} />
         ) : route === "/about" ? (
           <StandalonePage title={t(language, "about")} detail="Dedicated about page pending. This route is separate from Overview." />
         ) : lowBandwidth ? (
@@ -185,8 +186,8 @@ export function App({
             activeAlerts={activeAlerts}
             onSelectRegion={setSelectedRegionId}
           />
-        ) : (
-          <FullDashboard
+        ) : isOverviewRoute ? (
+          <OverviewScreen
             data={data}
             language={language}
             selectedRegion={selectedRegion}
@@ -194,6 +195,8 @@ export function App({
             activeAlerts={activeAlerts}
             onSelectRegion={setSelectedRegionId}
           />
+        ) : (
+          <StandalonePage title="Page not found" detail="This route does not have an approved screen yet." />
         )}
       </main>
     </div>
@@ -208,6 +211,507 @@ function StandalonePage({ title, detail }: { title: string; detail: string }): J
       <Placeholder title="Page shell pending" detail={detail} />
     </section>
   );
+}
+
+function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlerts: Alert[] }): JSX.Element {
+  const [query, setQuery] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [tab, setTab] = useState<"active" | "preventive" | "resolved" | "all">("active");
+  const [selectedAlertKey, setSelectedAlertKey] = useState<string | null>(null);
+
+  const alertRows = useMemo(() => data.alerts.map((alert, index) => ({
+    alert,
+    id: alertId(alert, index),
+    region: data.regions.find((region) => region.id === alert.regionId),
+    profile: data.profiles.find((profile) => profile.id === alert.regionId)
+  })), [data.alerts, data.profiles, data.regions]);
+
+  const filteredRows = alertRows.filter(({ alert }) => {
+    const text = `${alert.region} ${alert.title} ${alert.action} ${alert.quality} ${alert.evidence.flat().join(" ")}`.toLowerCase();
+    const matchesQuery = !query || text.includes(query.toLowerCase());
+    const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
+    const matchesRegion = regionFilter === "all" || alert.regionId === regionFilter;
+    const matchesStatus = statusFilter === "all" || alert.status === statusFilter;
+    const matchesTab = tab === "all" || (tab === "active" && alert.status === "active") || (tab === "preventive" && alert.status === "preventive") || (tab === "resolved" && alert.status === "resolved");
+    return matchesQuery && matchesSeverity && matchesRegion && matchesStatus && matchesTab;
+  });
+  const selectedRow = filteredRows.find((row) => row.id === selectedAlertKey) ?? filteredRows[0] ?? alertRows[0];
+  const selectedAlert = selectedRow?.alert;
+  const selectedProfile = selectedRow?.profile ?? data.profiles.find((profile) => profile.id === data.selectedRegionId) ?? data.profiles[0];
+  const selectedRegion = selectedRow?.region ?? data.regions.find((region) => region.id === selectedAlert?.regionId) ?? data.regions[0];
+  const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
+  const severeCount = activeAlerts.filter((alert) => alert.severity === "critical").length;
+
+  return (
+    <section className="alerts-screen" aria-label="Alerts Center">
+      <div className="alerts-header">
+        <div>
+          <h2>Alerts Center</h2>
+          <p>Track active, preventive, and resolved drought alerts across IGAD</p>
+        </div>
+        <div className="alerts-header-actions">
+          <button type="button" title="Filtered export endpoint pending">Export</button>
+          <button type="button" title="Admin alert settings pending">Alert settings</button>
+        </div>
+      </div>
+
+      <div className="alerts-filters" aria-label="Alert filters">
+        <input aria-label="Search alerts" onChange={(event) => setQuery(event.target.value)} placeholder="Search alerts by region, country, or type..." value={query} />
+        <select aria-label="Severity" onChange={(event) => setSeverityFilter(event.target.value)} value={severityFilter}>
+          <option value="all">Severity: All</option>
+          <option value="critical">Severe</option>
+          <option value="warning">Alert</option>
+          <option value="watch">Watch</option>
+          <option value="normal">Green</option>
+          <option value="unknown">Unknown</option>
+        </select>
+        <select aria-label="Country or region" onChange={(event) => setRegionFilter(event.target.value)} value={regionFilter}>
+          <option value="all">Country / Region: All</option>
+          {data.regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
+        </select>
+        <select aria-label="Status" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+          <option value="all">Status: All</option>
+          <option value="active">Active</option>
+          <option value="monitoring">Monitoring</option>
+          <option value="preventive">Preventive</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <select aria-label="Time period" disabled>
+          <option>Last 30 days</option>
+        </select>
+      </div>
+
+      <div className="alert-tabs" aria-label="Alert status tabs">
+        {(["active", "preventive", "resolved", "all"] as const).map((item) => (
+          <button data-active={tab === item ? "true" : "false"} key={item} onClick={() => setTab(item)} type="button">
+            {item === "all" ? "All alerts" : item[0].toUpperCase() + item.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <section className="alert-summary-grid" aria-label="Alert summary">
+        <SummaryTile label="Active alerts" value={activeAlerts.length} detail="Loaded active payload" severity="critical" />
+        <SummaryTile label="Severe alerts" value={severeCount} detail="Critical severity rows" severity="critical" />
+        <SummaryTile label="Preventive alerts" value="Pending" detail="Forecast alert contract pending" severity="watch" />
+        <SummaryTile label="Resolved this month" value="Pending" detail="Resolved history pending" severity="normal" />
+        <SummaryTile label="Notifications queued" value="Simulated" detail="No real messages are sent" severity="unknown" />
+      </section>
+
+      <div className="alerts-workspace">
+        <section className="alerts-queue">
+          <div className="section-heading">
+            <h2>Active alerts queue</h2>
+            <span className="muted">Showing {filteredRows.length ? `1 to ${filteredRows.length}` : "0"} of {alertRows.length} results</span>
+          </div>
+          {filteredRows.length ? (
+            <table>
+              <thead><tr><th></th><th>#</th><th>Severity</th><th>Region / Country</th><th>Alert type</th><th>Trigger / Evidence summary</th><th>Date issued</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {filteredRows.map(({ alert, id }, index) => (
+                  <tr data-selected={id === selectedRow?.id ? "true" : "false"} key={id}>
+                    <td><input aria-label={`Select ${alert.region}`} checked={id === selectedRow?.id} onChange={() => setSelectedAlertKey(id)} type="radio" /></td>
+                    <td>{index + 1}</td>
+                    <td><span className="table-badge" data-severity={alert.severity}>{severityLabel(alert.severity)}</span></td>
+                    <td>{alert.region}</td>
+                    <td>Drought</td>
+                    <td>{alert.title}</td>
+                    <td>{alert.period}</td>
+                    <td>{alert.status}</td>
+                    <td><button onClick={() => setSelectedAlertKey(id)} type="button">View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <Placeholder title="No alerts match filters" detail="Adjust search, severity, country or status filters." />
+          )}
+        </section>
+
+        <aside className="selected-alert-panel">
+          {selectedAlert ? (
+            <>
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Selected alert</p>
+                  <h2>{selectedAlert.region} - {severityLabel(selectedAlert.severity)}</h2>
+                  <p>{selectedAlert.title}</p>
+                </div>
+                <span className="severity-badge" data-severity={selectedAlert.severity}>{severityLabel(selectedAlert.severity)}</span>
+              </div>
+              <p className="muted">ID: {selectedRow.id}</p>
+              <dl className="alert-meta">
+                <div><dt>Quality</dt><dd>{qualityLabel(selectedAlert.quality)}</dd></div>
+                <div><dt>Issued</dt><dd>{selectedAlert.period}</dd></div>
+                <div><dt>Last updated</dt><dd>{selectedRegion.period}</dd></div>
+              </dl>
+              <div className="selected-alert-metrics">
+                {selectedMetrics.map((metric) => (
+                  <article key={metric.label}>
+                    <span>{metric.label}</span>
+                    <strong>{metric.value}<small>{metric.unit}</small></strong>
+                    <p>No comparison yet</p>
+                  </article>
+                ))}
+              </div>
+              <p>{alertNarrative(selectedAlert, selectedRegion)}</p>
+              <div className="alert-detail-actions">
+                <a href="/region">View full region analysis</a>
+                <a href="/reports">Generate PDF report</a>
+              </div>
+            </>
+          ) : (
+            <Placeholder title="No selected alert" detail="No alert is available in the current payload." />
+          )}
+        </aside>
+      </div>
+
+      <div className="alerts-lower-grid">
+        <section>
+          <h2>Recommended early actions</h2>
+          <ul className="action-list">
+            {(selectedProfile?.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => <li key={item}>{item}</li>)}
+          </ul>
+          <a className="text-link" href="/alerts">View all recommended actions</a>
+        </section>
+        <NotificationOutbox selectedAlert={selectedAlert} />
+        <AlertLifecycle selectedAlert={selectedAlert} selectedRegion={selectedRegion} />
+      </div>
+
+      <section className="resolved-recent">
+        <h2>Resolved & recent</h2>
+        <Placeholder title="Resolved alert history pending" detail="The public API does not expose resolved, downgraded or superseded alert history yet." />
+      </section>
+    </section>
+  );
+}
+
+function SummaryTile({ label, value, detail, severity }: { label: string; value: number | string; detail: string; severity: Severity }): JSX.Element {
+  return (
+    <article className="summary-tile" data-severity={severity}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <p>{detail}</p>
+    </article>
+  );
+}
+
+function NotificationOutbox({ selectedAlert }: { selectedAlert?: Alert }): JSX.Element {
+  const rows = ["SMS", "Email", "Telegram", "Dashboard broadcast"];
+  return (
+    <section>
+      <div className="section-heading">
+        <h2>Notification outbox <span className="muted">(simulated)</span></h2>
+        <span className="muted">No real messages are sent</span>
+      </div>
+      <table>
+        <thead><tr><th>Channel</th><th>Message</th><th>Recipients</th><th>Status</th></tr></thead>
+        <tbody>
+          {rows.map((channel, index) => (
+            <tr key={channel}>
+              <td>{channel}</td>
+              <td>{selectedAlert ? `${selectedAlert.region}: ${selectedAlert.title}` : "Alert message pending"}</td>
+              <td>{index === 0 ? "+251 9** *** 123" : index === 1 ? "ops***@relief.org" : index === 2 ? "@relief_channel" : "All users"}</td>
+              <td>{index === 3 ? "Delivered simulated" : "Queued"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function AlertLifecycle({ selectedAlert, selectedRegion }: { selectedAlert?: Alert; selectedRegion: RegionRisk }): JSX.Element {
+  const label = selectedAlert?.period ?? selectedRegion.period;
+  return (
+    <section>
+      <h2>Alert lifecycle</h2>
+      <ol className="lifecycle-list">
+        <li><strong>Triggered</strong><span>{label}</span></li>
+        <li><strong>Escalated to {selectedAlert ? severityLabel(selectedAlert.severity) : "current level"}</strong><span>{selectedRegion.period}</span></li>
+        <li><strong>Recommended actions generated</strong><span>Simulated from action catalog</span></li>
+        <li><strong>Notifications simulated</strong><span>No external adapter enabled</span></li>
+        <li><strong>Still active</strong><span>{selectedAlert?.status ?? "unknown"}</span></li>
+      </ol>
+    </section>
+  );
+}
+
+interface ReportRow {
+  id: string;
+  regionId: string;
+  region: string;
+  type: string;
+  period: string;
+  generatedOn: string;
+  status: "Ready" | "Review" | "Scheduled";
+  filename: string;
+  profile?: RegionProfile;
+  risk?: RegionRisk;
+}
+
+function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
+  const [query, setQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [tab, setTab] = useState<"generated" | "scheduled" | "templates" | "all">("generated");
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+
+  const reports = useMemo(() => buildReportRows(data), [data]);
+  const filteredReports = reports.filter((report) => {
+    const text = `${report.id} ${report.region} ${report.type} ${report.period} ${report.status}`.toLowerCase();
+    const matchesQuery = !query || text.includes(query.toLowerCase());
+    const matchesRegion = regionFilter === "all" || report.regionId === regionFilter;
+    const matchesType = typeFilter === "all" || report.type === typeFilter;
+    const matchesStatus = statusFilter === "all" || report.status === statusFilter;
+    const matchesTab = tab === "all" || (tab === "generated" && report.status !== "Scheduled") || (tab === "scheduled" && report.status === "Scheduled") || (tab === "templates" && false);
+    return matchesQuery && matchesRegion && matchesType && matchesStatus && matchesTab;
+  });
+  const selectedReport = filteredReports.find((report) => report.id === selectedReportId) ?? filteredReports[0] ?? reports[0];
+  const selectedProfile = selectedReport?.profile ?? data.profiles[0];
+  const selectedRisk = selectedReport?.risk ?? data.regions[0];
+  const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
+
+  return (
+    <section className="reports-screen" aria-label="Reports Center">
+      <div className="reports-header">
+        <div>
+          <h2>Reports Center</h2>
+          <p>Generate, review, and export executive drought reports across IGAD</p>
+        </div>
+        <div className="reports-header-actions">
+          <button type="button" title="Template management pending">Report templates</button>
+          <button type="button" title="Report generation endpoint pending">Generate new report</button>
+        </div>
+      </div>
+
+      <div className="reports-filters" aria-label="Report filters">
+        <input aria-label="Search reports" onChange={(event) => setQuery(event.target.value)} placeholder="Search reports by region, type, or ID..." value={query} />
+        <select aria-label="Report region" onChange={(event) => setRegionFilter(event.target.value)} value={regionFilter}>
+          <option value="all">Region / Country: All</option>
+          {data.regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
+        </select>
+        <select aria-label="Report type" onChange={(event) => setTypeFilter(event.target.value)} value={typeFilter}>
+          <option value="all">Report type: All</option>
+          <option value="Executive PDF">Executive PDF</option>
+          <option value="Situation Brief">Situation Brief</option>
+          <option value="Monthly Summary">Monthly Summary</option>
+        </select>
+        <select aria-label="Report time period" disabled>
+          <option>Last 30 days</option>
+        </select>
+        <select aria-label="Report status" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+          <option value="all">Status: All</option>
+          <option value="Ready">Ready</option>
+          <option value="Review">Review</option>
+          <option value="Scheduled">Scheduled</option>
+        </select>
+      </div>
+
+      <div className="report-tabs" aria-label="Report tabs">
+        {(["generated", "scheduled", "templates", "all"] as const).map((item) => (
+          <button data-active={tab === item ? "true" : "false"} key={item} onClick={() => setTab(item)} type="button">
+            {item === "all" ? "All reports" : item[0].toUpperCase() + item.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <section className="report-summary-grid" aria-label="Report summary">
+        <SummaryTile label="Generated this month" value={reports.filter((report) => report.status !== "Scheduled").length} detail="Derived from visible report rows" severity="normal" />
+        <SummaryTile label="Scheduled reports" value={reports.filter((report) => report.status === "Scheduled").length} detail="Schedule contract pending" severity="watch" />
+        <SummaryTile label="Pending review" value={reports.filter((report) => report.status === "Review").length} detail="Manual review placeholder" severity="warning" />
+        <SummaryTile label="Downloaded" value="Pending" detail="Download audit pending" severity="normal" />
+        <SummaryTile label="Shared with partners" value="Simulated" detail="Distribution contract pending" severity="unknown" />
+      </section>
+
+      <div className="reports-workspace">
+        <section className="reports-queue">
+          <div className="section-heading">
+            <h2>Generated reports queue</h2>
+            <span className="muted">Showing {filteredReports.length ? `1 to ${filteredReports.length}` : "0"} of {reports.length} reports</span>
+          </div>
+          {filteredReports.length ? (
+            <table>
+              <thead><tr><th>#</th><th>Report ID</th><th>Region / Country</th><th>Type</th><th>Period</th><th>Generated on</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {filteredReports.map((report, index) => (
+                  <tr data-selected={report.id === selectedReport?.id ? "true" : "false"} key={report.id}>
+                    <td>{index + 1}</td>
+                    <td>{report.id}</td>
+                    <td>{report.region}</td>
+                    <td>{report.type}</td>
+                    <td>{report.period}</td>
+                    <td>{report.generatedOn}</td>
+                    <td><span className="report-status">{report.status}</span></td>
+                    <td><button onClick={() => setSelectedReportId(report.id)} type="button">View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <Placeholder title="No reports match filters" detail="Adjust search, region, type or status filters." />
+          )}
+        </section>
+
+        <SelectedReportPanel report={selectedReport} metrics={selectedMetrics} risk={selectedRisk} />
+      </div>
+
+      <div className="reports-lower-grid">
+        <RecentExports report={selectedReport} data={data} />
+        <ReportPreview report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
+        <ReportSidePanels />
+      </div>
+    </section>
+  );
+}
+
+function SelectedReportPanel({ report, metrics, risk }: { report?: ReportRow; metrics: Metric[]; risk: RegionRisk }): JSX.Element {
+  if (!report) {
+    return <section className="selected-report-panel"><Placeholder title="No selected report" detail="No report is available in the current payload." /></section>;
+  }
+
+  return (
+    <section className="selected-report-panel">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Selected report</p>
+          <h2>{report.region} - {report.type} Report</h2>
+          <p>Current drought conditions and early action summary</p>
+        </div>
+        <span className="severity-badge" data-severity={risk.level}>{severityLabel(risk.level)}</span>
+      </div>
+      <p className="muted">ID: {report.id}</p>
+      <dl className="report-meta">
+        <div><dt>Quality</dt><dd>{qualityLabel(risk.quality)}</dd></div>
+        <div><dt>Generated</dt><dd>{report.generatedOn}</dd></div>
+        <div><dt>Based on snapshot</dt><dd>{report.period}</dd></div>
+        <div><dt>Language</dt><dd>EN</dd></div>
+      </dl>
+      <div className="selected-report-metrics">
+        {metrics.map((metric) => (
+          <article key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>{metric.value}<small>{metric.unit}</small></strong>
+            <p>No comparison yet</p>
+          </article>
+        ))}
+      </div>
+      <p>{report.region} report is based on the published snapshot for {report.period}. Indicators and recommendations should be used alongside local knowledge.</p>
+      <div className="report-actions">
+        <a href="/reports">Open full preview</a>
+        <a href="/reports">Download PDF</a>
+        <a href="/reports">Share</a>
+        <a href="/reports">Export data</a>
+      </div>
+    </section>
+  );
+}
+
+function RecentExports({ report, data }: { report?: ReportRow; data: DashboardData }): JSX.Element {
+  const rows = [
+    ["PDF", report?.id ?? "RPT-PENDING", "Mwangaza Dashboard", "Local download", report?.filename ?? data.reportFilename],
+    ["CSV", report?.id ?? "RPT-PENDING", "Dashboard export", "Local download", data.exportFilenames.csv],
+    ["JSON", report?.id ?? "RPT-PENDING", "Partner API", "api.partner.org", data.exportFilenames.json]
+  ];
+  return (
+    <section className="recent-exports">
+      <h2>Recent exports</h2>
+      <table>
+        <thead><tr><th>Format</th><th>Report ID</th><th>User / Channel</th><th>Destination</th><th>Action</th></tr></thead>
+        <tbody>
+          {rows.map(([format, id, channel, destination, filename]) => (
+            <tr key={`${format}-${id}`}>
+              <td>{format}</td><td>{id}</td><td>{channel}</td><td>{destination}</td><td><button title={filename} type="button">Download</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <a className="text-link" href="/reports">View all exports</a>
+    </section>
+  );
+}
+
+function ReportPreview({ report, metrics, recommendations }: { report?: ReportRow; metrics: Metric[]; recommendations: string[] }): JSX.Element {
+  return (
+    <section className="report-preview-panel">
+      <div className="section-heading">
+        <h2>Report preview</h2>
+        <span className="muted">1 / 8</span>
+      </div>
+      <article className="report-paper">
+        <header>
+          <strong>MWANGAZA EARLY WARNING REPORT</strong>
+          <span>{report ? `${report.region} - ${report.period}` : "No report selected"}</span>
+        </header>
+        <div className="preview-map">Drought risk map preview pending real PDF render</div>
+        <section>
+          <h3>Key findings</h3>
+          <ul>{metrics.slice(0, 3).map((metric) => <li key={metric.label}>{metric.label}: {metric.value}{metric.unit}</li>)}</ul>
+        </section>
+        <section>
+          <h3>Recommended early actions</h3>
+          <ul>{recommendations.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      </article>
+      <div className="viewer-controls" aria-label="PDF viewer controls pending">
+        <button type="button">+</button>
+        <button type="button">-</button>
+        <button type="button">Full screen</button>
+        <button type="button">Print</button>
+      </div>
+    </section>
+  );
+}
+
+function ReportSidePanels(): JSX.Element {
+  return (
+    <aside className="report-side-panels">
+      <section>
+        <h2>Report contents</h2>
+        <ul>
+          <li>Overview</li>
+          <li>Current indicators</li>
+          <li>Historical comparison</li>
+          <li>Early action recommendations</li>
+          <li>Methodology</li>
+        </ul>
+        <a className="text-link" href="/reports">View full table of contents</a>
+      </section>
+      <section>
+        <h2>Distribution</h2>
+        <p>Dashboard: Available here</p>
+        <p>Email summary: simulated</p>
+        <p>Partner download: pending</p>
+      </section>
+      <section>
+        <h2>Template used</h2>
+        <p>Executive PDF</p>
+        <p className="muted">Includes map, trends, recommendations and data provenance.</p>
+      </section>
+    </aside>
+  );
+}
+
+function buildReportRows(data: DashboardData): ReportRow[] {
+  return data.regions.map((region, index) => {
+    const profile = data.profiles.find((item) => item.id === region.id);
+    const type = index % 3 === 2 ? "Situation Brief" : index % 3 === 1 ? "Monthly Summary" : "Executive PDF";
+    const status: ReportRow["status"] = index === 2 ? "Review" : index === 3 ? "Scheduled" : "Ready";
+    return {
+      id: `RPT-${region.id.toUpperCase()}-2026-${String(index + 1).padStart(3, "0")}`,
+      regionId: region.id,
+      region: region.name,
+      type,
+      period: region.period,
+      generatedOn: "2026-07-17",
+      status,
+      filename: region.id === data.selectedRegionId ? data.reportFilename : `mwangaza-${region.id}-report-2026-07-17.pdf`,
+      profile,
+      risk: region
+    };
+  });
 }
 
 function RegionExplorer({
@@ -596,7 +1100,91 @@ function qualityLabel(value: string): string {
   return value;
 }
 
-function FullDashboard({
+function alertId(alert: Alert, index: number): string {
+  return `ALT-${alert.regionId.toUpperCase()}-${String(index + 1).padStart(3, "0")}`;
+}
+
+function alertNarrative(alert: Alert, region: RegionRisk): string {
+  const score = region.score === null ? "no published composite score" : `a composite score of ${region.score}`;
+  return `${alert.region} is classified as ${severityLabel(alert.severity).toLowerCase()} for ${alert.period}, with ${score}. ${alert.title}. Recommendations are decision support and should be validated with local knowledge.`;
+}
+
+function OverviewRiskMap({
+  data,
+  selectedRegion,
+  onSelectRegion
+}: {
+  data: DashboardData;
+  selectedRegion: RegionRisk;
+  onSelectRegion: (id: string) => void;
+}): JSX.Element {
+  const geography = useMemo(() => buildRiskFeatureCollection(data.regions), [data.regions]);
+  const hasGeometry = geography.features.length > 0;
+
+  return (
+    <section className="overview-map-panel">
+      <div className="section-heading">
+        <h2>Risk Map - IGAD</h2>
+        <span className="info-dot" title="Current drought risk relative to the historical baseline.">i</span>
+      </div>
+      <div className="overview-map-stage" aria-label="Overview risk map">
+        {hasGeometry ? (
+          <ComposableMap
+            projection="geoMercator"
+            projectionConfig={{ center: [38, 8], scale: 760 }}
+            width={760}
+            height={360}
+            className="region-svg-map"
+          >
+            <Geographies geography={geography}>
+              {({ geographies }) => geographies.map((geo) => {
+                const region = geo.properties.region as RegionRisk;
+                return (
+                  <Geography
+                    aria-label={`${region.name}: ${region.score ?? "No data"} ${region.level}`}
+                    geography={geo}
+                    key={geo.rsmKey}
+                    onClick={() => onSelectRegion(region.id)}
+                    role="button"
+                    style={{
+                      default: {
+                        fill: mapFill(region.level),
+                        stroke: region.id === selectedRegion.id ? "#172033" : "#ffffff",
+                        strokeWidth: region.id === selectedRegion.id ? 2.8 : 1.3,
+                        outline: "none"
+                      },
+                      hover: { fill: mapHoverFill(region.level), outline: "none" },
+                      pressed: { fill: mapHoverFill(region.level), outline: "none" }
+                    }}
+                    tabIndex={0}
+                  />
+                );
+              })}
+            </Geographies>
+          </ComposableMap>
+        ) : (
+          <Placeholder title="Map geometry pending" detail="The public API has not provided GeoJSON UI geometry for this payload yet." />
+        )}
+        <div className="map-controls" aria-label="Map controls pending">
+          <button type="button" title="Reset map view pending">Home</button>
+          <button type="button" title="Zoom in pending">+</button>
+          <button type="button" title="Zoom out pending">-</button>
+          <button type="button" title="Layer selector pending">Layers</button>
+        </div>
+      </div>
+      <div className="map-legend" aria-label="Risk legend">
+        <span data-severity="normal">Green</span>
+        <span data-severity="watch">Yellow</span>
+        <span data-severity="warning">Orange</span>
+        <span data-severity="critical">Red</span>
+        <span data-severity="unknown">Unknown</span>
+      </div>
+      <p className="muted">Risk levels indicate current drought risk relative to the historical baseline.</p>
+    </section>
+  );
+}
+
+function OverviewScreen({
   data,
   language,
   selectedRegion,
@@ -611,109 +1199,99 @@ function FullDashboard({
   activeAlerts: DashboardData["alerts"];
   onSelectRegion: (id: string) => void;
 }): JSX.Element {
-  return (
-    <>
-      <section id="overview" className="metric-grid" aria-label={t(language, "overview")}>
-        {data.metrics.map((metric) => (
-          <article key={metric.label} className="metric" data-severity={metric.severity}>
-            <span>{metric.label}</span>
-            <strong>{metric.value}<small>{metric.unit}</small></strong>
-            <p>{metric.detail}</p>
-          </article>
-        ))}
-      </section>
+  const displayMetrics = selectedProfile.metrics.length ? selectedProfile.metrics : data.metrics;
+  const topAlerts = activeAlerts.slice(0, 4);
 
-      <section className="workspace">
-        <section id="regions" className="risk-area" aria-label={t(language, "regions")}>
+  return (
+    <section className="overview-screen" aria-label={t(language, "overview")}>
+      <div className="overview-top-grid">
+        <OverviewRiskMap data={data} selectedRegion={selectedRegion} onSelectRegion={onSelectRegion} />
+        <section className="overview-alerts">
           <div className="section-heading">
-            <h2>{t(language, "regions")}</h2>
+            <h2>{t(language, "activeAlerts")}</h2>
+            <a className="text-link" href="/alerts">View all alerts</a>
+          </div>
+          <div className="overview-alert-list">
+            {topAlerts.length ? topAlerts.map((alert, index) => (
+              <article className="overview-alert-item" data-severity={alert.severity} key={`${alert.regionId}-${alert.title}`}>
+                <span className="alert-rank">{index + 1}</span>
+                <span className="alert-icon" aria-hidden="true">!</span>
+                <div>
+                  <h3>{alert.region} - {severityLabel(alert.severity)}</h3>
+                  <p>{alert.title}</p>
+                  <small>{alert.period} | quality {alert.quality}</small>
+                </div>
+                <a href="/alerts">View details</a>
+              </article>
+            )) : (
+              <Placeholder title="No active alerts" detail="No active alert payload is available for this snapshot." />
+            )}
+          </div>
+        </section>
+      </div>
+
+      <section className="selected-region-panel">
+        <div className="section-heading selected-heading">
+          <h2>Selected region: <strong>{selectedRegion.name}</strong></h2>
+          <label>
+            <span>Change region</span>
             <select value={selectedRegion.id} onChange={(event) => onSelectRegion(event.target.value)} aria-label={t(language, "selectedRegion")}>
               {data.regions.map((region) => (
                 <option key={region.id} value={region.id}>{region.name}</option>
               ))}
             </select>
-          </div>
-          <div className="risk-map" role="list">
-            {data.regions.map((region) => (
-              <button
-                className="risk-cell"
-                data-severity={region.level}
-                data-selected={region.id === selectedRegion.id ? "true" : "false"}
-                key={region.id}
-                onClick={() => onSelectRegion(region.id)}
-                type="button"
-              >
-                <span>{region.name}</span>
-                <strong>{region.score ?? "No data"}</strong>
-                <small>{region.level} | {region.quality}</small>
-              </button>
+          </label>
+        </div>
+        <div className="overview-metric-grid">
+          {displayMetrics.map((metric) => (
+            <article key={metric.label} className="overview-metric" data-severity={metric.severity}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}<small>{metric.unit}</small></strong>
+              <p>{metric.detail}</p>
+              <small>No comparison yet</small>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="overview-bottom-grid">
+        <TrendPanel title={`Trends (${selectedRegion.name})`} trends={selectedProfile.trends} />
+        <section className="overview-actions">
+          <h2>Early Action Recommendations</h2>
+          <ul className="action-list">
+            {(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => (
+              <li key={item}>{item}</li>
             ))}
+          </ul>
+          <a className="text-link" href="/alerts">See guidance for severe drought</a>
+        </section>
+        <section className="overview-share">
+          <a className="report-cta" href="/reports">
+            <strong>Generate Executive PDF Report</strong>
+            <span>{data.reportFilename}</span>
+          </a>
+          <div className="export-box">
+            <h2>Export data</h2>
+            <a href="/reports">CSV <span>{data.exportFilenames.csv}</span></a>
+            <a href="/reports">JSON <span>{data.exportFilenames.json}</span></a>
           </div>
-          <div className="drilldown">
-            <h3>{selectedProfile.name}</h3>
-            <p>{selectedRegion.period} | score {selectedRegion.score ?? "No data"} | {selectedRegion.level}</p>
-            <ul>
-              {selectedProfile.recommendations.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-            <p className="muted">{selectedProfile.pilotUnits.length ? selectedProfile.pilotUnits.join(", ") : "IGAD coverage remains national here."}</p>
-          </div>
         </section>
+      </div>
 
-        <aside className="side-panel">
-          <section id="alerts">
-            <h2>{t(language, "activeAlerts")}</h2>
-            <div className="alert-list">
-              {activeAlerts.map((alert) => (
-                <article className="alert-item" data-severity={alert.severity} key={`${alert.regionId}-${alert.title}`}>
-                  <h3>{alert.title}</h3>
-                  <p>{alert.region} | {alert.period} | quality {alert.quality}</p>
-                  <strong>{alert.action}</strong>
-                  <small>{alert.evidence.map(([label, value]) => `${label}: ${value}`).join(" | ")}</small>
-                </article>
-              ))}
-            </div>
-          </section>
-          <section id="reports">
-            <h2>{t(language, "reports")}</h2>
-            <p>{data.reportFilename}</p>
-            <p>{data.exportFilenames.csv}</p>
-            <p>{data.exportFilenames.json}</p>
-          </section>
-        </aside>
-      </section>
-
-      <section className="detail-grid">
-        <TrendPanel trends={selectedProfile.trends} />
-        <section>
-          <h2>{t(language, "historicalComparison")}</h2>
-          <table>
-            <thead><tr><th>Period</th><th>Indicator</th><th>Current</th><th>Historical</th><th>Difference</th></tr></thead>
-            <tbody>
-              {selectedProfile.historicalRows.map((row) => (
-                <tr key={`${row.period}-${row.indicator}`}>
-                  <td>{row.period}</td><td>{row.indicator}</td><td>{row.current}</td><td>{row.historical}</td><td>{row.difference}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-        <section>
-          <h2>{t(language, "exposure")}</h2>
-          <p>{data.exposureNote}</p>
-          <h2>{t(language, "forecastDiagnostics")}</h2>
-          <p>{data.forecastDiagnostics.message} | {data.forecastDiagnostics.modelVersion} | {data.forecastDiagnostics.confidence}</p>
-        </section>
-      </section>
-    </>
+      <footer className="overview-footer">
+        <p>Mwangaza is a decision-support prototype. Estimates are based on satellite observations and historical data and should be used alongside local knowledge.</p>
+        <p>Built for the IGAD Hackathon 2026 using regional and open climate data.</p>
+      </footer>
+    </section>
   );
 }
 
-function TrendPanel({ trends }: { trends: TrendSeries[] }): JSX.Element {
+function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSeries[]; title?: string }): JSX.Element {
   return (
     <section>
-      <h2>Indicator Trends</h2>
+      <h2>{title}</h2>
       <div className="trend-grid">
-        {trends.map((trend) => (
+        {trends.length ? trends.map((trend) => (
           <article className="trend" key={trend.indicator}>
             <h3>{trend.label}</h3>
             <p>{trend.unit} | {trend.source}</p>
@@ -727,7 +1305,9 @@ function TrendPanel({ trends }: { trends: TrendSeries[] }): JSX.Element {
               ))}
             </div>
           </article>
-        ))}
+        )) : (
+          <Placeholder title="Trend payload pending" detail="No trend series are available for the selected region yet." />
+        )}
       </div>
     </section>
   );

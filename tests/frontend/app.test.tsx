@@ -20,10 +20,21 @@ describe("React PWA dashboard", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 
     expect(screen.getByRole("heading", { name: "Mwangaza" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Regions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Risk Map - IGAD" })).toBeInTheDocument();
+    expect(screen.getByText("Selected region:")).toBeInTheDocument();
     expect(screen.getByText("Drought risk escalation")).toBeInTheDocument();
-    expect(screen.getByText("mwangaza-executive-report-som-2026-07-15.pdf")).toBeInTheDocument();
-    expect(screen.getByText(/Forecasts are not available yet/)).toBeInTheDocument();
+    expect(screen.getByText("Generate Executive PDF Report")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Export data" })).toBeInTheDocument();
+  });
+
+  it("renders Overview as a dedicated /overview page route", () => {
+    window.history.pushState({}, "", "/overview");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("heading", { name: "Risk Map - IGAD" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Overview risk map")).toBeInTheDocument();
   });
 
   it("renders Region Explorer as an internal app screen on /region", () => {
@@ -42,7 +53,7 @@ describe("React PWA dashboard", () => {
   it("uses page routes instead of hash anchors in the sidebar", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 
-    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
     expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/region");
     expect(screen.getByRole("link", { name: "Active alerts" })).toHaveAttribute("href", "/alerts");
     expect(screen.getByRole("link", { name: "Reports and export" })).toHaveAttribute("href", "/reports");
@@ -56,17 +67,35 @@ describe("React PWA dashboard", () => {
 
     expect(window.location.pathname).toBe("/");
     expect(window.location.hash).toBe("");
-    expect(screen.getByRole("heading", { name: "Regions" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Risk Map - IGAD" })).toBeInTheDocument();
   });
 
-  it("renders alerts as a standalone page route instead of scrolling inside Overview", () => {
+  it("renders alerts as a standalone center instead of scrolling inside Overview", () => {
     window.history.pushState({}, "", "/alerts");
 
     render(<App initialData={demoDashboard} skipApiLoad />);
 
-    expect(screen.getByRole("heading", { name: "Active alerts" })).toBeInTheDocument();
-    expect(screen.getByText("Page shell pending")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Regions" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Alerts Center" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Search alerts")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Active alerts queue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Somalia - Severe" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Notification outbox/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
+  });
+
+  it("renders reports as a standalone export center instead of scrolling inside Overview", () => {
+    window.history.pushState({}, "", "/reports");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Reports Center" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Search reports")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Generated reports queue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Somalia - Executive PDF Report" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Recent exports" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Report preview" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Report contents" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
   });
 
   it("does not draw provisional geography while the public API is loading on /region", () => {
@@ -103,7 +132,7 @@ describe("React PWA dashboard", () => {
   it("switches i18n labels", () => {
     render(<App initialData={demoDashboard} initialLanguage="sw" skipApiLoad />);
 
-    expect(screen.getByRole("heading", { name: "Maeneo" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Maeneo" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Tahadhari hai" })).toBeInTheDocument();
   });
 
