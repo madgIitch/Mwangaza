@@ -74,6 +74,10 @@ class DashboardShellTests(unittest.TestCase):
 
         for label in ("Overview", "Region", "Alerts", "Reports", "About"):
             self.assertIn(f">{label}<", html)
+        self.assertIn('type="button" data-nav-target="region"', html)
+        self.assertIn("scrollIntoView", html)
+        self.assertNotIn('href="#region"', html)
+        self.assertNotIn('href="#overview"', html)
 
     def test_data_modes_are_visually_distinct(self) -> None:
         html = build_dashboard_shell_html(load_dashboard_shell_data("cache"))

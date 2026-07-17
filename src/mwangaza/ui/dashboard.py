@@ -18,8 +18,9 @@ SAFE_ERROR_MESSAGE = "Dashboard data could not be loaded. Showing a safe fallbac
 def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = False) -> str:
     shell_id = _shell_dom_id(data)
     nav = "\n".join(
-        f'<a class="nav-item{" is-active" if item.active else ""}" href="#{escape(item.key)}">'
-        f"{escape(item.label)}</a>"
+        f'<button class="nav-item{" is-active" if item.active else ""}" '
+        f'type="button" data-nav-target="{escape(item.key)}">'
+        f"<span>{escape(item.label)}</span></button>"
         for item in data.navigation
     )
     metrics = "\n".join(
@@ -165,8 +166,10 @@ html, body, [data-testid="stAppViewContainer"] {{
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  border: 0;
   color: var(--mwa-text);
-  text-decoration: none;
+  background: transparent;
   min-height: 56px;
   padding: 0 18px;
   border-radius: 8px;
@@ -175,6 +178,8 @@ html, body, [data-testid="stAppViewContainer"] {{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
+  cursor: pointer;
 }}
 .nav-item.is-active {{
   background: linear-gradient(90deg, #f0f7f1, #f5f8f5);
@@ -796,6 +801,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   const detail = root.querySelector("[data-region-detail]");
   const metricsGrid = root.querySelector("[data-region-metrics]");
   const trendsGrid = root.querySelector("[data-region-trends]");
+  const navButtons = Array.from(root.querySelectorAll("[data-nav-target]"));
 
   function escapeHtml(value) {{
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({{
@@ -929,6 +935,15 @@ html, body, [data-testid="stAppViewContainer"] {{
   }}
 
   bindPaths();
+  navButtons.forEach((button) => {{
+    button.addEventListener("click", () => {{
+      const target = root.querySelector(`#${{button.dataset.navTarget || ""}}`);
+      if (!target) return;
+      navButtons.forEach((item) => item.classList.remove("is-active"));
+      button.classList.add("is-active");
+      target.scrollIntoView({{ block: "start", behavior: "smooth" }});
+    }});
+  }});
   selector?.addEventListener("change", () => {{
     const path = paths.find((item) => item.dataset.regionId === selector.value);
     if (path) selectRegion(path);
