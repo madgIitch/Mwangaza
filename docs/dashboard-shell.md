@@ -29,6 +29,8 @@ layout direction without embedding mock data or future-only interactions:
   seasonal periods already present in live/cache/demo payloads;
 - potential exposure card labelled `potentially_exposed`, with source, year,
   resolution, method, quality and demo/synthetic status;
+- executive report action with deterministic filename and optional configured
+  dashboard QR link;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,
@@ -64,6 +66,11 @@ Exposure estimates are rendered only from valid `exposure_estimate` payloads.
 The visible metric is `potentially_exposed`; invalid or missing datasets render
 as `No data`. Demo/synthetic status, source, year, resolution, method and
 quality remain visible with the value or range.
+
+The executive report panel uses the selected in-memory dashboard snapshot. It
+does not query Earth Engine or recalculate indicators. The generated filename is
+deterministic, and the QR status appears only when `MWANGAZA_DASHBOARD_URL`
+contains a public URL.
 
 Loader failures render a safe fallback shell. The fallback intentionally omits exception text, traceback, local paths and secret-like values.
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from html import escape
 from typing import Any
 
+from mwangaza.reports import build_executive_report_context, safe_report_filename
 from mwangaza.services.dashboard_shell import (
     DashboardShellData,
     fallback_dashboard_shell_data,
@@ -50,6 +52,7 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
     recommendations = "\n".join(
         f"<li>{escape(recommendation)}</li>" for recommendation in data.recommendations
     )
+    report_action = _render_report_action(data)
     mode_chips = "\n".join(
         '<span class="mode-chip{active}" data-mode="{mode}">{label}</span>'.format(
             active=" is-active" if data.data_status.mode == mode else "",
@@ -844,8 +847,12 @@ html, body, [data-testid="stAppViewContainer"] {{
           </div>
         </section>
         <section class="panel" id="reports">
-          <div class="panel-header"><h2>Early Action Recommendations</h2></div>
-          <div class="panel-body"><ul class="recommendations">{recommendations}</ul></div>
+          <div class="panel-header"><h2>Executive Report</h2></div>
+          <div class="panel-body">
+            {report_action}
+            <h3>Early Action Recommendations</h3>
+            <ul class="recommendations">{recommendations}</ul>
+          </div>
         </section>
         <section class="panel" id="about">
           <div class="panel-header"><h2>About</h2></div>
@@ -1357,6 +1364,25 @@ def _render_profile_alerts(alerts: tuple[Any, ...]) -> str:
         )
         for alert in alerts
     )
+
+
+def _render_report_action(data: DashboardShellData) -> str:
+    context = build_executive_report_context(
+        data,
+        dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL", ""),
+    )
+    qr = (
+        f'<span class="status-pill" data-report-qr="configured">QR configured: {escape(context.dashboard_url)}</span>'
+        if context.dashboard_url
+        else ""
+    )
+    return (
+        '<div class="report-action" data-report-filename="{filename}">'
+        "<p class=\"footer-note\">PDF preserves the selected snapshot, sources, versions, quality and limitations.</p>"
+        "<p><strong>{filename}</strong></p>"
+        "{qr}"
+        "</div>"
+    ).format(filename=escape(safe_report_filename(context)), qr=qr)
 
 
 def _render_alert_evidence(items: tuple[tuple[str, str], ...]) -> str:

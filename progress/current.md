@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-30-exposure-estimation - Sprint 30 - Exposure Estimation** - estado: `review_pending`.
+Feature: **sprint-31-executive-pdf-report - Sprint 31 - Executive PDF Report** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-30-exposure-estimation - Sprint 30 - Exposure Estimation** - e
 
 ## Siguiente accion
 
-- Smoke visual del dashboard: confirmar que la tarjeta `potentially_exposed` se entiende como exposicion potencial y no como impacto medido. Cerrar con `node .harness/spec.mjs done sprint-30-exposure-estimation` si pasa.
+- Smoke visual: abrir dashboard y confirmar que el panel Executive Report comunica filename, snapshot, fuentes/limitaciones y QR configurado solo cuando aplica. Cerrar con `node .harness/spec.mjs done sprint-31-executive-pdf-report` si pasa.
 
 ## Ultimo resultado
 
@@ -18,7 +18,7 @@ Feature: **sprint-30-exposure-estimation - Sprint 30 - Exposure Estimation** - e
 
 Validaciones ejecutadas hasta ahora:
 
-- `uv run python -m unittest tests.contracts.test_contracts`
+- `uv run python -m unittest tests.reports.test_executive_report`
 - `uv run python -m unittest tests.ui.test_dashboard_shell`
 - `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-30-exposure-estimation`
+- `node .harness\gates.mjs sprint-31-executive-pdf-report`

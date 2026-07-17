@@ -97,3 +97,8 @@
 - Contrato `ExposureEstimate` y metrica `potentially_exposed`.
 - Dashboard con fuente, ano, resolucion, metodo, calidad, demo/sintetico y warnings.
 - Validado con contratos, UI, suite completa y gate del harness.
+## 2026-07-17T11:55:00Z - #sprint-31-executive-pdf-report Sprint 31 - Executive PDF Report -> review_pending
+
+- Reporte ejecutivo determinista desde snapshot del dashboard.
+- HTML, bytes PDF, filename seguro y QR opcional por URL configurada.
+- Validado con reportes, UI, suite completa y gate del harness.

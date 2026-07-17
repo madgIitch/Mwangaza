@@ -324,3 +324,12 @@ Contexto: se aprobó el spec `sprint-30-exposure-estimation` (Sprint 30 - Exposu
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-31-executive-pdf-report -->
+## 2026-07-17 · sprint-31-executive-pdf-report aprobado
+
+Contexto: se aprobó el spec `sprint-31-executive-pdf-report` (Sprint 31 - Executive PDF Report).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
