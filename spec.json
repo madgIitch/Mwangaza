@@ -1793,7 +1793,7 @@
     {
       "id": "sprint-25-subnational-pilot",
       "name": "Sprint 25 - Subnational Pilot",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.3",
       "estimated_hours": 6,
