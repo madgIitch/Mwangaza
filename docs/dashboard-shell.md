@@ -20,6 +20,9 @@ layout direction without embedding mock data or future-only interactions:
 - country drilldown and subnational pilot panel backed by loaded dashboard payloads;
 - temporal selector over already loaded snapshots; changing period updates map,
   metrics, alerts and recommendations client-side without recalculating GEE;
+- indicator trend charts for NDVI, rainfall and LST, derived from loaded payload
+  series and rendered with observed values, documented baseline line when
+  available, explicit gaps and quality/anomaly details;
 - compact white operational surfaces with green, yellow, orange and red risk accents.
 
 Mockup-only controls such as trend charts, CSV/JSON export, browser PDF generation,

@@ -24,6 +24,7 @@ from mwangaza.risk import compute_composite_drought_score
 DEFAULT_SCALE_METERS = 5500
 DEFAULT_MAX_PIXELS = 1_000_000_000
 DEFAULT_LOOKBACK_DAYS = 15
+DEFAULT_TREND_POINTS = 4
 
 
 class LiveGeeDashboardError(RuntimeError):
@@ -154,7 +155,14 @@ def load_live_gee_dashboard_payloads(
     adapter = RealGeeRegionalAdapter(module, scale_meters=scale_meters)
     start, end = resolve_live_gee_period(adapter, period_start=period_start, period_end=period_end)
     region_ids = (target_region,) if region_id is not None else dashboard_live_region_ids(target_region)
-    return build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
+    if period_start is not None or period_end is not None:
+        return build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
+    return build_live_gee_payloads_for_recent_periods(
+        region_ids,
+        end,
+        adapter=adapter,
+        point_count=_live_trend_points(),
+    )
 
 
 def dashboard_live_region_ids(selected_region_id: str | None = None) -> tuple[str, ...]:
@@ -225,6 +233,39 @@ def build_live_gee_payloads_for_regions(
     for region_id in region_ids:
         payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
     return payloads
+
+
+def build_live_gee_payloads_for_recent_periods(
+    region_ids: tuple[str, ...],
+    latest_period_end: str,
+    *,
+    adapter: RealGeeRegionalAdapter,
+    point_count: int = DEFAULT_TREND_POINTS,
+) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for period_start, period_end in recent_period_windows(latest_period_end, point_count=point_count):
+        payloads.extend(build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter))
+    return payloads
+
+
+def recent_period_windows(
+    latest_period_end: str,
+    *,
+    point_count: int = DEFAULT_TREND_POINTS,
+) -> tuple[tuple[str, str], ...]:
+    bounded_count = max(1, min(int(point_count), 8))
+    end = datetime.fromisoformat(latest_period_end.replace("Z", "+00:00")).astimezone(UTC)
+    windows: list[tuple[str, str]] = []
+    for index in range(bounded_count):
+        period_end = end - timedelta(days=DEFAULT_LOOKBACK_DAYS * index)
+        period_start = period_end - timedelta(days=DEFAULT_LOOKBACK_DAYS - 1)
+        windows.append(
+            (
+                period_start.replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
+                period_end.replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
+            )
+        )
+    return tuple(windows)
 
 
 def _reduce(image: Any, reducer: Any, geometry: Any, adapter: RealGeeRegionalAdapter) -> dict[str, Any]:
@@ -305,6 +346,14 @@ def _ordered_region_ids(selected_region_id: str, region_ids: tuple[str, ...]) ->
     return tuple(dict.fromkeys(ordered))
 
 
+def _live_trend_points() -> int:
+    raw = os.environ.get("MWANGAZA_LIVE_TREND_POINTS", str(DEFAULT_TREND_POINTS))
+    try:
+        return max(1, min(int(raw), 8))
+    except ValueError:
+        return DEFAULT_TREND_POINTS
+
+
 def _first_number(values: dict[str, Any]) -> float | None:
     for value in values.values():
         if isinstance(value, int | float) and not isinstance(value, bool) and math.isfinite(value):
@@ -330,7 +379,9 @@ __all__ = [
     "RealGeeRegionalAdapter",
     "build_live_gee_payloads",
     "build_live_gee_payloads_for_regions",
+    "build_live_gee_payloads_for_recent_periods",
     "dashboard_live_region_ids",
     "load_live_gee_dashboard_payloads",
+    "recent_period_windows",
     "resolve_live_gee_period",
 ]

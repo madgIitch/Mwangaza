@@ -686,3 +686,32 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-27-indicator-trends -->
+## sprint-27-indicator-trends · Sprint 27 - Indicator Trends
+
+
+
+### Scope aprobado
+
+  - `app.py`
+  - `src/mwangaza/ui/**`
+  - `src/mwangaza/services/**`
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/gee/**`
+  - `src/mwangaza/contracts/**`
+  - `assets/**`
+  - `tests/ui/**`
+  - `tests/services/**`
+  - `tests/data/**`
+  - `tests/fixtures/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

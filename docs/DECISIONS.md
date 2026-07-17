@@ -288,3 +288,12 @@ Contexto: se aprobó el spec `sprint-26-temporal-slider` (Sprint 26 - Temporal S
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-27-indicator-trends -->
+## 2026-07-17 · sprint-27-indicator-trends aprobado
+
+Contexto: se aprobó el spec `sprint-27-indicator-trends` (Sprint 27 - Indicator Trends).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

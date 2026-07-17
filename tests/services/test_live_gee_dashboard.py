@@ -8,8 +8,10 @@ from mwangaza.data.ndvi import NdviCollectionConfig, NdviQueryResult
 from mwangaza.data.rainfall import RainfallCollectionConfig, RainfallQueryResult
 from mwangaza.services.live_gee_dashboard import (
     build_live_gee_payloads,
+    build_live_gee_payloads_for_recent_periods,
     build_live_gee_payloads_for_regions,
     dashboard_live_region_ids,
+    recent_period_windows,
     resolve_live_gee_period,
 )
 
@@ -135,6 +137,31 @@ class LiveGeeDashboardTests(unittest.TestCase):
 
         risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
         self.assertEqual([risk["region_id"] for risk in risks], ["som", "somalia-pilot"])
+        self.assertEqual(len(payloads), 10)
+
+    def test_recent_period_windows_are_limited_and_descending(self) -> None:
+        windows = recent_period_windows("2026-07-15T00:00:00Z", point_count=3)
+
+        self.assertEqual(
+            windows,
+            (
+                ("2026-07-01T00:00:00Z", "2026-07-15T00:00:00Z"),
+                ("2026-06-16T00:00:00Z", "2026-06-30T00:00:00Z"),
+                ("2026-06-01T00:00:00Z", "2026-06-15T00:00:00Z"),
+            ),
+        )
+        self.assertEqual(len(recent_period_windows("2026-07-15T00:00:00Z", point_count=99)), 8)
+
+    def test_builds_recent_live_payloads_for_series_points(self) -> None:
+        payloads = build_live_gee_payloads_for_recent_periods(
+            ("som",),
+            "2026-07-15T00:00:00Z",
+            adapter=FakeLiveGeeAdapter(),  # type: ignore[arg-type]
+            point_count=2,
+        )
+
+        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+        self.assertEqual([risk["period_end"] for risk in risks], ["2026-07-15T00:00:00Z", "2026-06-30T00:00:00Z"])
         self.assertEqual(len(payloads), 10)
 
 

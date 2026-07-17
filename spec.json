@@ -1924,7 +1924,7 @@
     {
       "id": "sprint-27-indicator-trends",
       "name": "Sprint 27 - Indicator Trends",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.5",
       "estimated_hours": 5,
@@ -1952,19 +1952,25 @@
       ],
       "deliverable": "Gráficos temporales interpretables por región.",
       "acceptance": [
-        "AC1: Cada gráfico muestra unidad, fechas y fuente.",
-        "AC2: La serie observada y baseline se distinguen sin depender solo del color.",
-        "AC3: Los gaps no se interpolan silenciosamente.",
-        "AC4: La banda histórica representa una estadística documentada.",
-        "AC5: Hover muestra valor, anomalía y quality flag.",
-        "AC6: La visualización limita el número de puntos para mantener rendimiento."
+        "Cada gráfico muestra unidad, fechas y fuente.",
+        "La serie observada y baseline se distinguen sin depender solo del color.",
+        "Los gaps no se interpolan silenciosamente.",
+        "La banda o línea histórica representa una estadística documentada.",
+        "Hover o detalle por punto muestra valor, anomalía y quality flag.",
+        "La visualización limita el número de puntos para mantener rendimiento."
       ],
       "scope": [
         "app.py",
         "src/mwangaza/ui/**",
         "src/mwangaza/services/**",
+        "src/mwangaza/data/**",
+        "src/mwangaza/gee/**",
+        "src/mwangaza/contracts/**",
         "assets/**",
         "tests/ui/**",
+        "tests/services/**",
+        "tests/data/**",
+        "tests/fixtures/**",
         "pyproject.toml",
         "requirements*.txt",
         "Makefile",
@@ -1976,7 +1982,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-17T00:31:53.518Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-17T00:31:59.709Z"
     },
     {
       "id": "sprint-28-active-alerts",

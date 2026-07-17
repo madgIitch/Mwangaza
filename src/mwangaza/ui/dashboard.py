@@ -35,6 +35,7 @@ def build_dashboard_shell_html(data: DashboardShellData, *, safe_error: bool = F
         )
         for metric in data.metrics
     )
+    trends = _render_trends(data.trends)
     alerts = _render_alerts(data)
     risk_map = build_regional_risk_map_html(data.risk_map)
     selected_region = _selected_map_region(data)
@@ -519,6 +520,61 @@ html, body, [data-testid="stAppViewContainer"] {{
 .metric-card[data-severity="warning"] {{ border-left: 4px solid var(--mwa-orange); }}
 .metric-card[data-severity="watch"] {{ border-left: 4px solid var(--mwa-yellow); }}
 .metric-card[data-severity="normal"] {{ border-left: 4px solid var(--mwa-green); }}
+.trends-panel .panel-body {{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}}
+.trend-card {{
+  border: 1px solid var(--mwa-border);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}}
+.trend-card h3 {{
+  margin: 0;
+  font-size: 13px;
+}}
+.trend-meta, .trend-detail {{
+  margin: 5px 0 0;
+  color: var(--mwa-muted);
+  font-size: 10px;
+}}
+.trend-chart {{
+  width: 100%;
+  height: 112px;
+  margin-top: 8px;
+}}
+.trend-observed {{
+  fill: none;
+  stroke: var(--mwa-green);
+  stroke-width: 2.4;
+}}
+.trend-baseline {{
+  fill: none;
+  stroke: #586579;
+  stroke-width: 1.8;
+  stroke-dasharray: 6 4;
+}}
+.trend-point {{
+  fill: #fff;
+  stroke: var(--mwa-green);
+  stroke-width: 2;
+}}
+.trend-gap {{
+  fill: var(--mwa-red);
+}}
+.trend-axis {{
+  stroke: #e4e8ee;
+  stroke-width: 1;
+}}
+.trend-empty {{
+  border: 1px dashed var(--mwa-border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--mwa-muted);
+  font-size: 12px;
+}}
 .alert-list {{
   display: grid;
   gap: 8px;
@@ -608,6 +664,9 @@ html, body, [data-testid="stAppViewContainer"] {{
   .metrics-grid {{
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }}
+  .trends-panel .panel-body {{
+    grid-template-columns: 1fr;
+  }}
 }}
 @media (max-width: 560px) {{
   .metrics-grid {{
@@ -675,6 +734,10 @@ html, body, [data-testid="stAppViewContainer"] {{
           <div class="panel-body" data-region-detail>{region_panel}</div>
         </section>
         <section class="metrics-grid" data-region-metrics>{metrics}</section>
+        <section class="panel trends-panel" id="trends">
+          <div class="panel-header"><h2>Indicator Trends</h2></div>
+          <div class="panel-body" data-region-trends>{trends}</div>
+        </section>
       </div>
       <aside class="side-column">
         <section class="panel" id="alerts">
@@ -723,6 +786,7 @@ html, body, [data-testid="stAppViewContainer"] {{
   const mapSlot = root.querySelector("[data-risk-map-slot]");
   const detail = root.querySelector("[data-region-detail]");
   const metricsGrid = root.querySelector("[data-region-metrics]");
+  const trendsGrid = root.querySelector("[data-region-trends]");
 
   function escapeHtml(value) {{
     return String(value ?? "").replace(/[&<>"']/g, (char) => ({{
@@ -764,6 +828,16 @@ html, body, [data-testid="stAppViewContainer"] {{
     return items.map((item) => `<li>${{escapeHtml(item)}}</li>`).join("");
   }}
 
+  function trendHtml(series) {{
+    if (!series.length) return '<div class="trend-empty">No trend series available for this region.</div>';
+    return series.map((item) => `<article class="trend-card">`
+      + `<h3>${{escapeHtml(item.label)}}</h3>`
+      + `<p class="trend-meta">${{escapeHtml(item.unit)}} | ${{escapeHtml(item.source)}}</p>`
+      + `${{item.svg || ""}}`
+      + `<p class="trend-detail">${{escapeHtml(item.baseline_label)}} | Latest quality: ${{escapeHtml(item.latest_quality)}} | Latest anomaly: ${{escapeHtml(item.latest_anomaly)}}</p>`
+      + `</article>`).join("");
+  }}
+
   function renderProfile(regionId) {{
     const profile = profiles[regionId];
     if (!profile) return;
@@ -777,6 +851,7 @@ html, body, [data-testid="stAppViewContainer"] {{
         + `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
     }}
     if (metricsGrid) metricsGrid.innerHTML = profile.metrics.map(metricHtml).join("");
+    if (trendsGrid) trendsGrid.innerHTML = trendHtml(profile.trends || []);
     const alertsPanel = root.querySelector("#alerts .alert-list, #alerts .footer-note");
     if (alertsPanel) alertsPanel.outerHTML = `<div class="alert-list">${{alertsHtml(profile.alerts)}}</div>`;
     const recommendations = root.querySelector("#reports .recommendations");
@@ -1034,6 +1109,28 @@ def _render_profile_alerts(alerts: tuple[Any, ...]) -> str:
     )
 
 
+def _render_trends(series: tuple[Any, ...]) -> str:
+    if not series:
+        return '<div class="trend-empty">No trend series available for this region.</div>'
+    return "\n".join(
+        '<article class="trend-card">'
+        "<h3>{label}</h3>"
+        '<p class="trend-meta">{unit} | {source}</p>'
+        "{svg}"
+        '<p class="trend-detail">{baseline} | Latest quality: {quality} | Latest anomaly: {anomaly}</p>'
+        "</article>".format(
+            label=escape(item.label),
+            unit=escape(item.unit),
+            source=escape(item.source),
+            svg=_trend_svg(item),
+            baseline=escape(item.baseline_label),
+            quality=escape(_latest_trend_quality(item)),
+            anomaly=escape(_latest_trend_anomaly(item)),
+        )
+        for item in series
+    )
+
+
 def _selected_region_profile(data: DashboardShellData) -> Any | None:
     for profile in data.region_profiles:
         if profile.region_id == data.selected_region_id:
@@ -1078,6 +1175,7 @@ def _profiles_dict(region_profiles: tuple[Any, ...]) -> dict[str, Any]:
             "metrics": [_metric_dict(metric) for metric in profile.metrics],
             "alerts": [_alert_dict(alert) for alert in profile.alerts],
             "recommendations": list(profile.recommendations),
+            "trends": [_trend_dict(series) for series in profile.trends],
             "pilot_units": [
                 {
                     "pilot_id": unit.pilot_id,
@@ -1118,6 +1216,108 @@ def _alert_dict(alert: Any) -> dict[str, str]:
         "period": alert.period,
         "action": alert.action,
     }
+
+
+def _trend_dict(series: Any) -> dict[str, Any]:
+    return {
+        "indicator": series.indicator,
+        "label": series.label,
+        "unit": series.unit,
+        "source": series.source,
+        "baseline_label": series.baseline_label,
+        "latest_quality": _latest_trend_quality(series),
+        "latest_anomaly": _latest_trend_anomaly(series),
+        "svg": _trend_svg(series),
+        "points": [
+            {
+                "period_start": point.period_start,
+                "period_end": point.period_end,
+                "value": point.value,
+                "baseline_value": point.baseline_value,
+                "anomaly_value": point.anomaly_value,
+                "quality_flag": point.quality_flag,
+                "is_gap": point.is_gap,
+            }
+            for point in series.points
+        ],
+    }
+
+
+def _trend_svg(series: Any) -> str:
+    points = list(series.points)
+    if not points:
+        return '<svg class="trend-chart" viewBox="0 0 320 112" role="img" aria-label="No trend data"></svg>'
+    values = [
+        value
+        for point in points
+        for value in (point.value, point.baseline_value)
+        if isinstance(value, int | float)
+    ]
+    if not values:
+        values = [0.0, 1.0]
+    low, high = min(values), max(values)
+    if low == high:
+        low -= 1.0
+        high += 1.0
+    width, height = 320.0, 112.0
+    left, right, top, bottom = 28.0, 10.0, 8.0, 24.0
+    x_step = (width - left - right) / max(1, len(points) - 1)
+
+    def x(index: int) -> float:
+        return left + index * x_step
+
+    def y(value: float) -> float:
+        return top + (high - value) / (high - low) * (height - top - bottom)
+
+    observed = " ".join(
+        f"{x(index):.1f},{y(float(point.value)):.1f}"
+        for index, point in enumerate(points)
+        if isinstance(point.value, int | float) and not point.is_gap
+    )
+    baseline = " ".join(
+        f"{x(index):.1f},{y(float(point.baseline_value)):.1f}"
+        for index, point in enumerate(points)
+        if isinstance(point.baseline_value, int | float)
+    )
+    circles = "".join(
+        '<circle class="{klass}" cx="{cx:.1f}" cy="{cy:.1f}" r="3">'
+        "<title>{title}</title></circle>".format(
+            klass="trend-gap" if point.is_gap else "trend-point",
+            cx=x(index),
+            cy=y(float(point.value)) if isinstance(point.value, int | float) else height - bottom,
+            title=escape(
+                f"{point.period_end[:10]} value={point.value if point.value is not None else 'gap'} "
+                f"anomaly={point.anomaly_value if point.anomaly_value is not None else 'n/a'} "
+                f"quality={point.quality_flag}"
+            ),
+        )
+        for index, point in enumerate(points)
+    )
+    labels = "".join(
+        '<text x="{cx:.1f}" y="106" text-anchor="middle" fill="#667085" font-size="9">{label}</text>'.format(
+            cx=x(index),
+            label=escape(point.period_end[:10][5:]),
+        )
+        for index, point in enumerate(points)
+    )
+    return (
+        f'<svg class="trend-chart" viewBox="0 0 320 112" role="img" '
+        f'aria-label="{escape(series.label)} {escape(series.unit)} trend">'
+        f'<line class="trend-axis" x1="{left}" x2="{width - right}" y1="{height - bottom}" y2="{height - bottom}" />'
+        f'<polyline class="trend-baseline" points="{baseline}" />'
+        f'<polyline class="trend-observed" points="{observed}" />'
+        f"{circles}{labels}</svg>"
+    )
+
+
+def _latest_trend_quality(series: Any) -> str:
+    return series.points[-1].quality_flag if series.points else "unknown"
+
+
+def _latest_trend_anomaly(series: Any) -> str:
+    if not series.points or series.points[-1].anomaly_value is None:
+        return "n/a"
+    return _format_map_score(float(series.points[-1].anomaly_value))
 
 
 def _temporal_periods_for_view(data: DashboardShellData) -> tuple[Any, ...]:

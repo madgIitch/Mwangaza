@@ -229,6 +229,68 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("mapSlot.innerHTML", html)
         self.assertNotIn("load_live_gee_dashboard_payloads", html)
 
+    def test_indicator_trends_render_units_sources_baseline_and_quality_details(self) -> None:
+        html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))
+
+        self.assertIn("Indicator Trends", html)
+        self.assertIn("trend-chart", html)
+        self.assertIn("trend-observed", html)
+        self.assertIn("trend-baseline", html)
+        self.assertIn("Latest quality:", html)
+        self.assertIn("Latest anomaly:", html)
+        self.assertIn("MODIS/061/MOD13Q1", html)
+        self.assertIn("UCSB-CHG/CHIRPS/DAILY", html)
+
+    def test_indicator_trends_are_derived_from_loaded_payload_series_with_gaps(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            payloads = [
+                _signal_payload(
+                    region_id="som",
+                    indicator="ndvi",
+                    period_end="2026-06-15T00:00:00Z",
+                    value=0.25,
+                    baseline=0.3,
+                    quality_flag="ok",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="ndvi",
+                    period_end="2026-06-30T00:00:00Z",
+                    value=None,
+                    baseline=0.28,
+                    quality_flag="no_data",
+                ),
+                _signal_payload(
+                    region_id="som",
+                    indicator="ndvi",
+                    period_end="2026-07-15T00:00:00Z",
+                    value=0.18,
+                    baseline=0.27,
+                    quality_flag="ok",
+                ),
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="watch",
+                    score=44.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-15T00:00:00Z",
+                ).to_dict(),
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+            html = build_dashboard_shell_html(data)
+
+        ndvi = next(series for series in data.trends if series.indicator == "ndvi")
+        self.assertEqual(len(ndvi.points), 3)
+        self.assertTrue(ndvi.points[1].is_gap)
+        self.assertEqual(ndvi.points[-1].anomaly_value, -0.09000000000000002)
+        self.assertIn("trend-gap", html)
+        self.assertIn("quality=no_data", html)
+        self.assertIn("Historical baseline when available", html)
+
     def test_dashboard_debug_flag_logs_loader_decision(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_DASHBOARD_DEBUG": "1"}),
@@ -408,6 +470,31 @@ def _risk_snapshot(
 
 def _json_payload(risk: RiskSnapshot) -> dict[str, object]:
     return json.loads(json.dumps(risk.to_dict()))
+
+
+def _signal_payload(
+    *,
+    region_id: str,
+    indicator: str,
+    period_end: str,
+    value: float | None,
+    baseline: float,
+    quality_flag: str,
+) -> dict[str, object]:
+    return {
+        "payload_type": "indicator_observation",
+        "schema_version": "mwangaza.contracts.v1",
+        "region_id": region_id,
+        "indicator": indicator,
+        "period_start": period_end.replace("15T", "01T").replace("30T", "16T"),
+        "period_end": period_end,
+        "value": value,
+        "unit": "index",
+        "source": "MODIS/061/MOD13Q1",
+        "quality_flag": quality_flag,
+        "is_simulated": False,
+        "metadata": {"updated_at": period_end, "baseline_value": baseline},
+    }
 
 
 if __name__ == "__main__":

@@ -72,6 +72,27 @@ class PilotUnit:
 
 
 @dataclass(frozen=True)
+class TrendPoint:
+    period_start: str
+    period_end: str
+    value: float | None
+    baseline_value: float | None
+    anomaly_value: float | None
+    quality_flag: str
+    is_gap: bool
+
+
+@dataclass(frozen=True)
+class TrendSeries:
+    indicator: str
+    label: str
+    unit: str
+    source: str
+    baseline_label: str
+    points: tuple[TrendPoint, ...]
+
+
+@dataclass(frozen=True)
 class RegionProfile:
     region_id: str
     label: str
@@ -80,6 +101,7 @@ class RegionProfile:
     recommendations: tuple[str, ...]
     pilot_units: tuple[PilotUnit, ...] = ()
     status: Freshness = "current"
+    trends: tuple[TrendSeries, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -96,6 +118,7 @@ class TemporalPeriod:
     alerts: tuple[AlertSummary, ...]
     recommendations: tuple[str, ...]
     region_profiles: tuple[RegionProfile, ...]
+    trends: tuple[TrendSeries, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -112,6 +135,7 @@ class DashboardShellData:
     recommendations: tuple[str, ...]
     region_profiles: tuple[RegionProfile, ...] = ()
     temporal_periods: tuple[TemporalPeriod, ...] = ()
+    trends: tuple[TrendSeries, ...] = ()
 
 
 def load_dashboard_shell_data(
@@ -164,6 +188,7 @@ def fallback_dashboard_shell_data() -> DashboardShellData:
         alerts=(),
         recommendations=("Retry after checking configuration and data refresh status.",),
         temporal_periods=data.temporal_periods,
+        trends=data.trends,
     )
 
 
@@ -238,7 +263,8 @@ def _dashboard_data_from_payloads(
     message = message_simulated if is_simulated else message_observed
     alerts = _alerts_for_region(active_alerts, region_id) or _alerts_from_risk(risk)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
-    region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts)
+    region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts, trend_payloads=cached_payloads)
+    trends = _trends_for_region(cached_payloads, selected_region_id)
 
     return DashboardShellData(
         project=PROJECT_NAME,
@@ -263,6 +289,7 @@ def _dashboard_data_from_payloads(
         recommendations=recommendations or ("No action recommendations are available yet.",),
         region_profiles=region_profiles,
         temporal_periods=temporal_periods,
+        trends=trends,
     )
 
 
@@ -329,7 +356,8 @@ def _temporal_period_from_payloads(
         metrics=_metrics_from_materialized(risk, signals),
         alerts=alerts,
         recommendations=recommendations or ("No action recommendations are available yet.",),
-        region_profiles=_region_profiles_from_payloads(payloads, active_alerts),
+        region_profiles=_region_profiles_from_payloads(payloads, active_alerts, trend_payloads=payloads),
+        trends=_trends_for_region(payloads, (region_id or "som").lower()),
     )
 
 
@@ -410,6 +438,8 @@ def _risk_snapshots(payloads: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any
 def _region_profiles_from_payloads(
     payloads: tuple[dict[str, Any], ...],
     active_alerts: tuple[AlertSummary, ...],
+    *,
+    trend_payloads: tuple[dict[str, Any], ...] | None = None,
 ) -> tuple[RegionProfile, ...]:
     all_region_ids = tuple(
         dict.fromkeys(
@@ -434,6 +464,7 @@ def _region_profiles_from_payloads(
                 metrics=_metrics_from_materialized(risk, signals),
                 alerts=alerts,
                 recommendations=recommendations or ("No action recommendations are available yet.",),
+                trends=_trends_for_region(trend_payloads or payloads, region_id),
                 pilot_units=_pilot_units_for_parent(region_id, payloads),
                 status="empty" if risk is None and not signals else "current",
             )
@@ -637,6 +668,77 @@ def _recommendations_from_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[str,
     return ()
 
 
+def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> tuple[TrendSeries, ...]:
+    target = region_id.lower()
+    series: list[TrendSeries] = []
+    for indicator, label, unit in (
+        ("ndvi", "NDVI trend", "index"),
+        ("rainfall_mm", "Rainfall trend", "mm"),
+        ("lst_c", "LST trend", "C"),
+    ):
+        signals = [
+            payload
+            for payload in payloads
+            if payload.get("payload_type") in {"indicator_observation", "anomaly"}
+            and _first_text(payload.get("region_id")).lower() == target
+            and payload.get("indicator") == indicator
+            and _payload_period_key(payload)
+        ]
+        by_period = {str(_payload_period_key(signal)): signal for signal in signals}
+        points: list[TrendPoint] = []
+        for period_key in sorted(by_period)[-12:]:
+            signal = by_period[period_key]
+            value = _safe_float(signal.get("value"))
+            baseline = _baseline_value(signal)
+            anomaly = None if value is None or baseline is None else value - baseline
+            points.append(
+                TrendPoint(
+                    period_start=_first_text(signal.get("period_start")),
+                    period_end=_first_text(signal.get("period_end")),
+                    value=value,
+                    baseline_value=baseline,
+                    anomaly_value=anomaly,
+                    quality_flag=_first_text(signal.get("quality_flag")) or "unknown",
+                    is_gap=value is None,
+                )
+            )
+        if points:
+            source = _first_text(*(signal.get("source") for signal in signals)) or "Loaded dashboard payloads"
+            series.append(
+                TrendSeries(
+                    indicator=indicator,
+                    label=label,
+                    unit=unit,
+                    source=source,
+                    baseline_label="Historical baseline when available; unavailable points are explicitly marked.",
+                    points=tuple(points),
+                )
+            )
+    return tuple(series)
+
+
+def _baseline_value(signal: dict[str, Any]) -> float | None:
+    metadata = signal.get("metadata", {})
+    candidates: list[Any] = []
+    if isinstance(metadata, dict):
+        candidates.extend(
+            metadata.get(key)
+            for key in (
+                "baseline_value",
+                "climatology_mean",
+                "baseline_mean",
+                "historical_mean",
+                "normal_value",
+            )
+        )
+    candidates.extend((signal.get("baseline_value"), signal.get("climatology_mean")))
+    for candidate in candidates:
+        value = _safe_float(candidate)
+        if value is not None:
+            return value
+    return None
+
+
 def _metrics_from_materialized(
     risk: dict[str, Any] | None,
     signals: tuple[dict[str, Any], ...],
@@ -755,6 +857,9 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         "Pre-position livestock feed in pastoral corridors.",
         "Coordinate district verification before publishing alerts.",
     )
+    som_trends = _demo_trends("som")
+    ken_trends = _demo_trends("ken")
+    eth_trends = _demo_trends("eth")
     return DashboardShellData(
         project=PROJECT_NAME,
         tagline=TAGLINE,
@@ -766,6 +871,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
         metrics=metrics,
         alerts=alerts,
         recommendations=recommendations,
+        trends=som_trends,
         region_profiles=(
             RegionProfile(
                 "som",
@@ -789,6 +895,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                         1,
                     ),
                 ),
+                trends=som_trends,
             ),
             RegionProfile(
                 "ken",
@@ -819,6 +926,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                         1,
                     ),
                 ),
+                trends=ken_trends,
             ),
             RegionProfile(
                 "eth",
@@ -833,8 +941,57 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 (alerts[2],),
                 ("Prepare early action checklist.",),
+                trends=eth_trends,
             ),
         ),
+    )
+
+
+def _demo_trends(region_id: str) -> tuple[TrendSeries, ...]:
+    base_by_region = {
+        "som": (0.22, 18.0, 29.0),
+        "ken": (0.18, 22.0, 28.0),
+        "eth": (0.28, 35.0, 25.0),
+    }
+    ndvi, rainfall, lst = base_by_region.get(region_id, (0.2, 20.0, 27.0))
+    periods = (
+        ("2026-06-01T00:00:00Z", "2026-06-15T00:00:00Z"),
+        ("2026-06-16T00:00:00Z", "2026-06-30T00:00:00Z"),
+        ("2026-07-01T00:00:00Z", "2026-07-15T00:00:00Z"),
+    )
+    specs = (
+        ("ndvi", "NDVI trend", "index", "MODIS/061/MOD13Q1", (ndvi + 0.08, ndvi + 0.02, ndvi - 0.04), ndvi + 0.05),
+        (
+            "rainfall_mm",
+            "Rainfall trend",
+            "mm",
+            "UCSB-CHG/CHIRPS/DAILY",
+            (rainfall + 8.0, rainfall - 3.0, rainfall - 11.0),
+            rainfall + 4.0,
+        ),
+        ("lst_c", "LST trend", "C", "MODIS/061/MOD11A2", (lst - 0.8, lst + 0.4, lst + 1.2), lst),
+    )
+    return tuple(
+        TrendSeries(
+            indicator=indicator,
+            label=label,
+            unit=unit,
+            source=source,
+            baseline_label="Demo historical baseline",
+            points=tuple(
+                TrendPoint(
+                    period_start=start,
+                    period_end=end,
+                    value=value,
+                    baseline_value=baseline,
+                    anomaly_value=value - baseline,
+                    quality_flag="ok",
+                    is_gap=False,
+                )
+                for (start, end), value in zip(periods, values, strict=True)
+            ),
+        )
+        for indicator, label, unit, source, values, baseline in specs
     )
 
 
@@ -890,6 +1047,10 @@ def _safe_score(risk: dict[str, Any] | None) -> float | None:
         return None
     score = risk.get("composite_score")
     return float(score) if isinstance(score, int | float) and not isinstance(score, bool) else None
+
+
+def _safe_float(value: object) -> float | None:
+    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) else None
 
 
 def _severity(value: str) -> Severity:
