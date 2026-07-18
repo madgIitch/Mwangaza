@@ -2930,7 +2930,7 @@
     {
       "id": "sprint-42-observability",
       "name": "Sprint 42 - Observability",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.0",
       "estimated_hours": 5,
@@ -2958,12 +2958,12 @@
       ],
       "deliverable": "Observabilidad suficiente para depurar la demo y despliegue.",
       "acceptance": [
-        "AC1: Logs contienen timestamp, level, component, run_id y event.",
-        "AC2: Credenciales y payloads sensibles se redactan.",
-        "AC3: Readiness falla si base o cache obligatoria no están disponibles.",
-        "AC4: Se miden duración, cache hit, regiones procesadas, errores y alertas activas.",
-        "AC5: El panel técnico queda separado de la narrativa principal.",
-        "AC6: Un error de Earth Engine puede localizarse por run_id."
+        "AC1: Cada evento JSON contiene timestamp UTC, level, component, event y run_id; las respuestas API incluyen el mismo `X-Run-ID` usado en sus logs.",
+        "AC2: La redacción recursiva elimina credenciales, tokens, secretos, rutas locales y payloads sensibles de logs, errores, métricas y checks.",
+        "AC3: `/health` conserva liveness; `/ready` devuelve 503 y checks saneados si la base o cache obligatoria no están disponibles.",
+        "AC4: `/api/v1/observability` expone duración, cache hit, regiones procesadas, errores y alertas activas como agregados sin datos sensibles.",
+        "AC5: `/technical` muestra estado operativo, readiness y métricas separado de Overview, con estados loading/error y low-bandwidth.",
+        "AC6: Un error de Earth Engine puede localizarse por run_id compartido entre evento, respuesta y diagnóstico, sin revelar detalles sensibles."
       ],
       "scope": [
         "src/mwangaza/observability/**",
@@ -2972,16 +2972,8 @@
         "src/mwangaza/contracts/**",
         "src/mwangaza/db/**",
         "tests/api/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**",
+        "frontend/**",
+        "tests/frontend/**",
         "pyproject.toml",
         "requirements*.txt",
         "Makefile",
@@ -2993,7 +2985,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-18T11:51:09.594Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:bee771a6a24569cdb155cb4999c0d0b830b9b1ddc38ad5cbadd86ba2e1966e24",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-18T11:51:10.298Z"
     },
     {
       "id": "sprint-43-security-and-privacy",
