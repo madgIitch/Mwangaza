@@ -2996,7 +2996,7 @@
     {
       "id": "sprint-43-security-and-privacy",
       "name": "Sprint 43 - Security and Privacy",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.1",
       "estimated_hours": 5,
@@ -3024,17 +3024,20 @@
       ],
       "deliverable": "Baseline de seguridad y privacidad verificable.",
       "acceptance": [
-        "AC1: CI busca secretos conocidos y archivos de credenciales.",
-        "AC2: API limita tamaño, tipos y frecuencia básica de peticiones.",
-        "AC3: Uploads, si existen, no permiten ejecución ni traversal.",
-        "AC4: El prototipo no recopila nombres, teléfonos ni ubicación individual de comunidades.",
-        "AC5: Headers de seguridad adecuados se aplican en despliegue.",
-        "AC6: El threat model cubre credenciales GEE, manipulación de datos, disponibilidad y desinformación."
+        "AC1: CI ejecuta un scanner determinista que falla ante claves privadas, credenciales GCP o archivos de secretos versionados, sin leer valores locales de `.env`.",
+        "AC2: La API limita cuerpos a 64 KiB, exige JSON en endpoints con body y aplica rate limiting configurable con respuestas 413, 415 y 429 saneadas.",
+        "AC3: El prototipo no expone uploads; multipart, nombres de archivo y traversal no alcanzan ejecución ni escritura de archivos.",
+        "AC4: Código, contratos y documentación no recopilan nombres, teléfonos ni ubicación individual de comunidades; métricas de seguridad son efímeras y agregadas.",
+        "AC5: API y despliegue estático aplican CSP, nosniff, anti-framing, referrer policy y permissions policy sin romper la PWA.",
+        "AC6: El threat model cubre credenciales GEE, manipulación de datos, disponibilidad, desinformación y el riesgo explícito del admin público de demo."
       ],
       "scope": [
         "docs/security/**",
         "src/mwangaza/security/**",
         "tests/security/**",
+        "src/mwangaza/api/**",
+        "tests/api/**",
+        "frontend/public/**",
         ".github/workflows/security.yml",
         "pyproject.toml",
         "requirements*.txt",
@@ -3047,7 +3050,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-18T12:04:55.643Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:2ce3484d1c2e51dcb5ced69d0c320b9c118618edddbf2a1fe9d33538825348ef",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-18T12:04:56.370Z"
     },
     {
       "id": "sprint-44-automated-testing",
