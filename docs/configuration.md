@@ -40,3 +40,9 @@ environment variables and secret managers.
 - `MWANGAZA_GEE_PRIVATE_KEY_JSON`
 
 Private values must not appear in `repr(settings)`, logs, HTTP responses or dashboard errors.
+# Explicit offline demo mode
+
+`MWANGAZA_MODE=demo` is the sole explicit switch for the offline demo baseline.
+It requires no Earth Engine credentials and does not initialize remote services.
+Production may use an explicitly identified valid cache, but never falls back to
+demo implicitly. Restore managed demo state with `python scripts/reset_demo.py`.

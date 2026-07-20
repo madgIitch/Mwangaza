@@ -1224,3 +1224,41 @@ Objetivo no negociable:
 - **edge_cases:** La unidad de mayor severidad se resuelve determinísticamente por severidad, luego por score descendente y finalmente por `unit_id` ascendente. Una unidad con datos parciales sigue siendo seleccionable y muestra `unknown` en campos ausentes. Una unidad sin geometría debe seguir funcionando vía tabla accesible. La ausencia de reporte obligatorio bloquea la finalización del escenario.
 - **ui_states:** La vista debe mostrar de forma visible el nombre y `unit_id` activos, badge de severidad, score e indicadores justificativos. El mapa o la tabla accesible permiten cambiar la selección sin recarga remota. El reporte debe reflejar el mismo `unit_id` de la unidad activa. La vista previa de notificación debe exponer idioma solicitado y efectivo, incluyendo fallback.
 
+<!-- harness:sprint-47-offline-demo-fallback -->
+## sprint-47-offline-demo-fallback · Sprint 47 - Offline Demo Fallback
+
+
+
+### Scope aprobado
+
+  - `demo_data/**`
+  - `.demo/**`
+  - `scripts/reset_demo.py`
+  - `scripts/demo_somalia.py`
+  - `scripts/demo_kenya.py`
+  - `src/**/config/**`
+  - `src/**/demo/**`
+  - `src/**/api/**`
+  - `src/**/services/**`
+  - `src/**/alerts/**`
+  - `src/**/reports/**`
+  - `src/**/ui/**`
+  - `frontend/src/**`
+  - `frontend/public/**`
+  - `tests/demo/**`
+  - `tests/**/api/**`
+  - `tests/**/ui/**`
+  - `tests/**/reports/**`
+  - `docs/configuration.md`
+  - `docs/contracts.md`
+  - `docs/dashboard-shell.md`
+  - `docs/reports-interface.md`
+  - `docs/DECISIONS.md`
+
+### Contexto técnico
+
+- **data_model:** `is_demo=true` queda como marca canónica aditiva para todos los datos derivados de fixtures demo: overview, region, alerts, reports, forecast diagnostics, exports, configuración y outbox. `is_simulated=true` se conserva solo donde ya exista: `is_demo` describe el origen del dato y `is_simulated` que no hubo entrega o acción real. Todo dato demo debe exponer además `reference_date` o `snapshot_id`.
+- **external_contracts:** La activación contractual única del modo es `MWANGAZA_MODE=demo`. `scripts/reset_demo.py` es el reset oficial. Los payloads API en demo añaden `is_demo`, `reference_date` o `snapshot_id`, y `data_mode=demo`. Deben funcionar offline Overview, Regions, Alerts, Reports, About, Admin y Technical, además de `scripts/demo_somalia.py`, `scripts/demo_kenya.py` y previews/exports locales.
+- **edge_cases:** El modo demo valida su baseline al arrancar. Si detecta estado corrupto, parcial o mezclado con registros no demo, bloquea el recorrido con mensaje accionable hasta ejecutar `scripts/reset_demo.py`; no hay sobrescritura automática. El reset elimina únicamente el estado demo gestionado y restaura el baseline de forma idempotente. Esto también cubre reinstalaciones/refrescos offline: el baseline debe validarse antes de servir datos demo.
+- **ui_states:** El banner demo debe mostrar siempre como mínimo “Demo data”, origen offline, `reference_date`, `snapshot_id` y referencia al comando oficial de reset. Debe permanecer visible en Overview, Regions, Alerts, Reports, About, Admin y Technical, incluidos estados de error y durante la navegación interna.
+

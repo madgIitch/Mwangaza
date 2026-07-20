@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-46-northern-kenya-end-to-end-scenario - Sprint 46 - Northern Kenya End-to-End Scenario** - estado: `review_pending`.
+Feature: **sprint-47-offline-demo-fallback - Sprint 47 - Offline Demo Fallback** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-46-northern-kenya-end-to-end-scenario - Sprint 46 - Northern K
 
 ## Siguiente accion
 
-- Smoke humano: abrir `/region`, seleccionar Kenya y comprobar Turkana, Marsabit e Isiolo, el reporte ligado a la unidad y los idiomas EN/SW/SO. Cerrar con `node .harness/spec.mjs done sprint-46-northern-kenya-end-to-end-scenario` si pasa.
+- Smoke humano: arrancar con `MWANGAZA_MODE=demo`, navegar todas las rutas y verificar el banner persistente; ejecutar dos veces `python scripts/reset_demo.py`. Cerrar con `node .harness/spec.mjs done sprint-47-offline-demo-fallback` si pasa.
 
 ## Ultimo resultado
 
@@ -18,6 +18,6 @@ Feature: **sprint-46-northern-kenya-end-to-end-scenario - Sprint 46 - Northern K
 
 Validaciones ejecutadas:
 
-- 227 tests Python y 29 tests frontend pasan.
+- 229 tests Python y 29 tests frontend pasan.
 - Typecheck, lint, build y gates del harness pasan.
-- Smoke CLI repetido: estado completo, offline e idempotente.
+- Reset demo y metadatos API validados; production nunca cae silenciosamente a demo.

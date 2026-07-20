@@ -178,6 +178,7 @@ Must state that Mwangaza is a decision-support prototype and estimates should be
 
 ## Future Sprint Notes
 
+- Criterio obligatorio para `sprint-56-region-explorer-completion`: el mapa completo debe funcionar contra la API iniciada con `MWANGAZA_MODE=demo`, sin red, mostrando metadatos demo y conservando tabla/placeholder accesible cuando falte geometría.
 - Full district-level Somalia map needs public API payloads with subnational geometries and metric rows. Related prior work: Sprint 25. Completion is now tracked by `sprint-56-region-explorer-completion`.
 - Northern Kenya multi-district scenario is already planned in Sprint 46.
 - Alerts center deep-link filters from `View all alerts` are tracked by `sprint-56-region-explorer-completion`.

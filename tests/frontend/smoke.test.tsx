@@ -21,6 +21,8 @@ describe("canonical React route smoke", () => {
     window.history.pushState({}, "", route);
     render(<App initialData={demoDashboard} skipApiLoad />);
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Demo data");
+    expect(screen.getByRole("status")).toHaveTextContent("mwangaza-offline-demo-v1");
   });
 
   it("opens admin with a deterministic API fixture", async () => {
@@ -28,6 +30,7 @@ describe("canonical React route smoke", () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(adminFixture())));
     render(<App initialData={demoDashboard} skipApiLoad />);
     await waitFor(() => expect(screen.getByText("Public demo mode. Changes are available without credentials.")).toBeInTheDocument());
+    expect(screen.getByRole("status")).toHaveTextContent("Demo data");
   });
 
   it("opens technical status with deterministic metrics", async () => {
@@ -41,6 +44,7 @@ describe("canonical React route smoke", () => {
     })));
     render(<App initialData={demoDashboard} skipApiLoad />);
     await waitFor(() => expect(screen.getByText("operational")).toBeInTheDocument());
+    expect(screen.getByRole("status")).toHaveTextContent("Demo data");
   });
 
   it("keeps essential data visible in low-bandwidth mode", () => {

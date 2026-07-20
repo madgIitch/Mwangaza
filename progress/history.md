@@ -193,3 +193,9 @@
 - Escenario offline de Turkana, Marsabit e Isiolo integrado en `/region`.
 - Reporte y notificación simulada siguen la unidad e idioma seleccionados.
 - 227 tests Python, 29 frontend, typecheck, lint, build y gates pasan.
+
+## 2026-07-20T15:46:00Z - #sprint-47-offline-demo-fallback Sprint 47 - Offline Demo Fallback -> review_pending
+
+- Activación explícita con `MWANGAZA_MODE=demo`, baseline y reset idempotente.
+- Banner demo persistente y metadatos API aditivos.
+- 229 tests Python, 29 frontend, typecheck, lint, build y gates pasan.

@@ -72,7 +72,7 @@ def prepare_scenario(fixture_path: Path, state_path: Path) -> dict[str, Any]:
         raise ScenarioError("state scenarios must be a JSON object")
     snapshot_id = fixture["snapshot_id"]
     result = {
-        "status": "complete", "mode": "demo", "offline": True,
+        "status": "complete", "mode": "demo", "is_demo": True, "offline": True, "reference_date": "2026-03-31",
         "snapshot_id": snapshot_id, "region": fixture["region"], "period": fixture["period"],
         "artifacts": fixture["artifacts"],
         "alerts": {fixture["alert"]["alert_id"]: fixture["alert"]},

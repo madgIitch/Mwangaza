@@ -39,3 +39,8 @@ Contracts reject:
 `insufficient_history`, or `invalid`.
 
 Fixtures and demo payloads must set `is_simulated=true`.
+# Demo metadata
+
+Fixture-derived payloads add `is_demo=true` plus `reference_date` or
+`snapshot_id`. Existing `is_simulated` fields remain independent: they indicate
+that an action or delivery was simulated, while `is_demo` identifies data origin.

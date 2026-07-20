@@ -1,0 +1,9 @@
+{
+  "schema_version": "mwangaza.demo.v1",
+  "is_demo": true,
+  "reference_date": "2026-07-15",
+  "snapshot_id": "mwangaza-offline-demo-v1",
+  "alerts": [],
+  "outbox": [],
+  "configuration": {"profile": "demo", "version": 1}
+}

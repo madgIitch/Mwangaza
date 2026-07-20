@@ -47,7 +47,7 @@ def prepare_scenario(fixture_path: Path, state_path: Path, unit_id: str | None =
     warnings = [] if effective == language else [{"code": "language_fallback", "requested": language, "effective": effective}]
     notification_id = f"notification-{snapshot_id}-{selected['unit_id']}-{effective}"
     result = {
-        "status": "complete", "mode": "demo", "offline": True, "snapshot_id": snapshot_id,
+        "status": "complete", "mode": "demo", "is_demo": True, "offline": True, "reference_date": "2026-03-31", "snapshot_id": snapshot_id,
         "units": units, "selected_unit": selected["unit_id"], "highlighted_unit": highlighted["unit_id"],
         "detail": {**selected, "snapshot_id": snapshot_id, "provenance": "demo"},
         "report": {**selected["report"], "snapshot_id": snapshot_id, "unit_id": selected["unit_id"]},

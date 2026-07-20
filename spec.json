@@ -3808,7 +3808,8 @@
         "AC4: Las tarjetas de indicadores muestran comparación mensual solo cuando existe snapshot comparable y no fabrican deltas.",
         "AC5: `View all alerts` abre la vista de alertas filtrada por región, periodo y estado activo.",
         "AC6: Low-bandwidth mantiene toda la información esencial en tablas sin mapas pesados ni animaciones.",
-        "AC7: La documentación de `/region` distingue implementado, pendiente por falta de datos y alcance futuro ya cubierto por Sprint 25/Sprint 46."
+        "AC7: La documentación de `/region` distingue implementado, pendiente por falta de datos y alcance futuro ya cubierto por Sprint 25/Sprint 46.",
+        "AC8: Con la API iniciada mediante `MWANGAZA_MODE=demo`, `/region` carga el mapa, selección, detalle y ranking exclusivamente desde payloads demo locales, sin consultas remotas, mantiene visibles `is_demo`, `reference_date` y `snapshot_id`, y conserva una degradación accesible cuando falte geometría."
       ],
       "scope": [
         "frontend/**",

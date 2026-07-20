@@ -173,6 +173,14 @@ export function App({
           </section>
         )}
 
+        {data.dataMode === "demo" && (
+          <section className="demo-banner" role="status">
+            <strong>Demo data</strong>
+            <span>Offline fixture · reference_date: {data.referenceDate ?? data.lastUpdated} · snapshot_id: {data.snapshotId ?? "mwangaza-offline-demo-v1"}</span>
+            <code>python scripts/reset_demo.py</code>
+          </section>
+        )}
+
         {route === "/alerts" ? (
           <AlertsCenter data={data} activeAlerts={activeAlerts} />
         ) : route === "/reports" ? (

@@ -75,6 +75,9 @@ export interface DashboardData {
   project: string;
   tagline: string;
   dataMode: DataMode;
+  isDemo?: boolean;
+  referenceDate?: string;
+  snapshotId?: string;
   source: string;
   lastUpdated: string;
   message: string;

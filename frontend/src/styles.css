@@ -2005,3 +2005,5 @@ td {
     display: block;
   }
 }
+.demo-banner { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin: 0 0 1rem; padding: .75rem 1rem; border: 1px solid #d49b31; border-radius: 10px; background: #fff6d9; color: #563c09; }
+.demo-banner code { margin-left: auto; font-size: .78rem; }

@@ -64,6 +64,33 @@ class PublicApiTests(unittest.TestCase):
 
         live.assert_not_called()
 
+    def test_explicit_demo_mode_adds_metadata_without_gee(self) -> None:
+        with (
+            patch.dict(os.environ, {"MWANGAZA_MODE": "demo"}, clear=True),
+            patch("mwangaza.api.app.check_gee_auth") as gee,
+        ):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
+            health_status, _headers, health = _request("/health")
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["is_demo"])
+        self.assertEqual(payload["data_mode"], "demo")
+        self.assertIn("reference_date", payload)
+        self.assertEqual(health_status, 200)
+        self.assertEqual(health["gee"]["status"], "not_initialized")
+        gee.assert_not_called()
+
+    def test_production_rejects_implicit_demo_fallback(self) -> None:
+        from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+        demo = load_dashboard_shell_data("demo")
+        with (
+            patch.dict(os.environ, {"MWANGAZA_MODE": "production"}, clear=True),
+            patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo),
+        ):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
+        self.assertEqual(status, 500)
+        self.assertEqual(payload["error"]["code"], "internal_error")
+        self.assertNotIn("is_demo", payload)
+
     def test_live_api_mode_uses_dashboard_loader_without_forcing_demo(self) -> None:
         from mwangaza.services.dashboard_shell import load_dashboard_shell_data
 

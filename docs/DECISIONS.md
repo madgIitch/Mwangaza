@@ -480,3 +480,16 @@ Decisiones registradas:
 - **tests:** La cobertura mínima incluye: E2E offline del script; prueba de selección desde mapa y tabla accesible; correspondencia entre unidad activa y reporte; notificación en `en`, `sw` y `so` con fallback a inglés cuando falte plantilla; empate determinista; errores por fixture corrupto/ausente y reporte obligatorio ausente; verificación de ausencia de red y credenciales; e idempotencia sin duplicar alertas ni notificaciones.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-47-offline-demo-fallback -->
+## 2026-07-20 · sprint-47-offline-demo-fallback aprobado
+
+Contexto: se aprobó el spec `sprint-47-offline-demo-fallback` (Sprint 47 - Offline Demo Fallback).
+
+Decisiones registradas:
+
+- **auth_secrets:** Se mantiene que `demo` arranca sin `MWANGAZA_GEE_*`, sin red y sin servicios remotos. En `production`, la ausencia de credenciales deriva únicamente en `cache` explícita o error estructurado, nunca en `demo`.
+- **rollback_compat:** Se preservan sin ruptura los endpoints y el shape base de `/region` y `/reports`, los `snapshot_id` de Somalia y Northern Kenya, y los IDs estables de alertas y outbox. Los cambios de payload solo pueden ser aditivos. El modo conectado y el modo `cache` existentes conservan su comportamiento actual.
+- **tests:** La matriz mínima bloqueante queda fijada: arranque demo sin secretos; ausencia de red e inicialización GEE en demo; banner persistente en todas las rutas aprobadas, incluidos errores; reset idempotente y aislamiento de estado no demo; escenarios Somalia y Kenya offline; reports/export demo; compatibilidad de contratos; y caso negativo de `production` sin credenciales verificando `cache` explícita o error, nunca `demo`.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

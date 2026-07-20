@@ -21,6 +21,8 @@ from mwangaza.regions import list_regions
 from mwangaza.services.dashboard_shell import load_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
+DEMO_REFERENCE_DATE = "2026-07-15"
+DEMO_SNAPSHOT_ID = "mwangaza-offline-demo-v1"
 MAX_LIMIT = 100
 LIVE_DASHBOARD_CACHE_SECONDS = 120
 _DASHBOARD_CACHE: tuple[float, Any] | None = None
@@ -57,7 +59,11 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
     _log("request start", path=path, query=query_string or "-")
     if path == "/health":
         payload = foundation_status().as_dict() | public_config_status()
-        payload["gee"] = check_gee_auth().to_public_dict()
+        if _is_demo_mode():
+            payload["gee"] = {"status": "not_initialized", "message": "Disabled in explicit demo mode"}
+            payload.update(_demo_metadata())
+        else:
+            payload["gee"] = check_gee_auth().to_public_dict()
         payload["observability"] = {"run_id": current_run_id(), "status": "ok"}
         _log("health checked", gee_status=payload["gee"].get("status", "unknown"))
         await _send_json(send, payload, HTTPStatus.OK)
@@ -78,6 +84,8 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
             body = await _read_body(receive)
             validate_body_contract(path, body, _header(scope.get("headers", []), "content-type"))
             payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body)
+            if _is_demo_mode():
+                payload.update(_demo_metadata())
             await _send_json(send, payload, status, cache_seconds=cache_seconds)
             _log(
                 "request end",
@@ -279,7 +287,9 @@ def _load_api_dashboard_data() -> Any:
     demo fallback.
     """
 
-    mode = os.environ.get("MWANGAZA_API_DATA_MODE", "demo").strip().lower()
+    configured = os.environ.get("MWANGAZA_MODE", "").strip().lower()
+    default_mode = "live" if configured == "production" else "demo"
+    mode = "demo" if configured == "demo" else os.environ.get("MWANGAZA_API_DATA_MODE", default_mode).strip().lower()
     _log("dashboard load requested", configured_mode=mode or "demo")
     if mode in {"live", "auto"}:
         return _cached_live_dashboard_data()
@@ -288,6 +298,14 @@ def _load_api_dashboard_data() -> Any:
     data = load_dashboard_shell_data("demo")
     _log("dashboard load complete", selected_mode="demo", data_mode=data.data_status.mode)
     return data
+
+
+def _is_demo_mode() -> bool:
+    return os.environ.get("MWANGAZA_MODE", "").strip().lower() == "demo"
+
+
+def _demo_metadata() -> dict[str, Any]:
+    return {"data_mode": "demo", "is_demo": True, "reference_date": DEMO_REFERENCE_DATE, "snapshot_id": DEMO_SNAPSHOT_ID}
 
 
 def _cached_live_dashboard_data() -> Any:
@@ -305,6 +323,8 @@ def _cached_live_dashboard_data() -> Any:
     started = time.monotonic()
     _log("dashboard live load start")
     data = load_dashboard_shell_data()
+    if os.environ.get("MWANGAZA_MODE", "").strip().lower() == "production" and data.data_status.mode == "demo":
+        raise RuntimeError("production data unavailable; implicit demo fallback is disabled")
     _DASHBOARD_CACHE = (time.monotonic(), data)
     _log("dashboard live load complete", elapsed_ms=_elapsed_ms(started), data_mode=data.data_status.mode, source=data.data_status.source)
     return data
