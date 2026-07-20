@@ -112,6 +112,16 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Limitations" })).toBeInTheDocument();
     expect(screen.getByText("Privacy Policy pending")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Data provenance and methodology" })).toHaveAttribute("href", "/about/provenance");
+  });
+
+  it("renders canonical data provenance with lineage and responsible-use definitions", () => {
+    window.history.pushState({}, "", "/about/provenance");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+    expect(screen.getByRole("heading", { name: "Data provenance and methodology" })).toBeInTheDocument();
+    expect(screen.getByText("MODIS/061/MOD13Q1")).toBeInTheDocument();
+    expect(screen.getByText(/potentially exposed population, not confirmed affected people/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Data lineage")).toHaveTextContent("Source → Transformation and QA → Cache → API → UI → Report");
   });
 
   it("does not draw provisional geography while the public API is loading on /region", () => {

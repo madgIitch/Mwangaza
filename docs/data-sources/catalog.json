@@ -1,0 +1,10 @@
+{
+  "schema_version": "mwangaza.provenance.v1",
+  "sources": [
+    {"source_name":"MODIS/061/MOD13Q1","variable_or_indicator":"NDVI","unit":"index","spatial_resolution":"250 m","temporal_resolution":"16 days","update_frequency":"16 days","license_or_terms":"NASA Earthdata open data terms","modes":["live","cache","demo"],"latency":"Product-dependent","limitations":"Cloud and QA masking can reduce coverage."},
+    {"source_name":"UCSB-CHG/CHIRPS/DAILY","variable_or_indicator":"Rainfall","unit":"mm","spatial_resolution":"0.05 degree","temporal_resolution":"daily","update_frequency":"daily with latency","license_or_terms":"CHIRPS data terms","modes":["live","cache","demo"],"latency":"Preliminary/final products differ","limitations":"Blended satellite/station estimate; sparse gauges increase uncertainty."},
+    {"source_name":"MODIS/061/MOD11A2","variable_or_indicator":"Land Surface Temperature","unit":"deg C","spatial_resolution":"1 km","temporal_resolution":"8 days","update_frequency":"8 days","license_or_terms":"NASA Earthdata open data terms","modes":["live","cache","demo"],"latency":"Product-dependent","limitations":"Land surface temperature is not air temperature; clouds reduce coverage."},
+    {"source_name":"IGAD administrative catalog","variable_or_indicator":"Administrative boundaries","unit":"geometry","spatial_resolution":"country and configured pilot units","temporal_resolution":"versioned","update_frequency":"on approved boundary release","license_or_terms":"Pending verification before redistribution","modes":["live","cache","demo"],"latency":"Not applicable","limitations":"Boundary versions and disputed areas require contextual review."},
+    {"source_name":"Demo population grid","variable_or_indicator":"Potential exposure","unit":"people estimate","spatial_resolution":"1 km demo grid","temporal_resolution":"2024 reference year","update_frequency":"versioned fixture","license_or_terms":"Synthetic demo; not for operational redistribution","modes":["demo"],"latency":"Fixed reference year","limitations":"Potentially exposed is not confirmed affected population."}
+  ]
+}

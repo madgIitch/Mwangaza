@@ -1262,3 +1262,27 @@ Objetivo no negociable:
 - **edge_cases:** El modo demo valida su baseline al arrancar. Si detecta estado corrupto, parcial o mezclado con registros no demo, bloquea el recorrido con mensaje accionable hasta ejecutar `scripts/reset_demo.py`; no hay sobrescritura automática. El reset elimina únicamente el estado demo gestionado y restaura el baseline de forma idempotente. Esto también cubre reinstalaciones/refrescos offline: el baseline debe validarse antes de servir datos demo.
 - **ui_states:** El banner demo debe mostrar siempre como mínimo “Demo data”, origen offline, `reference_date`, `snapshot_id` y referencia al comando oficial de reset. Debe permanecer visible en Overview, Regions, Alerts, Reports, About, Admin y Technical, incluidos estados de error y durante la navegación interna.
 
+<!-- harness:sprint-48-data-provenance-documentation -->
+## sprint-48-data-provenance-documentation · Sprint 48 - Data Provenance Documentation
+
+
+
+### Scope aprobado
+
+  - `docs/about-interface.md`
+  - `docs/contracts.md`
+  - `docs/thresholds.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/data-provenance.md`
+  - `frontend/src/App.tsx`
+  - `frontend/src/styles.css`
+  - `tests/frontend/app.test.tsx`
+  - `tests/frontend/smoke.test.tsx`
+
+### Contexto técnico
+
+- **data_model:** La feature debe definir un inventario canónico versionado y legible por máquina en `docs/data-sources/catalog.json`, reutilizado como fuente de verdad de `docs/data-provenance.md` y de la vista `/about/provenance`. Cada entrada del catálogo incluye como mínimo `source_name`, `variable_or_indicator`, `unit`, `spatial_or_temporal_resolution`, `update_frequency`, `license_or_terms`, `applicable_modes`, `latency` y `limitations`.
+- **external_contracts:** El contrato navegable queda fijado en la ruta interna estable `/about/provenance`, enlazada desde `/about` y reutilizable como referencia durable desde reportes. La documentación persistente equivalente vive en `docs/data-provenance.md`, y el catálogo fuente de verdad en `docs/data-sources/catalog.json`.
+- **edge_cases:** La documentación debe separar de forma explícita las variantes `live`, `cache` y `demo` cuando cambien procedencia, latencia o cobertura. `demo` y cualquier dato simulated deben quedar claramente diferenciados de los datos operativos. `cache` conserva la procedencia original y añade la antigüedad. Si una misma variable usa distintas fuentes o coberturas según modo o país, el catálogo debe reflejar esa variante sin ambigüedad. `exposure` solo muestra fuente/año/resolución cuando existan datos disponibles para esta release.
+- **ui_states:** `/about` debe mostrar un CTA visible con el texto `Data provenance and methodology` dentro de la sección Methodology. Ese enlace navega a la vista dedicada `/about/provenance`, que debe renderizar de forma visible el catálogo, las definiciones, las limitaciones, los umbrales etiquetados como no oficiales/configurables y un diagrama de linaje. Si existe contenido pendiente de verificación, la advertencia debe ser visible en esa misma vista.
+

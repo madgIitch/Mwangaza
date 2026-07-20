@@ -2007,3 +2007,6 @@ td {
 }
 .demo-banner { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin: 0 0 1rem; padding: .75rem 1rem; border: 1px solid #d49b31; border-radius: 10px; background: #fff6d9; color: #563c09; }
 .demo-banner code { margin-left: auto; font-size: .78rem; }
+.provenance-screen { display: grid; gap: 1rem; }
+.provenance-screen table { width: 100%; }
+.lineage-flow { padding: 1.2rem; border-radius: 12px; background: #eef5ef; color: #173f31; font-weight: 700; overflow-wrap: anywhere; }

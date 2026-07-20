@@ -185,6 +185,8 @@ export function App({
           <AlertsCenter data={data} activeAlerts={activeAlerts} />
         ) : route === "/reports" ? (
           <ReportsCenter data={data} />
+        ) : route === "/about/provenance" ? (
+          <ProvenanceScreen />
         ) : route === "/about" ? (
           <AboutScreen data={data} />
         ) : route === "/admin" ? (
@@ -600,7 +602,7 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
             <li><strong>Assess</strong><span>Generate anomalies, composite score, quality flags and drought level.</span></li>
             <li><strong>Act</strong><span>Surface alerts, recommendations and exportable reports.</span></li>
           </ol>
-          <a className="text-link" href="/about">Methodology page pending</a>
+          <a className="text-link" href="/about/provenance">Data provenance and methodology</a>
         </section>
 
         <section className="about-panel">
@@ -647,6 +649,26 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
       </footer>
     </section>
   );
+}
+
+function ProvenanceScreen(): JSX.Element {
+  const sources = [
+    ["MODIS/061/MOD13Q1", "NDVI", "index", "250 m / 16 days", "NASA Earthdata open data terms"],
+    ["UCSB-CHG/CHIRPS/DAILY", "Rainfall", "mm", "0.05 degree / daily", "CHIRPS data terms"],
+    ["MODIS/061/MOD11A2", "Land Surface Temperature", "deg C", "1 km / 8 days", "NASA Earthdata open data terms"],
+    ["IGAD administrative catalog", "Administrative boundaries", "geometry", "versioned", "Pending verification"],
+    ["Demo population grid", "Potential exposure", "people estimate", "1 km / 2024", "Synthetic demo"]
+  ];
+  return <section className="provenance-screen" aria-label="Data provenance and methodology">
+    <p className="eyebrow">Responsible use</p><h2>Data provenance and methodology</h2>
+    <p>Every source retains its variable, unit, resolution, frequency, terms, latency and limitations. Pending terms are not operational approval.</p>
+    <table><thead><tr><th>Source</th><th>Indicator</th><th>Unit</th><th>Resolution / frequency</th><th>License or terms</th></tr></thead><tbody>{sources.map(row => <tr key={row[0]}>{row.map(value => <td key={value}>{value}</td>)}</tr>)}</tbody></table>
+    <h2>Observation, anomaly, score, forecast and exposure</h2>
+    <p>An observation describes a measured period. An anomaly compares it with a seasonal baseline. A score combines normalized anomalies using configurable, non-official prototype thresholds. A forecast estimates a future period. Exposure means potentially exposed population, not confirmed affected people.</p>
+    <h2>Coverage and interpretation</h2><p>Clouds and QA masking reduce coverage; publication schedules create latency; aggregation can hide local variation. Live, cache and demo provenance remain explicit.</p>
+    <h2>Data lineage</h2><div className="lineage-flow" aria-label="Data lineage">Source → Transformation and QA → Cache → API → UI → Report</div>
+    <a className="text-link" href="/about">Back to About</a>
+  </section>;
 }
 
 function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlerts: Alert[] }): JSX.Element {

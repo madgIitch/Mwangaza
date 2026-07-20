@@ -493,3 +493,16 @@ Decisiones registradas:
 - **tests:** La matriz mínima bloqueante queda fijada: arranque demo sin secretos; ausencia de red e inicialización GEE en demo; banner persistente en todas las rutas aprobadas, incluidos errores; reset idempotente y aislamiento de estado no demo; escenarios Somalia y Kenya offline; reports/export demo; compatibilidad de contratos; y caso negativo de `production` sin credenciales verificando `cache` explícita o error, nunca `demo`.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-48-data-provenance-documentation -->
+## 2026-07-20 · sprint-48-data-provenance-documentation aprobado
+
+Contexto: se aprobó el spec `sprint-48-data-provenance-documentation` (Sprint 48 - Data Provenance Documentation).
+
+Decisiones registradas:
+
+- **auth_secrets:** La feature sigue siendo documental y no introduce manejo nuevo de credenciales. La documentación puede nombrar plataformas y datasets, pero no debe exponer secretos, identificadores sensibles ni valores internos de configuración.
+- **rollback_compat:** El cambio sigue siendo aditivo: añade documentación, navegación y catálogo canónico sin romper contratos existentes, siempre que `/about` mantenga sus rutas actuales y el nuevo enlace complemente, no sustituya, la navegación ya existente.
+- **tests:** Los tests deben verificar como mínimo: existencia y navegación de `/about/provenance`; presencia del enlace `Data provenance and methodology` en `/about`; renderizado de al menos un encabezado único de la documentación; presencia de las entradas mínimas MODIS NDVI, CHIRPS rainfall, MODIS LST, límites administrativos y exposición poblacional; completitud de campos obligatorios del catálogo; definiciones separadas de `observation`, `anomaly`, `score`, `forecast` y `exposure`; aviso visible de que los thresholds son configurables y no oficiales; y un esquema/cadena inequívoca `source -> transformation -> cache -> API -> UI -> report`.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
