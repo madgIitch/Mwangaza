@@ -7,18 +7,47 @@ on:
     branches: [main]
 
 jobs:
-  quality:
+  backend-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install
-        run: python -m pip install -e .
-      - name: Lint
-        run: make PYTHON=python lint
-      - name: Typecheck
-        run: make PYTHON=python typecheck
-      - name: Test
-        run: make PYTHON=python test
+      - run: python -m pip install -e ".[dev]"
+      - run: make PYTHON=python lint typecheck
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[dev]"
+      - run: make PYTHON=python test
+
+  contracts-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[dev]"
+      - run: make PYTHON=python test-contract
+      - run: make PYTHON=python coverage
+
+  frontend-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --run tests/frontend/smoke.test.tsx
+      - run: npm run build

@@ -1,13 +1,16 @@
 import { demoDashboard } from "./fixtures";
 import type {
   Alert,
+  AdminConfigResponse,
+  AdminConfiguration,
   DashboardData,
   Metric,
   PublicAlertsResponse,
   PublicForecastsResponse,
   PublicSnapshotResponse,
   RegionProfile,
-  RegionRisk
+  RegionRisk,
+  TechnicalStatusResponse
 } from "./types";
 
 let inFlightDashboard: Promise<DashboardData> | null = null;
@@ -15,12 +18,12 @@ let inFlightSnapshot: Promise<DashboardData> | null = null;
 let inFlightDetails: Promise<DashboardData> | null = null;
 let apiRequestSequence = 0;
 
-async function getJson<T>(path: string): Promise<T> {
+async function getJson<T>(path: string, headers: Record<string, string> = {}): Promise<T> {
   const requestId = ++apiRequestSequence;
   const started = performance.now();
   apiLog("fetch start", { requestId, path });
   try {
-    const response = await fetch(path, { headers: { accept: "application/json" } });
+    const response = await fetch(path, { headers: { accept: "application/json", ...headers } });
     const elapsedMs = Math.round(performance.now() - started);
     apiLog("fetch response", { requestId, path, status: response.status, ok: response.ok, elapsedMs });
     if (!response.ok) {
@@ -33,6 +36,46 @@ async function getJson<T>(path: string): Promise<T> {
     apiLog("fetch error", { requestId, path, elapsedMs: Math.round(performance.now() - started), error: errorMessage(error) });
     throw error;
   }
+}
+
+async function postJson<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/json", ...headers },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json() as T;
+  if (!response.ok) {
+    throw new Error(errorDetail(payload) || `Request failed: ${path}`);
+  }
+  return payload;
+}
+
+function errorDetail(payload: unknown): string {
+  if (payload && typeof payload === "object" && "error" in payload) {
+    const error = (payload as { error?: { message?: string; details?: string[] } }).error;
+    if (error?.details?.length) {
+      return error.details.join("; ");
+    }
+    return error?.message ?? "";
+  }
+  return "";
+}
+
+export async function loadAdminConfig(): Promise<AdminConfigResponse> {
+  return getJson<AdminConfigResponse>("/api/v1/admin/config");
+}
+
+export async function saveAdminConfig(configuration: AdminConfiguration): Promise<AdminConfigResponse> {
+  return postJson<AdminConfigResponse>("/api/v1/admin/config", { configuration });
+}
+
+export async function activateAdminConfig(versionId: string): Promise<AdminConfigResponse> {
+  return postJson<AdminConfigResponse>("/api/v1/admin/config/activate", { version_id: versionId });
+}
+
+export async function loadTechnicalStatus(): Promise<TechnicalStatusResponse> {
+  return getJson<TechnicalStatusResponse>("/api/v1/observability");
 }
 
 export async function loadApiDashboard(): Promise<DashboardData> {

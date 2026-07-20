@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { loadApiDashboardDetails, loadApiDashboardSnapshot } from "./api";
+import { activateAdminConfig, loadAdminConfig, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus, saveAdminConfig } from "./api";
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
-import type { Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TrendSeries } from "./types";
+import type { AdminConfigResponse, AdminConfiguration, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -136,6 +136,8 @@ export function App({
           <a data-active={route === "/alerts" ? "true" : "false"} href="/alerts">{t(language, "activeAlerts")}</a>
           <a data-active={route === "/reports" ? "true" : "false"} href="/reports">{t(language, "reports")}</a>
           <a data-active={route === "/about" ? "true" : "false"} href="/about">{t(language, "about")}</a>
+          <a data-active={route === "/admin" ? "true" : "false"} href="/admin">Admin</a>
+          <a className="technical-link" data-active={route === "/technical" ? "true" : "false"} href="/technical">Technical status</a>
         </nav>
         <label className="field">
           <span>Language</span>
@@ -175,7 +177,11 @@ export function App({
         ) : route === "/reports" ? (
           <ReportsCenter data={data} />
         ) : route === "/about" ? (
-          <StandalonePage title={t(language, "about")} detail="Dedicated about page pending. This route is separate from Overview." />
+          <AboutScreen data={data} />
+        ) : route === "/admin" ? (
+          <AdminPanel lowBandwidth={lowBandwidth} />
+        ) : route === "/technical" ? (
+          <TechnicalPanel lowBandwidth={lowBandwidth} />
         ) : lowBandwidth ? (
           <LowBandwidthView data={data} language={language} activeAlerts={activeAlerts} />
         ) : route === "/region" ? (
@@ -203,12 +209,433 @@ export function App({
   );
 }
 
+function TechnicalPanel({ lowBandwidth }: { lowBandwidth: boolean }): JSX.Element {
+  const [status, setStatus] = useState<TechnicalStatusResponse | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const refresh = (): void => {
+    setLoading(true);
+    setError("");
+    loadTechnicalStatus()
+      .then(setStatus)
+      .catch(() => setError("Operational status is unavailable."))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(refresh, []);
+  const metrics = status?.metrics;
+
+  return (
+    <section className={lowBandwidth ? "technical-screen technical-lite" : "technical-screen"} aria-label="Technical status">
+      <header className="technical-header">
+        <div>
+          <p className="eyebrow">Operations</p>
+          <h2>Technical status</h2>
+          <p>API readiness, request health and processing counters.</p>
+        </div>
+        <div className="technical-header-actions">
+          <span data-state={status?.status ?? "loading"}>{loading ? "Checking" : status?.status ?? "Unavailable"}</span>
+          <button onClick={refresh} type="button">Refresh</button>
+        </div>
+      </header>
+
+      {error ? <div className="notice" role="alert">{error}</div> : null}
+
+      <section className="technical-summary" aria-label="Operational summary">
+        <div><span>Readiness</span><strong>{status?.readiness.status ?? "checking"}</strong></div>
+        <div><span>Average duration</span><strong>{metrics ? `${metrics.duration_ms_average} ms` : "-"}</strong></div>
+        <div><span>Errors</span><strong>{metrics?.errors_total ?? "-"}</strong></div>
+        <div><span>Active alerts</span><strong>{metrics?.active_alerts ?? "-"}</strong></div>
+      </section>
+
+      <div className="technical-grid">
+        <section>
+          <h3>Dependency checks</h3>
+          <table>
+            <thead><tr><th>Dependency</th><th>Status</th></tr></thead>
+            <tbody>
+              {Object.entries(status?.readiness.checks ?? {}).map(([name, value]) => (
+                <tr key={name}><td>{name}</td><td data-check={value}>{value}</td></tr>
+              ))}
+              {!status ? <tr><td colSpan={2}>Waiting for readiness data.</td></tr> : null}
+            </tbody>
+          </table>
+        </section>
+        <section>
+          <h3>Runtime metrics</h3>
+          <dl>
+            <div><dt>Requests</dt><dd>{metrics?.requests_total ?? "-"}</dd></div>
+            <div><dt>Cache hit ratio</dt><dd>{metrics ? `${Math.round(metrics.cache_hit_ratio * 100)}%` : "-"}</dd></div>
+            <div><dt>Regions processed</dt><dd>{metrics?.regions_processed ?? "-"}</dd></div>
+            <div><dt>Run ID</dt><dd>{status?.run_id ?? "-"}</dd></div>
+          </dl>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function AdminPanel({ lowBandwidth }: { lowBandwidth: boolean }): JSX.Element {
+  const [response, setResponse] = useState<AdminConfigResponse | null>(null);
+  const [draft, setDraft] = useState<AdminConfiguration>(defaultAdminDraft());
+  const [message, setMessage] = useState("Loading admin configuration.");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadAdminConfig()
+      .then((next) => {
+        setResponse(next);
+        setDraft(next.active_version?.configuration ?? defaultAdminDraft());
+        setMessage("Public demo mode. Changes are available without credentials.");
+      })
+      .catch(() => {
+        setMessage("Admin configuration endpoint is unavailable.");
+      });
+  }, []);
+
+  const active = response?.active_version ?? null;
+  const versions = response?.versions ?? [];
+
+  const save = async (): Promise<void> => {
+    setError("");
+    try {
+      const next = await saveAdminConfig(draft);
+      setResponse(next);
+      setMessage(`Saved append-only version ${next.saved_version?.version_id ?? ""}. No recalculation was triggered.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Configuration validation failed.");
+    }
+  };
+
+  const activate = async (versionId: string): Promise<void> => {
+    setError("");
+    try {
+      const next = await activateAdminConfig(versionId);
+      setResponse(next);
+      setDraft(next.active_version?.configuration ?? draft);
+      setMessage(`Activated ${versionId}. Refresh jobs remain manual.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Activation failed.");
+    }
+  };
+
+  const updateThresholdLabel = (label: string): void => {
+    setDraft({ ...draft, thresholds: { ...draft.thresholds, label } });
+  };
+  const updateWarningAction = (action: string): void => {
+    setDraft({
+      ...draft,
+      actions: {
+        ...draft.actions,
+        templates: {
+          ...draft.actions.templates,
+          warning: { ...draft.actions.templates.warning, action }
+        }
+      }
+    });
+  };
+
+  return (
+    <section className="admin-screen" aria-label="Admin Configuration">
+      <div className="admin-header">
+        <div>
+          <p className="eyebrow">Demo admin</p>
+          <h2>Admin Configuration</h2>
+          <p>Version thresholds and early-action guidance without recalculating operational data.</p>
+        </div>
+        <span data-state="configured">Public access</span>
+      </div>
+
+      <section className="admin-login" aria-label="Admin access status">
+        <p>{message}</p>
+        {error ? <div className="notice" role="alert">{error}</div> : null}
+      </section>
+
+      <div className="admin-grid">
+        <section className="admin-editor">
+          <h2>Configuration editor</h2>
+          <label className="field">
+            <span>Threshold label</span>
+            <input
+              aria-label="Threshold label"
+              disabled={!response}
+              onChange={(event) => updateThresholdLabel(event.target.value)}
+              value={draft.thresholds.label}
+            />
+          </label>
+          <label className="field">
+            <span>Warning action</span>
+            <textarea
+              aria-label="Warning action"
+              disabled={!response}
+              onChange={(event) => updateWarningAction(event.target.value)}
+              value={draft.actions.templates.warning.action}
+            />
+          </label>
+          <div className="admin-actions">
+            <button disabled={!response} onClick={save} type="button">Save new version</button>
+            <span>No refresh, forecast or Earth Engine call is triggered.</span>
+          </div>
+        </section>
+
+        <section className="admin-active">
+          <h2>Active version</h2>
+          {active ? (
+            <dl>
+              <div><dt>Version</dt><dd>{active.version_id}</dd></div>
+              <div><dt>Status</dt><dd>{active.status}</dd></div>
+              <div><dt>Created</dt><dd>{active.created_at}</dd></div>
+              <div><dt>Hash prefix</dt><dd>{active.content_hash.slice(0, 12)}</dd></div>
+            </dl>
+          ) : (
+            <Placeholder title="No active version" detail="Save and activate a valid configuration to make it current." />
+          )}
+          <Placeholder title="Demo scope" detail="This hackathon panel is intentionally public. Add institutional identity and authorization before production use." />
+        </section>
+      </div>
+
+      <section className={lowBandwidth ? "admin-history admin-history-lite" : "admin-history"}>
+        <h2>Version history</h2>
+        <table>
+          <thead><tr><th>Version</th><th>Status</th><th>Created by</th><th>Validation</th><th>Action</th></tr></thead>
+          <tbody>
+            {versions.map((version) => (
+              <tr key={version.version_id}>
+                <td>{version.version_id}</td>
+                <td>{version.status}</td>
+                <td>{version.created_by}</td>
+                <td>{version.validation_errors.length ? version.validation_errors.join("; ") : "valid"}</td>
+                <td>
+                  <button
+                    disabled={version.status === "active" || version.validation_errors.length > 0}
+                    onClick={() => void activate(version.version_id)}
+                    type="button"
+                  >
+                    Activate
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!versions.length ? <tr><td colSpan={5}>No configuration versions yet.</td></tr> : null}
+          </tbody>
+        </table>
+      </section>
+    </section>
+  );
+}
+
+function defaultAdminDraft(): AdminConfiguration {
+  return {
+    schema_version: "mwangaza.admin.v1",
+    thresholds: {
+      threshold_version: "prototype-thresholds-v1",
+      domain_min: 0,
+      domain_max: 100,
+      bands: [
+        { level: "green", minimum: 0, maximum: 25 },
+        { level: "yellow", minimum: 25, maximum: 50 },
+        { level: "orange", minimum: 50, maximum: 75 },
+        { level: "red", minimum: 75, maximum: 100 }
+      ],
+      is_official: false,
+      label: "prototype-not-igad-official"
+    },
+    actions: {
+      recommendation_version: "actions-v1",
+      templates: {
+        green: { level: "green", action: "Continue routine monitoring", suggested_actor: "Analyst", urgency: "monitoring" },
+        watch: { level: "watch", action: "Prepare early action checklist", suggested_actor: "Program lead", urgency: "preparation" },
+        warning: { level: "warning", action: "Preposition supplies and brief partners", suggested_actor: "Operations lead", urgency: "prepositioning" },
+        emergency: { level: "emergency", action: "Activate urgent coordination review", suggested_actor: "Incident lead", urgency: "urgent_activation" },
+        unknown: { level: "unknown", action: "Review data quality before intervention", suggested_actor: "Data lead", urgency: "data_review" }
+      }
+    }
+  };
+}
+
 function StandalonePage({ title, detail }: { title: string; detail: string }): JSX.Element {
   return (
     <section className="standalone-page" aria-label={title}>
       <p className="eyebrow">Section</p>
       <h2>{title}</h2>
       <Placeholder title="Page shell pending" detail={detail} />
+    </section>
+  );
+}
+
+function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
+  const ndvi = metricByLabel(data.metrics, "NDVI");
+  const rainfall = metricByLabel(data.metrics, "Rainfall");
+  const lst = metricByLabel(data.metrics, "LST");
+  const composite = metricByLabel(data.metrics, "Composite");
+  const exposure = metricByLabel(data.metrics, "potentially_exposed");
+  const pilotRegions = data.profiles.filter((profile) => profile.pilotUnits.length > 0);
+
+  const capabilities = [
+    {
+      title: "Vegetation Monitoring",
+      icon: "NDVI",
+      detail: "Compares recent vegetation conditions with the historical seasonal baseline.",
+      metric: ndvi
+    },
+    {
+      title: "Rainfall Monitoring",
+      icon: "RAIN",
+      detail: "Tracks recent rainfall totals and deficit signals against expected seasonal conditions.",
+      metric: rainfall
+    },
+    {
+      title: "Surface Temperature",
+      icon: "LST",
+      detail: "Uses satellite-derived land surface temperature as complementary heat-stress evidence.",
+      metric: lst
+    },
+    {
+      title: "Early Action",
+      icon: "ACT",
+      detail: "Turns configured risk signals into alerts, recommendations and report-ready summaries.",
+      metric: composite
+    }
+  ];
+
+  const sources = [
+    ["Google Earth Engine", "Cloud geospatial processing platform used to access and aggregate satellite and climate datasets."],
+    ["MODIS vegetation / NDVI", "Satellite imagery used to derive recent vegetation conditions and NDVI signals."],
+    ["CHIRPS rainfall", "Satellite and station-based rainfall estimates used to calculate recent totals and anomalies."],
+    ["MODIS Land Surface Temperature", "Satellite-derived land surface temperature used as a complementary drought stress indicator."],
+    ["Administrative boundaries", "National and pilot subnational geography used for aggregation and map display."],
+    ["Population / exposure", exposure ? `${exposure.value}${exposure.unit} estimate. ${exposure.detail}` : "No valid exposure dataset is available in this snapshot."]
+  ];
+
+  return (
+    <section className="about-screen" aria-label="About Mwangaza">
+      <div className="about-header">
+        <div>
+          <p className="eyebrow">About</p>
+          <h2>About</h2>
+          <p>Methodology, data sources and project information</p>
+        </div>
+        <div className="about-header-actions">
+          <span>Version 1.0.0 prototype</span>
+          <span>{data.dataMode.toUpperCase()}</span>
+          <span>{data.lastUpdated}</span>
+          <button type="button" title="Documentation/status refresh endpoint pending">Refresh status</button>
+        </div>
+      </div>
+
+      <section className="about-hero">
+        <div className="about-hero-copy">
+          <h2>About Mwangaza</h2>
+          <p>Mwangaza is a satellite-powered drought early warning and early action platform designed for the IGAD region.</p>
+          <p>It combines vegetation, rainfall and land-surface-temperature indicators with historical baselines to help identify deteriorating conditions and translate them into actionable early-warning information.</p>
+          <div className="about-capabilities" aria-label="Mwangaza capabilities">
+            {capabilities.map((capability) => (
+              <article key={capability.title} title={capability.detail}>
+                <span>{capability.icon}</span>
+                <strong>{capability.title}</strong>
+                <small>{capability.metric ? `${capability.metric.value}${capability.metric.unit}` : "No data"}</small>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="about-illustration" aria-label="Satellite drought monitoring concept">
+          <div className="sun" />
+          <div className="satellite">SAT</div>
+          <div className="horn-map">
+            <span data-severity="normal" />
+            <span data-severity="watch" />
+            <span data-severity="warning" />
+            <span data-severity="critical" />
+          </div>
+          <div className="field-lines" />
+        </div>
+      </section>
+
+      <div className="about-main-grid">
+        <section className="about-panel">
+          <h2>Data Sources</h2>
+          <p>Mwangaza uses open satellite, climate and administrative datasets. Every indicator keeps its source, period, unit and processing context visible where the API provides it.</p>
+          <div className="source-list">
+            {sources.map(([name, detail]) => (
+              <article key={name}>
+                <span>{name.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{name}</strong>
+                  <p>{detail}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+          <Placeholder title="Source detail drawers pending" detail="Dataset resolution, frequency, transformations and limitations need a dedicated metadata contract." />
+        </section>
+
+        <section className="about-panel">
+          <h2>About This Project</h2>
+          <p>Mwangaza was developed as an individual project for the IGAD Hackathon 2026 to explore how satellite observations can support drought early warning and anticipatory action.</p>
+          <dl className="project-facts">
+            <div><dt>Project</dt><dd>IGAD Hackathon 2026</dd></div>
+            <div><dt>Team</dt><dd>Independent developer</dd></div>
+            <div><dt>Development Period</dt><dd>29-day hackathon development cycle</dd></div>
+            <div><dt>Purpose</dt><dd>Transform satellite observations into understandable drought-risk signals and actionable early-action recommendations.</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <div className="about-method-grid">
+        <section className="about-panel">
+          <h2>How Mwangaza Works</h2>
+          <ol className="method-steps">
+            <li><strong>Observe</strong><span>Retrieve NDVI, rainfall and land-surface temperature.</span></li>
+            <li><strong>Compare</strong><span>Compare recent values with seasonal historical baselines.</span></li>
+            <li><strong>Assess</strong><span>Generate anomalies, composite score, quality flags and drought level.</span></li>
+            <li><strong>Act</strong><span>Surface alerts, recommendations and exportable reports.</span></li>
+          </ol>
+          <a className="text-link" href="/about">Methodology page pending</a>
+        </section>
+
+        <section className="about-panel">
+          <h2>Pilot Coverage</h2>
+          <ul className="action-list">
+            <li>National view for configured IGAD countries.</li>
+            <li>{pilotRegions.length ? `${pilotRegions.map((profile) => profile.name).join(", ")} include pilot-unit metadata.` : "Pilot subnational payloads are not available in this snapshot."}</li>
+            <li>Additional subregions require approved geometry and aggregation contracts.</li>
+          </ul>
+        </section>
+
+        <section className="about-panel">
+          <h2>Version and System Status</h2>
+          <dl className="system-status-list">
+            <div><dt>App version</dt><dd>1.0.0 prototype</dd></div>
+            <div><dt>Source mode</dt><dd>{data.dataMode}</dd></div>
+            <div><dt>Current snapshot</dt><dd>{data.lastUpdated}</dd></div>
+            <div><dt>Methodology version</dt><dd>dashboard-v1</dd></div>
+            <div><dt>Forecast status</dt><dd>{data.forecastDiagnostics.available ? "Available" : data.forecastDiagnostics.message}</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <section className="about-limitations">
+        <div>
+          <h2>Limitations</h2>
+          <p>Mwangaza is a decision-support prototype. Alerts are not official public warnings, satellite datasets can have delays or quality gaps, and estimates must be validated with local knowledge.</p>
+        </div>
+        <ul>
+          <li>Composite scores depend on configurable thresholds.</li>
+          <li>Land surface temperature is not air temperature.</li>
+          <li>Exposure means potentially exposed, not confirmed affected population.</li>
+          <li>Operational privacy, terms and contact pages are still pending.</li>
+        </ul>
+      </section>
+
+      <footer className="about-footer">
+        <p>(c) 2026 Mwangaza Project. Open-source license display pending.</p>
+        <nav aria-label="About footer links">
+          <a href="/about">Privacy Policy pending</a>
+          <a href="/about">Terms of Use pending</a>
+          <a href="/about">Contact pending</a>
+        </nav>
+      </footer>
     </section>
   );
 }

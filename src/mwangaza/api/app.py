@@ -8,9 +8,15 @@ from urllib.parse import parse_qs
 from typing import Any
 
 from mwangaza._foundation import foundation_status
+from mwangaza.admin import (
+    AdminValidationError,
+    admin_repository_from_env,
+)
 from mwangaza.config import public_config_status
 from mwangaza.exports import build_visible_export
 from mwangaza.gee.auth import check_gee_auth
+from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, readiness_status, reset_run_id, resolve_run_id
+from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
 from mwangaza.regions import list_regions
 from mwangaza.services.dashboard_shell import load_dashboard_shell_data
 
@@ -23,16 +29,45 @@ _DASHBOARD_CACHE: tuple[float, Any] | None = None
 async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
     if scope["type"] != "http":
         return
+    request_started = time.monotonic()
+    run_id = resolve_run_id(_header(scope.get("headers", []), "x-run-id"))
+    token = bind_run_id(run_id)
+    try:
+        try:
+            await _handle_http(scope, receive, send)
+        except SecurityRequestError as exc:
+            METRICS.record_error()
+            await _send_json(send, _error(exc.code, str(exc)), exc.status)
+            _log("security request rejected", level="WARNING", code=exc.code, status=exc.status)
+    finally:
+        METRICS.record_request(_elapsed_ms(request_started))
+        reset_run_id(token)
+
+
+async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
+    if scope["type"] != "http":
+        return
 
     path = scope.get("path", "/")
+    validate_request_target(path)
+    client = scope.get("client") or ("unknown", 0)
+    RATE_LIMITER.check(str(client[0]))
     request_started = time.monotonic()
     query_string = scope.get("query_string", b"").decode("utf-8", errors="ignore")
     _log("request start", path=path, query=query_string or "-")
     if path == "/health":
         payload = foundation_status().as_dict() | public_config_status()
         payload["gee"] = check_gee_auth().to_public_dict()
+        payload["observability"] = {"run_id": current_run_id(), "status": "ok"}
+        _log("health checked", gee_status=payload["gee"].get("status", "unknown"))
         await _send_json(send, payload, HTTPStatus.OK)
         _log("request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started))
+        return
+    if path == "/ready":
+        readiness = readiness_status()
+        status = HTTPStatus.OK if readiness.ready else HTTPStatus.SERVICE_UNAVAILABLE
+        await _send_json(send, readiness.to_public_dict() | {"run_id": current_run_id()}, status)
+        _log("readiness checked", status=status, checks=readiness.checks)
         return
     if path == "/openapi.json":
         await _send_json(send, _openapi(), HTTPStatus.OK)
@@ -40,19 +75,29 @@ async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
         return
     if path.startswith("/api/v1/"):
         try:
-            payload = _route_v1(path, scope.get("query_string", b""))
-            await _send_json(send, payload, HTTPStatus.OK, cache_seconds=60)
+            body = await _read_body(receive)
+            validate_body_contract(path, body, _header(scope.get("headers", []), "content-type"))
+            payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body)
+            await _send_json(send, payload, status, cache_seconds=cache_seconds)
             _log(
                 "request end",
                 path=path,
-                status=HTTPStatus.OK,
+                status=status,
                 elapsed_ms=_elapsed_ms(request_started),
                 summary=_payload_summary(path, payload),
             )
+        except SecurityRequestError:
+            raise
+        except AdminValidationError as exc:
+            METRICS.record_error()
+            await _send_json(send, {"error": {"code": "admin_validation_failed", "message": "Configuration is invalid", "details": exc.errors}}, HTTPStatus.BAD_REQUEST)
+            _log("request error", path=path, status=HTTPStatus.BAD_REQUEST, error="admin_validation_failed", elapsed_ms=_elapsed_ms(request_started))
         except ValueError as exc:
+            METRICS.record_error()
             await _send_json(send, _error("invalid_request", str(exc)), HTTPStatus.BAD_REQUEST)
             _log("request error", path=path, status=HTTPStatus.BAD_REQUEST, error=str(exc), elapsed_ms=_elapsed_ms(request_started))
         except Exception:
+            METRICS.record_error()
             await _send_json(send, _error("internal_error", "Request could not be served"), HTTPStatus.INTERNAL_SERVER_ERROR)
             _log("request error", path=path, status=HTTPStatus.INTERNAL_SERVER_ERROR, error="internal_error", elapsed_ms=_elapsed_ms(request_started))
         return
@@ -66,7 +111,12 @@ async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
         return
 
 
-def _route_v1(path: str, query_string: bytes) -> dict[str, Any]:
+def _route_v1(
+    path: str,
+    query_string: bytes,
+    headers: list[tuple[bytes, bytes]],
+    body: bytes,
+) -> tuple[dict[str, Any], HTTPStatus, int | None]:
     query = parse_qs(query_string.decode("utf-8", errors="ignore"))
     if path == "/api/v1/regions":
         limit, offset = _pagination(query)
@@ -81,7 +131,8 @@ def _route_v1(path: str, query_string: bytes) -> dict[str, Any]:
             }
             for region in list_regions(include_pilots=True)
         ]
-        return _listed(regions, limit, offset)
+        METRICS.observe_workload(regions_processed=len(regions))
+        return _listed(regions, limit, offset), HTTPStatus.OK, 60
     if path == "/api/v1/snapshots/latest":
         data = _load_api_dashboard_data()
         export = build_visible_export(data, max_rows=MAX_LIMIT)
@@ -104,7 +155,7 @@ def _route_v1(path: str, query_string: bytes) -> dict[str, Any]:
                 "regional_risk": _regional_risk(data),
                 "source_metadata": export.source_metadata,
             },
-        }
+        }, HTTPStatus.OK, 60
     if path == "/api/v1/alerts":
         limit, offset = _pagination(query)
         data = _load_api_dashboard_data()
@@ -122,11 +173,101 @@ def _route_v1(path: str, query_string: bytes) -> dict[str, Any]:
             for alert in data.alerts
         ]
         _log("alerts export", data_mode=data.data_status.mode, total=len(alerts), limit=limit, offset=offset)
-        return _listed(alerts, limit, offset)
+        METRICS.observe_workload(active_alerts=len(alerts))
+        return _listed(alerts, limit, offset), HTTPStatus.OK, 60
     if path == "/api/v1/forecasts":
         limit, offset = _pagination(query)
-        return _listed([], limit, offset) | {"available": False, "message": "Forecasts are not available yet"}
+        return _listed([], limit, offset) | {"available": False, "message": "Forecasts are not available yet"}, HTTPStatus.OK, 60
+    if path == "/api/v1/observability":
+        readiness = readiness_status()
+        return {
+            "schema_version": API_SCHEMA_VERSION,
+            "run_id": current_run_id(),
+            "status": "operational" if readiness.ready else "degraded",
+            "readiness": readiness.to_public_dict(),
+            "metrics": METRICS.snapshot(),
+        }, HTTPStatus.OK, None
+    if path == "/api/v1/admin/config":
+        repo = admin_repository_from_env()
+        try:
+            if body:
+                payload = _json_body(body)
+                version = repo.create_version(payload.get("configuration", {}), actor="public-admin", activate=bool(payload.get("activate", False)))
+                return _admin_payload(repo, version=version), HTTPStatus.CREATED, None
+            return _admin_payload(repo), HTTPStatus.OK, None
+        finally:
+            repo.close()
+    if path == "/api/v1/admin/config/activate":
+        payload = _json_body(body)
+        repo = admin_repository_from_env()
+        try:
+            version = repo.activate_version(str(payload.get("version_id", "")), actor="public-admin")
+            return _admin_payload(repo, version=version), HTTPStatus.OK, None
+        finally:
+            repo.close()
+    if path == "/api/v1/admin/status":
+        return {
+            "schema_version": API_SCHEMA_VERSION,
+            "admin": {
+                "access": "public",
+                "auth": "none",
+                "institutional_auth": False,
+            },
+        }, HTTPStatus.OK, None
     raise ValueError("unknown v1 endpoint")
+
+
+def _admin_payload(repo: Any, *, version: Any | None = None) -> dict[str, Any]:
+    active = repo.get_active()
+    versions = repo.list_versions()
+    return {
+        "schema_version": API_SCHEMA_VERSION,
+        "admin_schema_version": "mwangaza.admin.v1",
+        "active_version": active.to_public_dict() if active else None,
+        "saved_version": version.to_public_dict() if version else None,
+        "versions": [item.to_public_dict() for item in versions],
+        "security": {
+            "access": "public",
+            "auth": "none",
+            "institutional_auth": False,
+        },
+        "recalculation": {
+            "triggered": False,
+            "message": "Configuration changes do not refresh indicators, cache, forecasts or alerts.",
+        },
+    }
+
+
+def _json_body(body: bytes) -> dict[str, Any]:
+    if not body:
+        raise ValueError("request body is required")
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("request body must be JSON") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("request body must be a JSON object")
+    return payload
+
+
+async def _read_body(receive: Any) -> bytes:
+    chunks: list[bytes] = []
+    while True:
+        message = await receive()
+        chunks.append(message.get("body", b""))
+        if sum(len(chunk) for chunk in chunks) > 64 * 1024:
+            raise SecurityRequestError("payload_too_large", "Request body exceeds 64 KiB", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+        if not message.get("more_body", False):
+            break
+    return b"".join(chunks)
+
+
+def _header(headers: list[tuple[bytes, bytes]], name: str) -> str:
+    key = name.lower().encode("ascii")
+    for raw_key, raw_value in headers:
+        if raw_key.lower() == key:
+            return raw_value.decode("utf-8", errors="ignore")
+    return ""
 
 
 def _load_api_dashboard_data() -> Any:
@@ -156,9 +297,11 @@ def _cached_live_dashboard_data() -> Any:
         cached_at, data = _DASHBOARD_CACHE
         age_seconds = now - cached_at
         if age_seconds < LIVE_DASHBOARD_CACHE_SECONDS:
+            METRICS.record_cache(True)
             _log("dashboard cache hit", age_s=round(age_seconds, 2), data_mode=data.data_status.mode)
             return data
         _log("dashboard cache expired", age_s=round(age_seconds, 2))
+    METRICS.record_cache(False)
     started = time.monotonic()
     _log("dashboard live load start")
     data = load_dashboard_shell_data()
@@ -206,6 +349,10 @@ def _openapi() -> dict[str, Any]:
         "/api/v1/snapshots/latest": {"schema_version": API_SCHEMA_VERSION},
         "/api/v1/alerts": {"limit": 10, "offset": 0},
         "/api/v1/forecasts": {"available": False},
+        "/api/v1/admin/status": {"admin": {"configured": False}},
+        "/api/v1/admin/config": {"active_version": None},
+        "/api/v1/admin/config/activate": {"version_id": "cfg-example"},
+        "/api/v1/observability": {"status": "operational"},
     }
     return {
         "openapi": "3.1.0",
@@ -214,7 +361,10 @@ def _openapi() -> dict[str, Any]:
             path: {"get": {"responses": {"200": {"description": "OK"}}, "x-example": example}}
             for path, example in examples.items()
         }
-        | {"/health": {"get": {"responses": {"200": {"description": "OK"}}}}},
+        | {
+            "/health": {"get": {"responses": {"200": {"description": "OK"}}}},
+            "/ready": {"get": {"responses": {"200": {"description": "Ready"}, "503": {"description": "Not ready"}}}},
+        },
     }
 
 
@@ -226,7 +376,8 @@ async def _send_json(
     cache_seconds: int | None = None,
 ) -> None:
     body = json.dumps(payload, sort_keys=True).encode("utf-8")
-    headers = [(b"content-type", b"application/json")]
+    headers = [(b"content-type", b"application/json"), (b"x-run-id", current_run_id().encode("ascii"))]
+    headers.extend((name.encode("ascii"), value.encode("ascii")) for name, value in SECURITY_HEADERS.items())
     if cache_seconds is not None:
         headers.append((b"cache-control", f"public, max-age={cache_seconds}".encode("ascii")))
     await send(
@@ -259,8 +410,7 @@ def _payload_summary(path: str, payload: dict[str, Any]) -> str:
 
 
 def _log(event: str, **fields: Any) -> None:
-    serialized = " ".join(f"{key}={value}" for key, value in fields.items())
-    print(f"[mwangaza.api] {event} {serialized}".rstrip(), flush=True)
+    emit(event, component="api", **fields)
 
 
 def _regional_risk(data: Any) -> list[dict[str, Any]]:

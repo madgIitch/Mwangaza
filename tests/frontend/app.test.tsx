@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadApiDashboard } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
@@ -58,6 +58,7 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("link", { name: "Active alerts" })).toHaveAttribute("href", "/alerts");
     expect(screen.getByRole("link", { name: "Reports and export" })).toHaveAttribute("href", "/reports");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
   });
 
   it("removes legacy hash anchors from the browser URL", () => {
@@ -95,6 +96,21 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Recent exports" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Report preview" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Report contents" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
+  });
+
+  it("renders about as a standalone methodology and project information screen", () => {
+    window.history.pushState({}, "", "/about");
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "About Mwangaza" })).toBeInTheDocument();
+    expect(screen.getByText(/satellite-powered drought early warning/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Data Sources" })).toBeInTheDocument();
+    expect(screen.getByText("Google Earth Engine")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "How Mwangaza Works" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Limitations" })).toBeInTheDocument();
+    expect(screen.getByText("Privacy Policy pending")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
   });
 
@@ -263,6 +279,86 @@ describe("React PWA dashboard", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("API unavailable"));
   });
+
+  it("loads the complete admin panel without credentials", async () => {
+    window.history.pushState({}, "", "/admin");
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(adminResponse())));
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Admin Configuration" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("Public demo mode. Changes are available without credentials.")).toBeInTheDocument());
+    expect(screen.getByLabelText("Warning action")).toBeEnabled();
+    expect(screen.queryByLabelText("Demo admin credential")).not.toBeInTheDocument();
+    expect(screen.getByText(/institutional identity and authorization/i)).toBeInTheDocument();
+  });
+
+  it("edits warning action and saves an append-only version without credentials", async () => {
+    window.history.pushState({}, "", "/admin");
+    const fetchMock = vi.fn(async (path: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(path);
+      if (url === "/api/v1/admin/config" && init?.method !== "POST") {
+        return jsonResponse(adminResponse());
+      }
+      if (url === "/api/v1/admin/config" && init?.method === "POST") {
+        return jsonResponse(adminResponse("cfg-saved-002", "draft", "Brief partners from admin panel"));
+      }
+      return jsonResponse(adminResponse());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    await waitFor(() => expect(screen.getByDisplayValue("Preposition supplies and brief partners")).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText("Warning action"), { target: { value: "Brief partners from admin panel" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save new version" }));
+
+    await waitFor(() => expect(screen.getByText(/Saved append-only version cfg-saved-002/)).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/admin/config", expect.objectContaining({ method: "POST" }));
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("authorization");
+    expect(screen.getByText("No refresh, forecast or Earth Engine call is triggered.")).toBeInTheDocument();
+  });
+
+  it("keeps admin history usable in low-bandwidth mode", async () => {
+    window.history.pushState({}, "", "/admin");
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      return jsonResponse(adminResponse());
+    }));
+
+    render(<App initialData={demoDashboard} initialLowBandwidth skipApiLoad />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Version history" })).toBeInTheDocument());
+    expect(screen.getByRole("columnheader", { name: "Version" })).toBeInTheDocument();
+    expect(screen.getAllByText("cfg-active-001").length).toBeGreaterThan(0);
+  });
+
+  it("shows technical readiness and metrics on a separate route", async () => {
+    window.history.pushState({}, "", "/technical");
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
+      schema_version: "mwangaza.api.v1",
+      run_id: "judge-run-123",
+      status: "operational",
+      readiness: { status: "ready", ready: true, checks: { database: "ok", cache: "optional" } },
+      metrics: {
+        requests_total: 12,
+        duration_ms_total: 240,
+        duration_ms_average: 20,
+        cache_hits: 3,
+        cache_misses: 1,
+        cache_hit_ratio: 0.75,
+        regions_processed: 8,
+        errors_total: 0,
+        active_alerts: 2
+      }
+    })));
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Technical status" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("operational")).toBeInTheDocument());
+    expect(screen.getByText("judge-run-123")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Dependency" })).toBeInTheDocument();
+  });
 });
 
 function jsonResponse(body: unknown): Response {
@@ -270,4 +366,51 @@ function jsonResponse(body: unknown): Response {
     ok: true,
     json: async () => body
   } as Response;
+}
+
+function adminResponse(versionId = "cfg-active-001", status = "active", warningAction = "Preposition supplies and brief partners") {
+  const configuration = {
+    schema_version: "mwangaza.admin.v1",
+    thresholds: {
+      threshold_version: "prototype-thresholds-v1",
+      domain_min: 0,
+      domain_max: 100,
+      bands: [
+        { level: "green", minimum: 0, maximum: 25 },
+        { level: "yellow", minimum: 25, maximum: 50 },
+        { level: "orange", minimum: 50, maximum: 75 },
+        { level: "red", minimum: 75, maximum: 100 }
+      ],
+      is_official: false,
+      label: "prototype-not-igad-official"
+    },
+    actions: {
+      recommendation_version: "actions-v1",
+      templates: {
+        green: { level: "green", action: "Continue routine monitoring", suggested_actor: "Analyst", urgency: "monitoring" },
+        watch: { level: "watch", action: "Prepare early action checklist", suggested_actor: "Program lead", urgency: "preparation" },
+        warning: { level: "warning", action: warningAction, suggested_actor: "Operations lead", urgency: "prepositioning" },
+        emergency: { level: "emergency", action: "Activate urgent coordination review", suggested_actor: "Incident lead", urgency: "urgent_activation" },
+        unknown: { level: "unknown", action: "Review data quality before intervention", suggested_actor: "Data lead", urgency: "data_review" }
+      }
+    }
+  };
+  const version = {
+    version_id: versionId,
+    created_at: "2026-07-17T20:00:00+00:00",
+    created_by: "demo-admin",
+    status,
+    content_hash: "1234567890abcdef",
+    configuration,
+    validation_errors: []
+  };
+  return {
+    schema_version: "mwangaza.api.v1",
+    admin_schema_version: "mwangaza.admin.v1",
+    active_version: status === "active" ? version : { ...version, version_id: "cfg-active-001", status: "active" },
+    saved_version: status === "draft" ? version : null,
+    versions: [version],
+    security: { access: "public", auth: "none", institutional_auth: false },
+    recalculation: { triggered: false, message: "Configuration changes do not refresh indicators, cache, forecasts or alerts." }
+  };
 }

@@ -418,3 +418,52 @@ Decisiones registradas:
 - **tests:** Cobertura frontend y gates JS definidos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-41-admin-configuration -->
+## 2026-07-17 · sprint-41-admin-configuration aprobado
+
+Contexto: se aprobó el spec `sprint-41-admin-configuration` (Sprint 41 - Admin Configuration).
+
+Decisiones registradas:
+
+- **auth_secrets:** El panel de hackathon es público y no usa credenciales; producción requerirá autenticación y autorización institucional.
+- **rollback_compat:** Defaults existentes se conservan.
+- **tests:** Cobertura API y frontend definida.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-42-observability -->
+## 2026-07-18 · sprint-42-observability aprobado
+
+Contexto: se aprobó el spec `sprint-42-observability` (Sprint 42 - Observability).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-43-security-and-privacy -->
+## 2026-07-18 · sprint-43-security-and-privacy aprobado
+
+Contexto: se aprobó el spec `sprint-43-security-and-privacy` (Sprint 43 - Security and Privacy).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-44-automated-testing -->
+## 2026-07-18 · sprint-44-automated-testing aprobado
+
+Contexto: se aprobó el spec `sprint-44-automated-testing` (Sprint 44 - Automated Testing).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-45-somalia-end-to-end-scenario -->
+## 2026-07-20 · sprint-45-somalia-end-to-end-scenario aprobado
+
+Contexto: se aprobó el spec `sprint-45-somalia-end-to-end-scenario` (Sprint 45 - Somalia End-to-End Scenario).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

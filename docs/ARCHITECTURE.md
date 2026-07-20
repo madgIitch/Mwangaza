@@ -1059,3 +1059,134 @@ Objetivo no negociable:
 - **edge_cases:** Responsive, low-bandwidth, i18n y payload parcial cubiertos.
 - **ui_states:** Paridad visible con Streamlit definida.
 
+<!-- harness:sprint-41-admin-configuration -->
+## sprint-41-admin-configuration · Sprint 41 - Admin Configuration
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/admin/**`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/audit/**`
+  - `src/mwangaza/db/**`
+  - `src/mwangaza/alerts/**`
+  - `src/mwangaza/actions/**`
+  - `config/thresholds/**`
+  - `config/actions/**`
+  - `tests/admin/**`
+  - `tests/api/**`
+  - `tests/audit/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Versiones append-only para umbrales y acciones.
+- **external_contracts:** `/api/v1/admin/**` y frontend React canónico.
+- **edge_cases:** Concurrencia, invalidación y no recalculo cubiertos.
+- **ui_states:** Acceso público, editor, validación, historial y modo lite.
+
+<!-- harness:sprint-42-observability -->
+## sprint-42-observability · Sprint 42 - Observability
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/observability/**`
+  - `tests/observability/**`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/contracts/**`
+  - `src/mwangaza/db/**`
+  - `tests/api/**`
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+<!-- harness:sprint-43-security-and-privacy -->
+## sprint-43-security-and-privacy · Sprint 43 - Security and Privacy
+
+
+
+### Scope aprobado
+
+  - `docs/security/**`
+  - `src/mwangaza/security/**`
+  - `tests/security/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `frontend/public/**`
+  - `.github/workflows/security.yml`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+<!-- harness:sprint-44-automated-testing -->
+## sprint-44-automated-testing · Sprint 44 - Automated Testing
+
+
+
+### Scope aprobado
+
+  - `tests/**`
+  - `.github/workflows/ci.yml`
+  - `.harness/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+<!-- harness:sprint-45-somalia-end-to-end-scenario -->
+## sprint-45-somalia-end-to-end-scenario · Sprint 45 - Somalia End-to-End Scenario
+
+
+
+### Scope aprobado
+
+  - `tests/e2e/test_somalia_scenario.py`
+  - `tests/fixtures/scenarios/somalia/**`
+  - `scripts/demo_somalia.py`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.github/workflows/**`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+

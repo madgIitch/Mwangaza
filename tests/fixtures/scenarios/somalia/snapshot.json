@@ -1,0 +1,15 @@
+{
+  "snapshot_id": "somalia-2026-03-demo-v1", "mode": "demo",
+  "region": {"country": "SOM", "name": "Somalia", "pilot_area": "Bay"},
+  "period": {"start": "2026-03-01", "end": "2026-03-31"},
+  "artifacts": {
+    "map": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "demo", "state": "accessible_table", "regions": [{"name": "Bay", "risk": "high"}]},
+    "trend": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "demo", "indicator": "rainfall_anomaly", "values": [-0.18, -0.31, -0.44]},
+    "score": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "simulated", "value": 0.78, "severity": "high"},
+    "quality": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "demo", "status": "usable", "coverage": 0.92},
+    "action": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "simulated", "title": "Verify water access and pre-position response supplies"},
+    "report": {"snapshot_id": "somalia-2026-03-demo-v1", "provenance": "simulated", "report_id": "report-somalia-2026-03-demo-v1", "format": "pdf-demo"}
+  },
+  "alert": {"alert_id": "alert-somalia-2026-03-demo-v1", "snapshot_id": "somalia-2026-03-demo-v1", "provenance": "simulated", "status": "active", "severity": "high"},
+  "notification": {"notification_id": "notification-somalia-2026-03-demo-v1", "snapshot_id": "somalia-2026-03-demo-v1", "status": "simulated", "channel": "outbox"}
+}

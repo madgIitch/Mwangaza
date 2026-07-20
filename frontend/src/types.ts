@@ -150,3 +150,82 @@ export interface PublicForecastsResponse {
   message: string;
   items: unknown[];
 }
+
+export interface AdminConfiguration {
+  schema_version: "mwangaza.admin.v1";
+  thresholds: {
+    threshold_version: string;
+    domain_min: number;
+    domain_max: number;
+    bands: Array<{ level: string; minimum: number; maximum: number }>;
+    is_official: boolean;
+    label: string;
+  };
+  actions: {
+    recommendation_version: string;
+    templates: Record<string, {
+      level: string;
+      action: string;
+      suggested_actor: string;
+      urgency: string;
+    }>;
+  };
+}
+
+export interface AdminConfigurationVersion {
+  version_id: string;
+  created_at: string;
+  created_by: string;
+  status: string;
+  content_hash: string;
+  configuration: AdminConfiguration;
+  validation_errors: string[];
+}
+
+export interface AdminConfigResponse {
+  schema_version: "mwangaza.api.v1";
+  admin_schema_version: "mwangaza.admin.v1";
+  active_version: AdminConfigurationVersion | null;
+  saved_version: AdminConfigurationVersion | null;
+  versions: AdminConfigurationVersion[];
+  security: {
+    access: "public";
+    auth: string;
+    institutional_auth: boolean;
+  };
+  recalculation: {
+    triggered: boolean;
+    message: string;
+  };
+}
+
+export interface AdminStatusResponse {
+  schema_version: "mwangaza.api.v1";
+  admin: {
+    access: "public";
+    auth: string;
+    institutional_auth: boolean;
+  };
+}
+
+export interface TechnicalStatusResponse {
+  schema_version: "mwangaza.api.v1";
+  run_id: string;
+  status: "operational" | "degraded";
+  readiness: {
+    status: "ready" | "not_ready";
+    ready: boolean;
+    checks: Record<string, "ok" | "optional" | "unavailable">;
+  };
+  metrics: {
+    requests_total: number;
+    duration_ms_total: number;
+    duration_ms_average: number;
+    cache_hits: number;
+    cache_misses: number;
+    cache_hit_ratio: number;
+    regions_processed: number;
+    errors_total: number;
+    active_alerts: number;
+  };
+}

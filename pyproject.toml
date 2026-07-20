@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "coverage[toml]>=7.6",
   "mypy>=1.10",
   "pytest>=8.0",
   "ruff>=0.5",
@@ -39,3 +40,19 @@ packages = ["mwangaza"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = [
+  "mwangaza.api",
+  "mwangaza.cache",
+  "mwangaza.contracts",
+  "mwangaza.observability",
+  "mwangaza.pipeline",
+  "mwangaza.security",
+]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+skip_covered = true

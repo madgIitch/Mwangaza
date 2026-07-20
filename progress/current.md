@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-39-low-bandwidth-mode - Sprint 39 - Low-Bandwidth Mode** - estado: `review_pending`.
+Feature: **sprint-45-somalia-end-to-end-scenario - Sprint 45 - Somalia End-to-End Scenario** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,17 +8,16 @@ Feature: **sprint-39-low-bandwidth-mode - Sprint 39 - Low-Bandwidth Mode** - est
 
 ## Siguiente accion
 
-- Preparar Sprint 40 PWA/migracion con el modo lite como contrato base. Cerrar con `node .harness/spec.mjs done sprint-39-low-bandwidth-mode` si pasa.
+- Smoke humano: ejecutar `python scripts/demo_somalia.py` en un entorno donde Python no este bloqueado y revisar el resumen del escenario. Cerrar con `node .harness/spec.mjs done sprint-45-somalia-end-to-end-scenario` si pasa.
 
 ## Ultimo resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | - | - | - |
+| 1 | PARCIAL | Python bloqueado por App Control | - | - |
 
-Validaciones ejecutadas hasta ahora:
+Validaciones ejecutadas:
 
-- `uv run python -m unittest tests.ui.test_dashboard_shell`
-- `uv run python -m compileall -q src tests app.py`
-- `uv run python -m unittest discover -s tests`
-- `node .harness\gates.mjs sprint-39-low-bandwidth-mode`
+- Fixture JSON valido y `git diff --check` sin errores.
+- 28 tests frontend, lint, typecheck y build pasan.
+- Los tests Python no pudieron ejecutarse: Windows App Control bloquea `python.exe`, incluido el entorno `.venv`.

@@ -142,3 +142,48 @@
 - Modo lite por `MWANGAZA_LOW_BANDWIDTH=1`.
 - Tabla accesible sin SVG/geometria, con reportes/export/API visibles.
 - Validado con UI, compile, suite completa y gate del harness.
+## 2026-07-17T21:05:00Z - #sprint-41-admin-configuration Sprint 41 - Admin Configuration -> review_pending
+
+- Panel `/admin` React con login demo, editor, version activa e historial.
+- API `/api/v1/admin/**` con hash PBKDF2, versiones append-only, validacion y auditoria saneada.
+- Validado con admin tests, frontend tests, suite Python completa, lint/typecheck/build frontend.
+
+## 2026-07-18T12:00:00Z - #sprint-41-admin-configuration Sprint 41 - Admin Configuration -> done
+
+- Panel revisado por el usuario y dependencia liberada para Sprint 42.
+
+## 2026-07-18T12:00:00Z - #sprint-42-observability Sprint 42 - Observability -> review_pending
+
+- Logs JSON, redaccion y correlacion `X-Run-ID` implementados.
+- Readiness, metricas y panel `/technical` añadidos.
+- Validado con 219 tests Python, 20 tests frontend, build y gates del harness.
+
+## 2026-07-18T12:05:00Z - #sprint-42-observability Sprint 42 - Observability -> done
+
+- Smoke visual confirmado por el usuario en `/technical`.
+
+## 2026-07-18T12:10:00Z - #sprint-43-security-and-privacy Sprint 43 - Security and Privacy -> review_pending
+
+- Scanner de secretos, limites HTTP, rate limiting y headers implementados.
+- Threat model y privacidad documentados sin reintroducir credenciales admin.
+- Validado con 225 tests Python, 20 frontend, scanner, build y gates.
+
+## 2026-07-18T12:14:00Z - #sprint-43-security-and-privacy Sprint 43 - Security and Privacy -> done
+
+- Sprint aceptado al continuar con la siguiente iteracion.
+
+## 2026-07-18T12:26:00Z - #sprint-44-automated-testing Sprint 44 - Automated Testing -> review_pending
+
+- CI por capas, fixtures deterministas, contratos, smoke React y coverage añadidos.
+- Coverage critico 80% con minimo bloqueante 70%.
+- Validado con 227 tests Python, 28 frontend, build y gates.
+
+## 2026-07-20T14:34:00Z - #sprint-44-automated-testing Sprint 44 - Automated Testing -> done
+
+- Sprint aceptado al solicitar la siguiente iteracion.
+
+## 2026-07-20T14:42:00Z - #sprint-45-somalia-end-to-end-scenario Sprint 45 - Somalia End-to-End Scenario -> review_pending
+
+- Escenario offline determinista, fixture versionada e idempotencia implementados.
+- 28 tests frontend, lint, typecheck, build, JSON y diff-check pasan.
+- Validacion Python pendiente porque Windows App Control bloquea el interprete local.
