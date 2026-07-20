@@ -467,3 +467,16 @@ Contexto: se aprobó el spec `sprint-45-somalia-end-to-end-scenario` (Sprint 45 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-46-northern-kenya-end-to-end-scenario -->
+## 2026-07-20 · sprint-46-northern-kenya-end-to-end-scenario aprobado
+
+Contexto: se aprobó el spec `sprint-46-northern-kenya-end-to-end-scenario` (Sprint 46 - Northern Kenya End-to-End Scenario).
+
+Decisiones registradas:
+
+- **auth_secrets:** El flujo sigue siendo completamente offline/demo: no realiza red, no inicializa GEE ni requiere credenciales externas. Los artefactos derivados deben quedar marcados como `demo` o `simulated`.
+- **rollback_compat:** Sprint 46 es estrictamente aditivo. Debe preservar el escenario Somalia y los contratos actuales de `/region`, `/reports` y notificaciones simuladas. Los campos específicos de Kenya solo pueden añadirse como opcionales o encapsulados en fixture/estado demo, sin convertirlos en requisitos obligatorios de contratos existentes.
+- **tests:** La cobertura mínima incluye: E2E offline del script; prueba de selección desde mapa y tabla accesible; correspondencia entre unidad activa y reporte; notificación en `en`, `sw` y `so` con fallback a inglés cuando falte plantilla; empate determinista; errores por fixture corrupto/ausente y reporte obligatorio ausente; verificación de ausencia de red y credenciales; e idempotencia sin duplicar alertas ni notificaciones.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

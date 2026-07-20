@@ -3,6 +3,7 @@ import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { activateAdminConfig, loadAdminConfig, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus, saveAdminConfig } from "./api";
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
+import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import type { AdminConfigResponse, AdminConfiguration, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
@@ -1199,6 +1200,8 @@ function RegionExplorer({
           </div>
         </div>
       </div>
+
+      {selectedRegion.id === "ken" ? <NorthernKenyaScenario /> : null}
 
       <div className="region-main-grid">
         <RegionRiskSurface data={data} selectedRegion={selectedRegion} onSelectRegion={onSelectRegion} />

@@ -187,3 +187,9 @@
 - Escenario offline determinista, fixture versionada e idempotencia implementados.
 - 28 tests frontend, lint, typecheck, build, JSON y diff-check pasan.
 - Validacion Python pendiente porque Windows App Control bloquea el interprete local.
+
+## 2026-07-20T15:28:00Z - #sprint-46-northern-kenya-end-to-end-scenario Sprint 46 - Northern Kenya End-to-End Scenario -> review_pending
+
+- Escenario offline de Turkana, Marsabit e Isiolo integrado en `/region`.
+- Reporte y notificación simulada siguen la unidad e idioma seleccionados.
+- 227 tests Python, 29 frontend, typecheck, lint, build y gates pasan.

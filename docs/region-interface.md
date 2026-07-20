@@ -170,6 +170,7 @@ Must state that Mwangaza is a decision-support prototype and estimates should be
 
 ## Implemented Now
 
+- Northern Kenya demo selection covers Turkana, Marsabit and Isiolo offline; the active district drives its detail, report reference and simulated notification language.
 - `/region` route renders a Region Explorer workspace in the React PWA.
 - Country selection updates region summary, indicators, alert, recommendations, trends and history from the existing `DashboardData`.
 - Low-bandwidth mode keeps a table-first shell.

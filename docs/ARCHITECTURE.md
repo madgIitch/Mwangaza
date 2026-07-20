@@ -1190,3 +1190,37 @@ Objetivo no negociable:
   - `spec/**`
   - `progress/**`
 
+<!-- harness:sprint-46-northern-kenya-end-to-end-scenario -->
+## sprint-46-northern-kenya-end-to-end-scenario · Sprint 46 - Northern Kenya End-to-End Scenario
+
+
+
+### Scope aprobado
+
+  - `scripts/demo_kenya.py`
+  - `.demo/**`
+  - `docs/region-interface.md`
+  - `docs/reports-interface.md`
+  - `docs/notification-simulator.md`
+  - `docs/i18n.md`
+  - `docs/README.md`
+  - `spec/sprint-46-northern-kenya-end-to-end-scenario-*/**`
+  - `src/**/demo/**`
+  - `src/**/region*/**`
+  - `src/**/reports*/**`
+  - `src/**/notifications/**`
+  - `frontend/src/routes/region/**`
+  - `frontend/src/routes/reports/**`
+  - `frontend/src/components/**`
+  - `tests/demo/**`
+  - `tests/ui/**`
+  - `tests/notifications/**`
+  - `tests/reports/**`
+
+### Contexto técnico
+
+- **data_model:** El escenario usa exactamente tres unidades subnacionales estables: Turkana (`KEN-023`), Marsabit (`KEN-010`) e Isiolo (`KEN-011`), todas enlazadas al `snapshot_id` común `northern-kenya-2026-03-demo-v1`. Turkana es la unidad destacada por mayor severidad. Cada unidad expone `unit_id`, nombre, severidad, score e indicadores, y mapa, detalle, reporte, alerta y notificación deben referenciar conjuntamente `snapshot_id` y `unit_id`. El estado demo idempotente se persiste por esos identificadores.
+- **external_contracts:** La entrada principal verificable es `python scripts/demo_kenya.py`, con fixture local versionado y estado por defecto en `.demo/kenya-state.json`. El JSON de salida debe incluir como mínimo `status`, `mode`, `offline`, `snapshot_id`, `units`, `selected_unit`, `highlighted_unit`, `detail`, `report`, `alert`, `notification`, `requested_language`, `effective_language` y `warnings`. No debe realizar llamadas de red ni depender de credenciales.
+- **edge_cases:** La unidad de mayor severidad se resuelve determinísticamente por severidad, luego por score descendente y finalmente por `unit_id` ascendente. Una unidad con datos parciales sigue siendo seleccionable y muestra `unknown` en campos ausentes. Una unidad sin geometría debe seguir funcionando vía tabla accesible. La ausencia de reporte obligatorio bloquea la finalización del escenario.
+- **ui_states:** La vista debe mostrar de forma visible el nombre y `unit_id` activos, badge de severidad, score e indicadores justificativos. El mapa o la tabla accesible permiten cambiar la selección sin recarga remota. El reporte debe reflejar el mismo `unit_id` de la unidad activa. La vista previa de notificación debe exponer idioma solicitado y efectivo, incluyendo fallback.
+

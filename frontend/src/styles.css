@@ -1458,6 +1458,13 @@ td {
   gap: 14px;
 }
 
+.kenya-scenario { margin: 1rem 0; padding: 1.1rem; border: 1px solid var(--border); border-radius: 18px; background: #fff; }
+.kenya-scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.kenya-scenario-grid > div { padding: .9rem; background: #f6f8f4; border-radius: 12px; }
+.kenya-scenario-grid button { display: flex; width: 100%; justify-content: space-between; margin: .35rem 0; padding: .65rem; border: 1px solid #d5ddd3; border-radius: 8px; background: #fff; }
+.kenya-scenario-grid button[data-selected="true"] { border-color: #174f3a; box-shadow: inset 3px 0 #174f3a; }
+.kenya-scenario-grid button small { margin-left: .5rem; }
+
 .region-map-panel,
 .region-summary,
 .region-lower-grid section {

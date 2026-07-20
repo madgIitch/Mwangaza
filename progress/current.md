@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-45-somalia-end-to-end-scenario - Sprint 45 - Somalia End-to-End Scenario** - estado: `review_pending`.
+Feature: **sprint-46-northern-kenya-end-to-end-scenario - Sprint 46 - Northern Kenya End-to-End Scenario** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,16 +8,16 @@ Feature: **sprint-45-somalia-end-to-end-scenario - Sprint 45 - Somalia End-to-En
 
 ## Siguiente accion
 
-- Smoke humano: ejecutar `python scripts/demo_somalia.py` en un entorno donde Python no este bloqueado y revisar el resumen del escenario. Cerrar con `node .harness/spec.mjs done sprint-45-somalia-end-to-end-scenario` si pasa.
+- Smoke humano: abrir `/region`, seleccionar Kenya y comprobar Turkana, Marsabit e Isiolo, el reporte ligado a la unidad y los idiomas EN/SW/SO. Cerrar con `node .harness/spec.mjs done sprint-46-northern-kenya-end-to-end-scenario` si pasa.
 
 ## Ultimo resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | PARCIAL | Python bloqueado por App Control | - | - |
+| 1 | OK | - | - | - |
 
 Validaciones ejecutadas:
 
-- Fixture JSON valido y `git diff --check` sin errores.
-- 28 tests frontend, lint, typecheck y build pasan.
-- Los tests Python no pudieron ejecutarse: Windows App Control bloquea `python.exe`, incluido el entorno `.venv`.
+- 227 tests Python y 29 tests frontend pasan.
+- Typecheck, lint, build y gates del harness pasan.
+- Smoke CLI repetido: estado completo, offline e idempotente.

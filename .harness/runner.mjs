@@ -40,6 +40,7 @@ function runClaude(prompt, write) {
 function runCodex(prompt, write) {
   const sandbox = write ? "workspace-write" : "read-only";
   const args = ["exec", "-s", sandbox];
+  if (process.env.HARNESS_CODEX_MODEL) args.push("--model", process.env.HARNESS_CODEX_MODEL);
   if (UNATTENDED || write) args.push("-c", "approval_policy='never'");
   args.push("-"); // '-' = leer el prompt completo desde stdin
   return { text: exec("codex", args, prompt).trim(), cost: null };

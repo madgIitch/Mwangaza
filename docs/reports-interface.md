@@ -139,6 +139,7 @@ Current implementation shows `Executive PDF` as a template placeholder.
 
 ## Implemented Now
 
+- The Northern Kenya demo exposes a stable simulated report reference keyed by the selected `unit_id`.
 - `/reports` route renders Reports Center as an independent screen.
 - Search, region, report type and status filters operate on local report rows.
 - Selecting a report updates selected detail, preview, recent exports and metadata.

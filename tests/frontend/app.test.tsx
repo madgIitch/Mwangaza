@@ -136,6 +136,18 @@ describe("React PWA dashboard", () => {
     expect(document.querySelector(".region-svg-map")).not.toBeInTheDocument();
   });
 
+  it("selects Northern Kenya districts and keeps report and notification aligned", () => {
+    window.history.pushState({}, "", "/region");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+    fireEvent.change(screen.getByLabelText("Country", { selector: "select" }), { target: { value: "ken" } });
+    expect(screen.getByRole("heading", { name: "Northern Kenya subnational scenario" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Marsabit/ }));
+    expect(screen.getByRole("heading", { name: "Marsabit · KEN-010" })).toBeInTheDocument();
+    expect(screen.getByText(/report-KEN-010-demo/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Notification language"), { target: { value: "sw" } });
+    expect(screen.getByText(/Kagua upatikanaji wa maji katika Marsabit/)).toBeInTheDocument();
+  });
+
   it("renders a low-bandwidth table shell", () => {
     render(<App initialData={demoDashboard} initialLowBandwidth skipApiLoad />);
 

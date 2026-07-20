@@ -12,3 +12,6 @@ does not duplicate messages.
 
 Only configured severities create notifications. The dashboard shows a simulated
 preview and outbox count, not a real send button.
+
+The Northern Kenya demo includes local `en`, `sw` and `so` templates. Missing
+languages fall back to English with requested/effective language metadata.

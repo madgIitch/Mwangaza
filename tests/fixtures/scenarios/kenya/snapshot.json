@@ -1,0 +1,10 @@
+{
+  "snapshot_id": "northern-kenya-2026-03-demo-v1",
+  "mode": "demo",
+  "units": [
+    {"unit_id":"KEN-023","name":"Turkana","severity":"critical","score":0.84,"indicators":{"ndvi_anomaly":-0.42,"rainfall_anomaly":-0.48,"temperature_anomaly":0.31},"report":{"report_id":"report-KEN-023-demo","provenance":"simulated"}},
+    {"unit_id":"KEN-010","name":"Marsabit","severity":"warning","score":0.68,"indicators":{"ndvi_anomaly":-0.31,"rainfall_anomaly":-0.35,"temperature_anomaly":0.22},"report":{"report_id":"report-KEN-010-demo","provenance":"simulated"}},
+    {"unit_id":"KEN-011","name":"Isiolo","severity":"watch","score":0.51,"indicators":{"ndvi_anomaly":-0.2,"rainfall_anomaly":-0.24,"temperature_anomaly":0.16},"report":{"report_id":"report-KEN-011-demo","provenance":"simulated"}}
+  ],
+  "templates": {"en":"Review water access in {unit}.","sw":"Kagua upatikanaji wa maji katika {unit}.","so":"Hubi helitaanka biyaha ee {unit}."}
+}
