@@ -3123,7 +3123,7 @@
     {
       "id": "sprint-45-somalia-end-to-end-scenario",
       "name": "Sprint 45 - Somalia End-to-End Scenario",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.3",
       "estimated_hours": 5,
@@ -3151,12 +3151,12 @@
       ],
       "deliverable": "Escenario Somalia ejecutable de extremo a extremo.",
       "acceptance": [
-        "AC1: El escenario empieza con un snapshot identificado y termina con alerta persistida.",
-        "AC2: La demo muestra mapa, tendencia, score, calidad, acción y reporte.",
-        "AC3: Las cifras simuladas se etiquetan.",
-        "AC4: Reejecutar el escenario no duplica alertas ni notificaciones.",
-        "AC5: Existe un comando para preparar el estado.",
-        "AC6: El flujo puede completarse sin red mediante fixtures de demo."
+        "AC1: El comando `python scripts/demo_somalia.py` completa sin red un recorrido desde un `snapshot_id` estable hasta una alerta persistida y devuelve código cero.",
+        "AC2: El resultado verificable incluye mapa o degradación accesible, tendencia, score, calidad, acción recomendada y reporte, todos vinculados al snapshot de origen.",
+        "AC3: Cada cifra o artefacto procedente de fixtures se etiqueta de forma visible como `demo` o `simulated`, sin aparentar datos operativos en vivo.",
+        "AC4: Ejecutar dos veces el mismo snapshot produce el mismo resultado lógico y no duplica alertas ni notificaciones simuladas.",
+        "AC5: Fixtures ausentes o inválidas y etapas incompletas terminan con código distinto de cero, mensaje accionable y sin presentar el escenario como completado.",
+        "AC6: Un test E2E automatizado ejecuta el flujo con fixtures locales, sin Earth Engine, red, credenciales ni destinatarios reales."
       ],
       "scope": [
         "tests/e2e/test_somalia_scenario.py",
@@ -3173,7 +3173,13 @@
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-20T14:36:04.640Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:59a437038d51cb2ab9ae67317f8b3378b32f87cd8f436f01628d9e3b5ac8886d",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-20T14:36:04.774Z"
     },
     {
       "id": "sprint-46-northern-kenya-end-to-end-scenario",
