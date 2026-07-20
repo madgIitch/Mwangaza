@@ -3379,7 +3379,7 @@
     {
       "id": "sprint-49-public-readme",
       "name": "Sprint 49 - Public README",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.7",
       "estimated_hours": 5,
@@ -3407,29 +3407,34 @@
       ],
       "deliverable": "README público completo.",
       "acceptance": [
-        "AC1: El README explica problema, usuarios, early action y alcance del piloto.",
-        "AC2: Incluye requisitos, instalación, demo offline, modo conectado y tests.",
-        "AC3: Incluye diagrama de arquitectura y lista de tecnologías.",
-        "AC4: Distingue funcionalidades implementadas de roadmap.",
-        "AC5: Incluye limitaciones y uso responsable.",
-        "AC6: Los comandos documentados se verifican en CI o prueba manual."
+        "El `README.md` abre con una descripción pública del problema, los usuarios objetivo, el propósito de early action y el alcance explícito del piloto actual, sin mezclar roadmap con funcionalidad disponible.",
+        "El `README.md` incluye secciones separadas y tituladas para `Requirements`, `Installation`, `Offline demo`, `Connected mode`, `Architecture`, `Technology stack`, `Implemented today`, `Roadmap`, `Limitations`, `Responsible use` y `Testing/verification`.",
+        "La sección `Offline demo` documenta comandos reproducibles y sin red para al menos un recorrido demo soportado actualmente, indicando el modo demo y cualquier prerequisito local no secreto.",
+        "La sección `Connected mode` documenta únicamente los prerequisitos públicos y variables necesarias para habilitar integraciones reales, sin exponer secretos ni valores sensibles; cualquier detalle sensible se deriva a la documentación de configuración/seguridad existente.",
+        "La sección `Architecture` contiene un diagrama textual o Mermaid renderizable en GitHub que describe frontend, API, fuentes de datos/modos (`live`, `cache`, `demo`) y flujos principales.",
+        "La sección `Technology stack` enumera las tecnologías realmente usadas en el repositorio y visibles en los entrypoints o workflows actuales.",
+        "La sección `Implemented today` enumera solo capacidades ya entregadas en la release actual; la sección `Roadmap` enumera únicamente capacidades futuras o no garantizadas.",
+        "La sección `Limitations` explica al menos las restricciones de cobertura/piloto, dependencia de datos demo vs operativos y cualquier limitación relevante de conectividad o credenciales.",
+        "La sección `Responsible use` indica que las recomendaciones son prototipo de apoyo a decisión y no órdenes oficiales, médicas ni humanitarias automáticas.",
+        "Cada comando publicado en el README queda trazado a una evidencia verificable: o bien aparece ejecutado en CI (`.github/workflows/ci.yml`), o bien se referencia explícitamente una verificación manual reproducible versionada en el repo.",
+        "No quedan en el README comandos obsoletos, nombres de componentes que contradigan `docs/ARCHITECTURE.md`, ni promesas de funcionalidades no implementadas."
       ],
       "scope": [
         "README.md",
         "docs/ARCHITECTURE.md",
-        "assets/screenshots/**",
-        "pyproject.toml",
-        "requirements*.txt",
+        "docs/README.md",
+        "docs/configuration.md",
+        "docs/security/**",
+        ".github/workflows/ci.yml",
         "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
+        "tests/**",
         "spec/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:73ec2e47a756241bc6b3ad8b54c384409bfbb743250836997290cc6048845c85",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-20T16:02:50.637Z"
     },
     {
       "id": "sprint-50-landing-page",
