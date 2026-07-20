@@ -3323,7 +3323,7 @@
     {
       "id": "sprint-48-data-provenance-documentation",
       "name": "Sprint 48 - Data Provenance Documentation",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.6",
       "estimated_hours": 5,
@@ -3351,29 +3351,30 @@
       ],
       "deliverable": "Documentación de procedencia y uso responsable.",
       "acceptance": [
-        "AC1: Cada fuente tiene nombre, variable, unidad, resolución, frecuencia y licencia o términos aplicables.",
-        "AC2: Se documenta la diferencia entre observación, anomalía, score, forecast y exposición.",
-        "AC3: Los umbrales de prototipo se presentan como configurables y no oficiales.",
-        "AC4: Se explican nubes, cobertura, latencia y agregación.",
-        "AC5: El diagrama conecta fuente, transformación, cache, API, UI y reporte.",
-        "AC6: La página About enlaza a esta documentación."
+        "Existe un recurso canónico accesible desde la UI en una URL estable definida por el spec, enlazado visiblemente desde `/about` con texto explícito sobre metodología o procedencia de datos.",
+        "La documentación enumera como mínimo cada fuente aprobada para esta release y, para cada una, muestra `source_name`, `variable_or_indicator`, `unit`, `spatial_or_temporal_resolution`, `update_frequency` y `license_or_terms`; si algún campo no aplica, se muestra un valor explícito como `Not available` o `Pending`, nunca silencio.",
+        "La documentación define de forma separada y no ambigua los términos `observation`, `anomaly`, `score`, `forecast` y `exposure`, incluyendo una frase de uso y cómo se relacionan dentro del producto.",
+        "Todos los umbrales de prototipo aparecen etiquetados explícitamente como configurables y no oficiales; no se presenta ningún threshold como estándar oficial de IGAD ni como warning público oficial.",
+        "La documentación explica, con texto visible, cómo afectan `clouds or QA masking`, `coverage`, `latency` y `aggregation` a la interpretación de cada indicador o de la cadena metodológica.",
+        "Incluye un diagrama o esquema visible que conecte, en ese orden lógico, `source`, `transformation`, `cache`, `API`, `UI` y `report`, usando esos conceptos o equivalentes inequívocos.",
+        "La pantalla `/about` contiene un enlace navegable hacia esta documentación y los tests verifican tanto la presencia del enlace como la renderización de al menos un encabezado único de la documentación de procedencia.",
+        "La documentación deja explícito que `exposure` significa población potencialmente expuesta y no población confirmada afectada, y que la fuente/año/resolución de exposición solo se muestran cuando existan datos disponibles para esta release."
       ],
       "scope": [
-        "docs/data-sources/**",
-        "docs/methodology/**",
-        "assets/diagrams/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "docs/about-interface.md",
+        "docs/contracts.md",
+        "docs/thresholds.md",
+        "docs/ARCHITECTURE.md",
+        "docs/data-provenance.md",
+        "frontend/src/App.tsx",
+        "frontend/src/styles.css",
+        "tests/frontend/app.test.tsx",
+        "tests/frontend/smoke.test.tsx"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:fc106485bf0df8cec495482dca44b33be3af591c42b6190d341273267a6d6053",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-20T15:55:37.414Z"
     },
     {
       "id": "sprint-49-public-readme",
