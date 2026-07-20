@@ -4,6 +4,7 @@ import { activateAdminConfig, loadAdminConfig, loadApiDashboardDetails, loadApiD
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
+import { LandingPage } from "./pages/LandingPage";
 import type { AdminConfigResponse, AdminConfiguration, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
@@ -120,6 +121,8 @@ export function App({
   );
   const route = window.location.pathname;
   const isOverviewRoute = route === "/" || route === "/overview";
+
+  if (route === "/landing") return <LandingPage />;
 
   return (
     <div className="app-shell" data-low-bandwidth={lowBandwidth ? "true" : "false"}>
@@ -1362,6 +1365,9 @@ function stripUiGeometry(region: RegionRisk): RegionRisk {
 
 function shouldLoadApiByDefault(): boolean {
   const params = new URLSearchParams(window.location.search);
+  if (params.get("demo") === "1") {
+    return false;
+  }
   return import.meta.env.MODE === "api" || params.get("api") === "1";
 }
 

@@ -37,6 +37,18 @@ describe("React PWA dashboard", () => {
     expect(screen.getByLabelText("Overview risk map")).toBeInTheDocument();
   });
 
+  it("keeps the explicit demo route isolated from the live API", () => {
+    window.history.pushState({}, "", "/overview?demo=1&api=1");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Demo data");
+    expect(screen.getByRole("status")).toHaveTextContent("mwangaza-offline-demo-v1");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("renders Region Explorer as an internal app screen on /region", () => {
     window.history.pushState({}, "", "/region");
 

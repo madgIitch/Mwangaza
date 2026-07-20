@@ -199,3 +199,7 @@
 - Activación explícita con `MWANGAZA_MODE=demo`, baseline y reset idempotente.
 - Banner demo persistente y metadatos API aditivos.
 - 229 tests Python, 29 frontend, typecheck, lint, build y gates pasan.
+# 2026-07-20T16:19:00Z - #sprint-50-landing-page Sprint 50 - Landing Page -> review_pending
+
+- Landing pública en `/landing`, CTAs configurables, ruta aditiva y diseño responsive.
+- 232 tests Python, 33 frontend, typecheck, lint, build y gates pasan.

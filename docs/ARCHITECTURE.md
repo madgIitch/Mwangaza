@@ -1311,3 +1311,29 @@ Objetivo no negociable:
 - **edge_cases:** La spec debe fijar una ruta canónica basada en `uv` y `npm`, documentando equivalentes claros para PowerShell y shells POSIX cuando difiera la sintaxis de variables de entorno. `make` puede aparecer como atajo opcional, pero no como requisito universal. También debe quedar explícito que el README público solo promete recorridos demo soportados actualmente, incluyendo los escenarios versionados de Somalia y Northern Kenya.
 - **ui_states:** La feature no cambia la UI. El README solo debe describir estados ya existentes: demo/offline, conectado, limitaciones y roadmap, sin introducir nuevos estados visuales ni pantallas no implementadas.
 
+<!-- harness:sprint-50-landing-page -->
+## sprint-50-landing-page · Sprint 50 - Landing Page
+
+
+
+### Scope aprobado
+
+  - `frontend/src/**`
+  - `frontend/public/**`
+  - `frontend/index.html`
+  - `frontend/src/router/**`
+  - `frontend/src/config/**`
+  - `frontend/src/components/**`
+  - `frontend/src/pages/**`
+  - `tests/frontend/**`
+  - `docs/about-interface.md`
+  - `README.md`
+  - `spec/sprint-50-landing-page-*/**`
+
+### Contexto técnico
+
+- **data_model:** La configuración pública de la landing se define en `frontend/src/config/landing.ts` con los campos `dashboard`, `github` y `demo`. Cada valor debe ser una URL absoluta HTTPS o una ruta interna que empiece por `/`. El componente de la landing admite configuración inyectable en tests para verificar resolución de CTAs por entorno sin depender de secretos.
+- **external_contracts:** La landing vive en la ruta pública `/landing` y es estrictamente aditiva. El CTA principal abre `/overview`. La navegación secundaria enlaza `About`, `GitHub` y `demo` desde la configuración pública. `/` y las rutas operativas existentes conservan su comportamiento actual.
+- **edge_cases:** La validación responsive cubre 320 px de ancho mínimo y breakpoints de 375/768/1280. Ningún contenedor puede introducir overflow horizontal; textos largos deben hacer wrapping. Las listas de pilotos y limitaciones crecen verticalmente y cualquier grid colapsa a una sola columna en móvil estrecho.
+- **ui_states:** La landing no tiene estado de carga ni dependencias remotas. El contenido principal es estático/versionado y no depende de la disponibilidad de los CTAs opcionales. Los CTAs no disponibles se omiten sin mensaje de error y sin dejar huecos visuales.
+

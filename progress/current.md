@@ -1,23 +1,19 @@
-# Sesion actual
+# Sesión actual
 
-Feature: **sprint-47-offline-demo-fallback - Sprint 47 - Offline Demo Fallback** - estado: `review_pending`.
+Feature: **sprint-50-landing-page - Sprint 50 - Landing Page** - estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
 - intentos: 1
 
-## Siguiente accion
+## Siguiente acción
 
-- Smoke humano: arrancar con `MWANGAZA_MODE=demo`, navegar todas las rutas y verificar el banner persistente; ejecutar dos veces `python scripts/reset_demo.py`. Cerrar con `node .harness/spec.mjs done sprint-47-offline-demo-fallback` si pasa.
+- Smoke humano: abrir `/landing` a 1440 px y 320 px, validar CTAs, ausencia de overflow y conservación de rutas. Cerrar con `node .harness/spec.mjs done sprint-50-landing-page` si pasa.
 
-## Ultimo resultado
+## Último resultado
 
-| intento | resultado | gate fallido | tts(s) | coste |
-|--:|--|--|--:|--:|
-| 1 | OK | - | - | - |
+| intento | resultado | gate fallido |
+|--:|--|--|
+| 1 | OK | - |
 
-Validaciones ejecutadas:
-
-- 229 tests Python y 29 tests frontend pasan.
-- Typecheck, lint, build y gates del harness pasan.
-- Reset demo y metadatos API validados; production nunca cae silenciosamente a demo.
+Validaciones ejecutadas: 232 tests Python, 33 tests frontend, typecheck, lint, build y gates del harness.

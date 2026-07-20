@@ -519,3 +519,16 @@ Decisiones registradas:
 - **tests:** La verificación mínima queda cerrada: cada comando publicado en el README debe estar cubierto por CI o por una verificación manual reproducible versionada en `progress/review_sprint-49-public-readme.md`. Los comandos de calidad deben mapearse a CI o al smoke versionado del Sprint 49; los arranques y escenarios pueden validarse manualmente si la evidencia queda documentada.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-50-landing-page -->
+## 2026-07-20 · sprint-50-landing-page aprobado
+
+Contexto: se aprobó el spec `sprint-50-landing-page` (Sprint 50 - Landing Page).
+
+Decisiones registradas:
+
+- **auth_secrets:** La landing es pública, no depende de Earth Engine y no requiere credenciales `MWANGAZA_GEE_*`. La configuración de enlaces usa solo valores públicos no sensibles definidos en código versionado.
+- **rollback_compat:** La feature es estrictamente aditiva: deben preservarse intactos `/`, `/overview`, `/region`, `/alerts`, `/reports`, `/about`, `/admin`, `/technical`, el banner demo y los contratos existentes. Solo se añade `/landing` junto con sus assets y configuración pública.
+- **tests:** Quedan como mínimos bloqueantes: smoke de contenido visible con exactamente tres capacidades; verificación de URLs configuradas y omisión de CTAs inválidos; prueba de que `/landing` es aditiva y no altera rutas existentes; comprobación CSS/DOM a 320 px sin overflow horizontal; ausencia de inicialización o llamadas remotas/GEE; y prueba que rechaza claims cuantitativos sin cita visible o referencia explícita aprobada.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

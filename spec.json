@@ -3439,7 +3439,7 @@
     {
       "id": "sprint-50-landing-page",
       "name": "Sprint 50 - Landing Page",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.9.8",
       "estimated_hours": 5,
@@ -3467,29 +3467,32 @@
       ],
       "deliverable": "Landing page pública con enlaces de entrega.",
       "acceptance": [
-        "AC1: La página muestra `Mwangaza - Bringing Light to Early Action`.",
-        "AC2: Incluye problema, solución, tres capacidades, pilotos y limitaciones.",
-        "AC3: Los enlaces a dashboard, GitHub y demo son configurables.",
-        "AC4: La página carga sin depender de Earth Engine.",
-        "AC5: La experiencia móvil no tiene scroll horizontal.",
-        "AC6: Los claims de impacto no incluyen cifras no citadas o simuladas como reales."
+        "La landing pública muestra literalmente `Mwangaza - Bringing Light to Early Action` en el hero o encabezado principal visible sin interacción.",
+        "La landing incluye secciones distinguibles y visibles para `Problem`, `Solution`, `Capabilities` (exactamente 3 capacidades resumidas), `Pilots` y `Limitations`.",
+        "Los enlaces `dashboard`, `github` y `demo` se resuelven desde una configuración pública aprobada y cada CTA usa exactamente la URL configurada para ese entorno.",
+        "La landing renderiza y navega sin inicializar Google Earth Engine ni requerir credenciales `MWANGAZA_GEE_*`; con la app en modo demo/offline sigue cargando correctamente.",
+        "En un viewport móvil aprobado por spec no aparece scroll horizontal en `body` ni en el contenedor principal de la landing.",
+        "Cualquier claim de impacto cuantitativo mostrado en la landing incluye cita visible o referencia explícita aprobada; si no existe cita, el texto permanece cualitativo y no presenta cifras simuladas como reales.",
+        "Si falta o es inválida la configuración de un CTA, la landing aplica el comportamiento de fallback aprobado por spec de forma consistente y sin romper el layout.",
+        "La introducción de la landing no rompe las rutas existentes de la PWA ni sustituye contenido operativo aprobado salvo decisión explícita del spec."
       ],
       "scope": [
-        "landing/**",
-        "assets/brand/**",
-        "docs/branding.md",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
-        "docs/**",
-        "spec/**",
-        "progress/**"
+        "frontend/src/**",
+        "frontend/public/**",
+        "frontend/index.html",
+        "frontend/src/router/**",
+        "frontend/src/config/**",
+        "frontend/src/components/**",
+        "frontend/src/pages/**",
+        "tests/frontend/**",
+        "docs/about-interface.md",
+        "README.md",
+        "spec/sprint-50-landing-page-*/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:e0b7efd4790bf628d3e8fab6713b1595898ba6fcaaff2788f9c2d06d36473eac",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-20T16:11:23.949Z"
     },
     {
       "id": "sprint-51-pitch-deck",
