@@ -506,3 +506,16 @@ Decisiones registradas:
 - **tests:** Los tests deben verificar como mínimo: existencia y navegación de `/about/provenance`; presencia del enlace `Data provenance and methodology` en `/about`; renderizado de al menos un encabezado único de la documentación; presencia de las entradas mínimas MODIS NDVI, CHIRPS rainfall, MODIS LST, límites administrativos y exposición poblacional; completitud de campos obligatorios del catálogo; definiciones separadas de `observation`, `anomaly`, `score`, `forecast` y `exposure`; aviso visible de que los thresholds son configurables y no oficiales; y un esquema/cadena inequívoca `source -> transformation -> cache -> API -> UI -> report`.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-49-public-readme -->
+## 2026-07-20 · sprint-49-public-readme aprobado
+
+Contexto: se aprobó el spec `sprint-49-public-readme` (Sprint 49 - Public README).
+
+Decisiones registradas:
+
+- **auth_secrets:** La sección pública solo puede listar nombres de variables y prerequisitos públicos. No debe incluir valores, claves, blobs JSON ni tutoriales de creación de credenciales; cualquier detalle sensible se deriva a `docs/configuration.md` y `docs/security/**`.
+- **rollback_compat:** Se permite reestructurar completamente el README actual porque está obsoleto, pero deben conservarse anchors públicos razonables para `Requirements`, `Installation`, `Architecture`, `Testing`, `Configuration`, `Limitations` y `Roadmap`. También debe evitarse romper expectativas de onboarding ya trazadas desde CI, `docs/` o revisiones versionadas.
+- **tests:** La verificación mínima queda cerrada: cada comando publicado en el README debe estar cubierto por CI o por una verificación manual reproducible versionada en `progress/review_sprint-49-public-readme.md`. Los comandos de calidad deben mapearse a CI o al smoke versionado del Sprint 49; los arranques y escenarios pueden validarse manualmente si la evidencia queda documentada.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -1286,3 +1286,28 @@ Objetivo no negociable:
 - **edge_cases:** La documentación debe separar de forma explícita las variantes `live`, `cache` y `demo` cuando cambien procedencia, latencia o cobertura. `demo` y cualquier dato simulated deben quedar claramente diferenciados de los datos operativos. `cache` conserva la procedencia original y añade la antigüedad. Si una misma variable usa distintas fuentes o coberturas según modo o país, el catálogo debe reflejar esa variante sin ambigüedad. `exposure` solo muestra fuente/año/resolución cuando existan datos disponibles para esta release.
 - **ui_states:** `/about` debe mostrar un CTA visible con el texto `Data provenance and methodology` dentro de la sección Methodology. Ese enlace navega a la vista dedicada `/about/provenance`, que debe renderizar de forma visible el catálogo, las definiciones, las limitaciones, los umbrales etiquetados como no oficiales/configurables y un diagrama de linaje. Si existe contenido pendiente de verificación, la advertencia debe ser visible en esa misma vista.
 
+<!-- harness:sprint-49-public-readme -->
+## sprint-49-public-readme · Sprint 49 - Public README
+
+
+
+### Scope aprobado
+
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/README.md`
+  - `docs/configuration.md`
+  - `docs/security/**`
+  - `.github/workflows/ci.yml`
+  - `Makefile`
+  - `tests/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** La feature sigue siendo documental y no introduce contratos de datos nuevos. El README debe apoyarse en los modelos y catálogos ya documentados en `docs/`, incluyendo la separación entre modos `live`, `cache` y `demo`, sin redefinir payloads ni estructuras.
+- **external_contracts:** La spec ya puede fijar los entrypoints y comandos públicos canónicos que el README puede prometer: `uv sync`, `npm install`, `MWANGAZA_MODE=demo` + `uv run uvicorn mwangaza.api.app:app`, `npm run dev`, `scripts/demo_somalia.py`, `scripts/demo_kenya.py`, `scripts/reset_demo.py`, `uv run python -m unittest discover -s tests`, `npm test`, `npm run typecheck`, `npm run lint` y `npm run build`. El README no debe publicar comandos obsoletos ni nombres que contradigan `docs/ARCHITECTURE.md`.
+- **edge_cases:** La spec debe fijar una ruta canónica basada en `uv` y `npm`, documentando equivalentes claros para PowerShell y shells POSIX cuando difiera la sintaxis de variables de entorno. `make` puede aparecer como atajo opcional, pero no como requisito universal. También debe quedar explícito que el README público solo promete recorridos demo soportados actualmente, incluyendo los escenarios versionados de Somalia y Northern Kenya.
+- **ui_states:** La feature no cambia la UI. El README solo debe describir estados ya existentes: demo/offline, conectado, limitaciones y roadmap, sin introducir nuevos estados visuales ni pantallas no implementadas.
+
