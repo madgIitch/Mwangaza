@@ -85,6 +85,8 @@ Hover/focus details should include district/region name, alert level, score, NDV
 
 The React implementation renders validated ADM1 boundaries from local assets and overlays only matching API observations. If a validated boundary asset is unavailable it shows an explicit unavailable state; it must not draw the coarse prototype bounding boxes as if they were geography. Polygon winding is normalized for the D3 projection before rendering so the country fits the viewport correctly.
 
+The overlay join is exact on geoBoundaries `shapeISO` → API `boundary_iso`. Name matching is intentionally not used. Tooltips show the unit's own score, NDVI and rainfall values; any missing, non-conclusive or mismatched unit remains neutral gray.
+
 ### Region Summary
 
 Shows:

@@ -39,6 +39,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-07-21 · ADM1 color keyed by stable boundary identity
+
+Region Explorer uses geoBoundaries `shapeISO` as the presentation join key and exposes it as `boundary_iso` in the API. Names are labels only and national risk is never propagated to subdivisions. ADM1 GEE processing is bounded to the current period and configurable coverage; failures are isolated so an unavailable unit remains unassessed without collapsing the country payload.
+
 <!-- harness:sprint-1-configuration-and-secrets -->
 ## 2026-07-14 · sprint-1-configuration-and-secrets aprobado
 

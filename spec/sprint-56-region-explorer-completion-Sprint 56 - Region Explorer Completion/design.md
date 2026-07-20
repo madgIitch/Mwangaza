@@ -8,6 +8,11 @@
 - `tests/api/**`
 - `src/mwangaza/services/live_gee_dashboard.py`
 - `src/mwangaza/services/dashboard_shell.py`
+- `src/mwangaza/regions/**`
+- `src/mwangaza/data/**`
+- `data/regions/**`
+- `tests/regions/**`
+- `tests/data/**`
 - `tests/services/**`
 - `smoke_tests/**`
 - `docs/region-interface.md`
@@ -22,6 +27,13 @@
 - **edge_cases:** Orden, comparación y selección deterministas.
 - **ui_states:** Panel funcional completo en live y demo, low-bandwidth y payload incompleto.
 
+## Ampliación ADM1 aprobada
+
+- Incorporar las fronteras ADM1 versionadas al catálogo geográfico como regiones consultables por GEE, conservando `shapeID` y `shapeISO` de geoBoundaries.
+- Añadir `AdministrativeUnit` a `RegionProfile` y serializarlo como `administrative_units` sin romper consumidores v1.
+- Consultar ADM1 sólo en la ventana actual. La cobertura por defecto es Somalia completa y Turkana, Marsabit e Isiolo; se amplía mediante configuración.
+- Resolver el color del mapa por `boundary_iso`. No se permite propagar el score nacional ni usar coincidencia aproximada de nombre.
+
 ## Decisiones de la entrevista
 
 - **data_model:** La API expone unidades subnacionales ya procesadas tanto en demo como en live GEE, con `id`, `name`, `admin_level`, `score`, `level`, `quality`, `period`, `ui_geometry`, métricas, contribuciones del composite, tendencias y comparaciones. Los valores ausentes permanecen `null`; no se completan desde fixtures salvo en modo demo explícito.
@@ -32,4 +44,3 @@
 - **ui_states:** Vista normal live y demo: mapa, controles de país/subregión/periodo/vista, resumen, alerta, métricas, contribuciones, ranking, tendencias, comparación y acciones funcionales. Low-bandwidth: equivalente completo en tabla/texto sin SVG ni animaciones. Demo: banner persistente con `is_demo`, `reference_date` y `snapshot_id`. Live/cache: procedencia y frescura reales, sin mezclar fixtures.
 - **rollback_compat:** Se preservan rutas y contratos existentes; los campos API nuevos son aditivos. Los placeholders actuales siguen siendo fallback recuperable cuando el backend no cubra una región.
 - **tests:** Bloquean pruebas API y frontend para geometría real, demo sin red/GEE, live GEE con adaptador determinista y smoke real versionado, ranking determinista, unknown al final, contribuciones, comparación disponible/ausente, tendencias, deep-link con filtros, todos los controles, low-bandwidth sin mapa, producción sin fallback demo y degradación accesible por payload incompleto.
-

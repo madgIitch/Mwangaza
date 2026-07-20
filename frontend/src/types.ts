@@ -60,6 +60,26 @@ export interface HistoricalRow {
   version: string;
 }
 
+export interface AdministrativeUnit {
+  regionId: string;
+  boundaryId: string;
+  boundaryIso: string;
+  name: string;
+  parentId: string;
+  adminLevel: string;
+  score: number | null;
+  level: Severity;
+  quality: string;
+  periodStart: string;
+  periodEnd: string;
+  sourceMode: string;
+  geometrySource: string;
+  ndvi: number | null;
+  rainfallMm: number | null;
+  lstC: number | null;
+  rank: number;
+}
+
 export interface RegionProfile {
   id: string;
   name: string;
@@ -68,6 +88,7 @@ export interface RegionProfile {
   recommendations: string[];
   pilotUnits: string[];
   pilotRows?: Array<{ id: string; name: string; adminLevel: string; score: number | null; level: Severity; quality: string; rank: number }>;
+  administrativeUnits?: AdministrativeUnit[];
   contributions?: Array<{ indicator: string; weight: number | null; score: number | null; source: string; quality: string }>;
   trends: TrendSeries[];
   historicalRows: HistoricalRow[];
@@ -138,6 +159,23 @@ export interface PublicSnapshotResponse {
       status: string;
       metrics: Metric[];
       pilot_units: Array<{ id: string; name: string; admin_level: string; score: number | null; level: string; quality: string; rank: number }>;
+      administrative_units?: Array<{
+        region_id: string;
+        boundary_id: string;
+        boundary_iso: string;
+        name: string;
+        parent_id: string;
+        admin_level: string;
+        score: number | null;
+        level: string;
+        quality: string;
+        period_start: string;
+        period_end: string;
+        source_mode: string;
+        geometry_source: string;
+        metrics: { ndvi: number | null; rainfall_mm: number | null; lst_c: number | null };
+        rank: number;
+      }>;
       trends: Array<{ indicator: string; label: string; unit: string; source: string; points: Array<{ period: string; value: number | null; baseline: number | null }> }>;
       historical_rows: HistoricalRow[];
       recommendations: string[];

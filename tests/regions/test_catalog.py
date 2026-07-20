@@ -4,6 +4,7 @@ import copy
 import unittest
 
 from mwangaza.regions import (
+    ADM1_LEVEL,
     PILOT_COVERAGE,
     REGIONAL_COVERAGE,
     REQUIRED_COUNTRIES,
@@ -69,6 +70,16 @@ class RegionCatalogTests(unittest.TestCase):
         self.assertEqual(get_region("northern-kenya-pilot").iso3, "KEN")
         with self.assertRaises(RegionCatalogError):
             get_region("missing")
+
+    def test_adm1_catalog_preserves_geoboundaries_identifiers(self) -> None:
+        units = list_regions(level=ADM1_LEVEL, include_administrative=True)
+
+        self.assertEqual(len(units), 121)
+        hiiraan = get_region("adm1-so-hi")
+        self.assertEqual(hiiraan.parent_id, "som")
+        self.assertEqual(hiiraan.metadata["boundary_iso"], "SO-HI")
+        self.assertTrue(hiiraan.metadata["boundary_id"])
+        self.assertIn(hiiraan.geometry["type"], {"Polygon", "MultiPolygon"})
 
     def test_validate_rejects_duplicate_ids(self) -> None:
         regions = list(load_region_catalog())

@@ -1364,3 +1364,9 @@ Objetivo no negociable:
 - **edge_cases:** Orden, comparación y selección deterministas.
 - **ui_states:** Panel funcional completo en live y demo, low-bandwidth y payload incompleto.
 
+### ADM1 analytical overlay
+
+- Versioned geoBoundaries assets are loaded into the region catalog as `adm1` analytical regions with stable `boundary_iso` and `boundary_id` metadata.
+- The live loader computes the current-period indicator snapshot and composite risk per configured ADM1 unit, while country trends and historical comparisons remain aggregated.
+- `RegionProfile.administrative_units` is the boundary between processing and presentation. The public API serializes it additively and the React atlas joins it to local geometry by exact `boundary_iso`.
+- ADM1 query failures are isolated per unit. Missing units are not synthesized and remain visually unassessed.

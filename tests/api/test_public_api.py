@@ -43,6 +43,7 @@ class PublicApiTests(unittest.TestCase):
         self.assertTrue(payload["snapshot"]["region_profiles"])
         profile = payload["snapshot"]["region_profiles"][0]
         self.assertTrue(profile["pilot_units"])
+        self.assertIn("administrative_units", profile)
         self.assertTrue(profile["trends"])
         self.assertTrue(profile["historical_rows"])
         self.assertTrue(profile["contributions"])

@@ -315,8 +315,27 @@ function profilesFromApi(apiProfiles: NonNullable<PublicSnapshotResponse["snapsh
         name: unit.name,
         adminLevel: unit.admin_level,
         score: unit.score,
+        level: normalizeRiskLevel(unit.level, ""),
+        quality: unit.quality,
+        rank: unit.rank
+      })),
+      administrativeUnits: (profile.administrative_units ?? []).map((unit) => ({
+        regionId: unit.region_id,
+        boundaryId: unit.boundary_id,
+        boundaryIso: unit.boundary_iso,
+        name: unit.name,
+        parentId: unit.parent_id,
+        adminLevel: unit.admin_level,
+        score: unit.score,
         level: normalizeSeverity(unit.level),
         quality: unit.quality,
+        periodStart: unit.period_start,
+        periodEnd: unit.period_end,
+        sourceMode: unit.source_mode,
+        geometrySource: unit.geometry_source,
+        ndvi: unit.metrics.ndvi,
+        rainfallMm: unit.metrics.rainfall_mm,
+        lstC: unit.metrics.lst_c,
         rank: unit.rank
       })),
       trends: profile.trends.map((trend) => ({
@@ -391,7 +410,7 @@ function qualityLabel(value: string | undefined): string {
 }
 
 function normalizeRiskLevel(level: string, colorLevel: string): RegionRisk["level"] {
-  const normalized = level === "emergency" ? "critical" : level;
+  const normalized = level === "emergency" ? "critical" : level === "low" ? "normal" : level;
   if (normalized === "normal" || normalized === "watch" || normalized === "warning" || normalized === "critical") {
     return normalized;
   }

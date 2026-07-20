@@ -13,3 +13,8 @@
 - [x] T11 Smoke GEE real versionado.
 - [x] T12 Placeholders explícitos para cuenta/notificaciones.
 - [x] Tests de aceptación.
+- [x] T13 Catálogo ADM1 versionado y consultable por GEE.
+- [x] T14 Contrato `administrative_units` en shell/API/PWA.
+- [x] T15 Loader live ADM1 acotado al periodo actual y agregado en una sola consulta `reduceRegions`.
+- [x] T16 Join exacto por `boundary_iso`, tooltip y ranking.
+- [x] T17 Tests, smoke GEE y gates de la ampliación.

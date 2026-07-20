@@ -17,14 +17,16 @@ from mwangaza.data.rainfall import (
     compute_current_rainfall,
 )
 from mwangaza.gee.auth import check_gee_auth
+from mwangaza.observability import emit
 from mwangaza.quality import evaluate_data_quality
-from mwangaza.regions import COUNTRY_LEVEL, PILOT_LEVEL, list_regions
+from mwangaza.regions import ADM1_LEVEL, COUNTRY_LEVEL, PILOT_LEVEL, get_region, list_regions
 from mwangaza.risk import compute_composite_drought_score
 
 DEFAULT_SCALE_METERS = 5500
 DEFAULT_MAX_PIXELS = 1_000_000_000
 DEFAULT_LOOKBACK_DAYS = 15
 DEFAULT_TREND_POINTS = 4
+DEFAULT_KENYA_ADM1_PILOTS = frozenset({"Turkana", "Marsabit", "Isiolo"})
 
 
 class LiveGeeDashboardError(RuntimeError):
@@ -137,6 +139,71 @@ class RealGeeRegionalAdapter:
             .replace("+00:00", "Z")
         )
 
+    def query_adm1_values(
+        self,
+        regions: tuple[Any, ...],
+        period_start: str,
+        period_end: str,
+    ) -> dict[str, dict[str, float | None]]:
+        ndvi_config = NdviCollectionConfig()
+        rainfall_config = RainfallCollectionConfig(max_missing_days=3)
+        lst_config = LstCollectionConfig()
+        features = self.ee.FeatureCollection([
+            self.ee.Feature(self.ee.Geometry(region.geometry), {"region_id": region.id})
+            for region in regions
+        ])
+        ndvi_collection = self.ee.ImageCollection(ndvi_config.collection_id).filterDate(
+            period_start,
+            _exclusive_end(period_end),
+        )
+
+        def mask_quality(image: Any) -> Any:
+            mask = image.select(ndvi_config.qa_band).eq(ndvi_config.valid_qa_values[0])
+            return image.updateMask(mask).select(ndvi_config.ndvi_band)
+
+        ndvi = ndvi_collection.map(mask_quality).mean().multiply(ndvi_config.scale_factor).rename("ndvi")
+        rainfall = (
+            self.ee.ImageCollection(rainfall_config.collection_id)
+            .filterDate(period_start, _exclusive_end(period_end))
+            .select("precipitation")
+            .sum()
+            .rename("rainfall_mm")
+        )
+        lst = (
+            self.ee.ImageCollection(lst_config.collection_id)
+            .filterDate(period_start, _exclusive_end(period_end))
+            .select("LST_Day_1km")
+            .mean()
+            .multiply(lst_config.scale)
+            .add(lst_config.offset - 273.15)
+            .rename("lst_c")
+        )
+        values = (
+            ndvi.addBands(rainfall)
+            .addBands(lst)
+            .reduceRegions(
+                collection=features,
+                reducer=self.ee.Reducer.mean(),
+                scale=self.scale_meters,
+                tileScale=2,
+                maxPixelsPerRegion=self.max_pixels,
+            )
+            .getInfo()
+        )
+        rows = values.get("features", []) if isinstance(values, dict) else []
+        result: dict[str, dict[str, float | None]] = {}
+        for feature in rows:
+            properties = feature.get("properties", {}) if isinstance(feature, dict) else {}
+            region_id = properties.get("region_id") if isinstance(properties, dict) else None
+            if not isinstance(region_id, str):
+                continue
+            result[region_id] = {
+                "ndvi": _optional_finite(properties.get("ndvi")),
+                "rainfall_mm": _optional_finite(properties.get("rainfall_mm")),
+                "lst_c": _optional_finite(properties.get("lst_c")),
+            }
+        return result
+
 
 def load_live_gee_dashboard_payloads(
     *,
@@ -155,20 +222,42 @@ def load_live_gee_dashboard_payloads(
     adapter = RealGeeRegionalAdapter(module, scale_meters=scale_meters)
     start, end = resolve_live_gee_period(adapter, period_start=period_start, period_end=period_end)
     region_ids = (target_region,) if region_id is not None else dashboard_live_region_ids(target_region)
+    adm1_region_ids = dashboard_live_adm1_region_ids()
     if period_start is not None or period_end is not None:
-        return build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
-    return build_live_gee_payloads_for_recent_periods(
+        payloads = build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
+        payloads.extend(build_live_gee_payloads_for_adm1_regions(adm1_region_ids, start, end, adapter=adapter))
+        return payloads
+    payloads = build_live_gee_payloads_for_recent_periods(
         region_ids,
         end,
         adapter=adapter,
         point_count=_live_trend_points(),
         history_years=2,
     )
+    payloads.extend(
+        build_live_gee_payloads_for_adm1_regions(adm1_region_ids, _default_period_start(end), end, adapter=adapter)
+    )
+    return payloads
 
 
 def dashboard_live_region_ids(selected_region_id: str | None = None) -> tuple[str, ...]:
     target_region = (selected_region_id or os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
     return _ordered_region_ids(target_region, _enabled_dashboard_region_ids())
+
+
+def dashboard_live_adm1_region_ids() -> tuple[str, ...]:
+    if os.environ.get("MWANGAZA_GEE_ADM1_ENABLED", "true").strip().lower() in {"0", "false", "no", "off"}:
+        return ()
+    configured = os.environ.get("MWANGAZA_GEE_ADM1_COUNTRIES", "").strip()
+    configured_iso3 = {item.strip().upper() for item in configured.split(",") if item.strip()}
+    regions = list_regions(level=ADM1_LEVEL, include_administrative=True)
+    if configured_iso3:
+        return tuple(region.id for region in regions if region.iso3 in configured_iso3)
+    return tuple(
+        region.id
+        for region in regions
+        if region.iso3 == "SOM" or (region.iso3 == "KEN" and region.name in DEFAULT_KENYA_ADM1_PILOTS)
+    )
 
 
 def resolve_live_gee_period(
@@ -214,12 +303,19 @@ def build_live_gee_payloads(
         _json_safe(snapshot.to_dict()),
         *(_json_safe(signal.to_dict()) for signal in signals),
     ]
+    region = get_region(region_id)
     for payload in payloads:
         metadata = payload.setdefault("metadata", {})
         if isinstance(metadata, dict):
             metadata["source_mode"] = "live"
             metadata["smoke_source"] = "real_gee"
             metadata["updated_at"] = metadata.get("updated_at", _utc_now())
+            metadata["region_level"] = region.level
+            metadata["parent_region_id"] = region.parent_id
+            if region.level == ADM1_LEVEL:
+                metadata["boundary_id"] = region.metadata.get("boundary_id")
+                metadata["boundary_iso"] = region.metadata.get("boundary_iso")
+                metadata["geometry_source"] = f"{region.source} {region.source_version}"
     return payloads
 
 
@@ -230,9 +326,140 @@ def build_live_gee_payloads_for_regions(
     *,
     adapter: RealGeeRegionalAdapter,
 ) -> list[dict[str, Any]]:
+    if hasattr(adapter, "query_adm1_values"):
+        regions = tuple(get_region(region_id) for region_id in region_ids)
+        try:
+            values_by_region = adapter.query_adm1_values(regions, period_start, period_end)
+        except Exception as exc:
+            emit(
+                "Regional GEE batch query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                region_count=len(regions),
+                error_type=type(exc).__name__,
+            )
+        else:
+            batch_payloads: list[dict[str, Any]] = []
+            for region in regions:
+                values = values_by_region.get(region.id)
+                if values is None:
+                    continue
+                batch_payloads.extend(
+                    _build_region_payloads_from_values(region, values, period_start, period_end)
+                )
+            return batch_payloads
+
     payloads: list[dict[str, Any]] = []
     for region_id in region_ids:
         payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
+    return payloads
+
+
+def build_live_gee_payloads_for_adm1_regions(
+    region_ids: tuple[str, ...],
+    period_start: str,
+    period_end: str,
+    *,
+    adapter: RealGeeRegionalAdapter,
+) -> list[dict[str, Any]]:
+    if hasattr(adapter, "query_adm1_values"):
+        regions = tuple(get_region(region_id) for region_id in region_ids)
+        values_by_region: dict[str, dict[str, float | None]] | None = None
+        try:
+            values_by_region = adapter.query_adm1_values(regions, period_start, period_end)
+        except Exception as exc:
+            emit(
+                "ADM1 GEE batch query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                region_count=len(regions),
+                error_type=type(exc).__name__,
+            )
+        if values_by_region is not None:
+            batch_payloads: list[dict[str, Any]] = []
+            for region in regions:
+                values = values_by_region.get(region.id)
+                if values is None:
+                    continue
+                batch_payloads.extend(
+                    _build_region_payloads_from_values(region, values, period_start, period_end)
+                )
+            return batch_payloads
+
+    payloads: list[dict[str, Any]] = []
+    for region_id in region_ids:
+        try:
+            payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
+        except Exception as exc:
+            emit(
+                "ADM1 GEE query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                region_id=region_id,
+                error_type=type(exc).__name__,
+            )
+            continue
+    return payloads
+
+
+def _build_region_payloads_from_values(
+    region: Any,
+    values: dict[str, float | None],
+    period_start: str,
+    period_end: str,
+) -> list[dict[str, Any]]:
+    configs = {
+        "ndvi": ("index", NdviCollectionConfig().collection_id),
+        "rainfall_mm": ("mm", RainfallCollectionConfig().collection_id),
+        "lst_c": ("celsius", LstCollectionConfig().collection_id),
+    }
+    signals = tuple(
+        IndicatorObservation(
+            region_id=region.id,
+            indicator=indicator,
+            period_start=period_start,
+            period_end=period_end,
+            value=values.get(indicator),
+            unit=unit,
+            source=source,
+            quality_flag="ok" if values.get(indicator) is not None else "no_data",
+            is_simulated=False,
+            metadata={
+                "updated_at": _utc_now(),
+                "source_mode": "live",
+                "aggregation_mode": "reduceRegions",
+                "coverage_fraction": 1.0 if values.get(indicator) is not None else 0.0,
+            },
+        )
+        for indicator, (unit, source) in configs.items()
+    )
+    snapshot = build_indicator_snapshot(
+        region.id,
+        period_start,
+        period_end,
+        signals,
+        expected_indicators=("ndvi", "rainfall_mm", "lst_c"),
+    )
+    quality = evaluate_data_quality(snapshot, now=datetime.now(UTC))
+    risk = compute_composite_drought_score(snapshot, quality)
+    payloads = [
+        _json_safe(risk.to_dict()),
+        _json_safe(snapshot.to_dict()),
+        *(_json_safe(signal.to_dict()) for signal in signals),
+    ]
+    for payload in payloads:
+        metadata = payload.setdefault("metadata", {})
+        if isinstance(metadata, dict):
+            metadata.update({
+                "source_mode": "live",
+                "smoke_source": "real_gee",
+                "aggregation_mode": "reduceRegions",
+                "region_level": region.level,
+                "parent_region_id": region.parent_id,
+                "boundary_id": region.metadata.get("boundary_id"),
+                "boundary_iso": region.metadata.get("boundary_iso"),
+                "geometry_source": f"{region.source} {region.source_version}",
+            })
     return payloads
 
 
@@ -333,7 +560,7 @@ def _latest_common_collection_date(adapter: Any) -> str:
         adapter.latest_collection_date(RainfallCollectionConfig().collection_id),
         adapter.latest_collection_date(LstCollectionConfig().collection_id),
     )
-    return min(dates)
+    return str(min(dates))
 
 
 def _enabled_country_region_ids() -> tuple[str, ...]:
@@ -382,6 +609,10 @@ def _first_number(values: dict[str, Any]) -> float | None:
     return None
 
 
+def _optional_finite(value: Any) -> float | None:
+    return float(value) if isinstance(value, int | float) and not isinstance(value, bool) and math.isfinite(value) else None
+
+
 def _first_int(values: dict[str, Any]) -> int:
     value = _first_number(values)
     return max(0, int(value or 0))
@@ -400,9 +631,11 @@ __all__ = [
     "RealGeeRegionalAdapter",
     "build_live_gee_payloads",
     "build_live_gee_payloads_for_regions",
+    "build_live_gee_payloads_for_adm1_regions",
     "build_live_gee_payloads_for_recent_periods",
     "comparable_period_windows",
     "dashboard_live_region_ids",
+    "dashboard_live_adm1_region_ids",
     "load_live_gee_dashboard_payloads",
     "recent_period_windows",
     "resolve_live_gee_period",

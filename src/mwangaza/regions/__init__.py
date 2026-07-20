@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -17,8 +19,12 @@ REQUIRED_COUNTRIES: dict[str, str] = {
 }
 COUNTRY_LEVEL = "country"
 PILOT_LEVEL = "pilot_area"
+ADM1_LEVEL = "adm1"
 REGIONAL_COVERAGE = "regional_country"
 PILOT_COVERAGE = "pilot_subnational"
+ADMINISTRATIVE_COVERAGE = "administrative_reference"
+ADM1_SOURCE = "geoBoundaries gbOpen"
+ADM1_SOURCE_VERSION = "wmgeolab/geoBoundaries@9469f09"
 
 
 class RegionCatalogError(ValueError):
@@ -78,6 +84,7 @@ def default_catalog_path() -> Path:
     return Path(__file__).resolve().parents[3] / "data" / "regions" / "igad_regions.json"
 
 
+@lru_cache(maxsize=8)
 def load_region_catalog(path: str | Path | None = None) -> tuple[Region, ...]:
     catalog_path = Path(path) if path is not None else default_catalog_path()
     try:
@@ -93,6 +100,8 @@ def load_region_catalog(path: str | Path | None = None) -> tuple[Region, ...]:
     if not isinstance(items, list) or not items:
         raise RegionCatalogError("region catalog must include a non-empty regions list")
     regions = tuple(Region.from_dict(item, source=source, source_version=source_version) for item in items)
+    if path is None:
+        regions = (*regions, *_load_adm1_regions(regions))
     validate_region_catalog(regions)
     return regions
 
@@ -108,6 +117,7 @@ def get_region(region_id: str, catalog: Iterable[Region] | None = None) -> Regio
 def list_regions(
     level: str | None = None,
     include_pilots: bool = True,
+    include_administrative: bool = False,
     catalog: Iterable[Region] | None = None,
 ) -> tuple[Region, ...]:
     regions = tuple(catalog or load_region_catalog())
@@ -115,6 +125,8 @@ def list_regions(
         regions = tuple(region for region in regions if region.level == level)
     if not include_pilots:
         regions = tuple(region for region in regions if not region.is_pilot)
+    if not include_administrative and level != ADM1_LEVEL:
+        regions = tuple(region for region in regions if region.level != ADM1_LEVEL)
     return regions
 
 
@@ -147,9 +159,9 @@ def validate_region_catalog(catalog: Iterable[Region]) -> None:
 
 
 def _validate_region(region: Region, by_id: dict[str, Region]) -> None:
-    if region.level not in {COUNTRY_LEVEL, PILOT_LEVEL}:
+    if region.level not in {COUNTRY_LEVEL, PILOT_LEVEL, ADM1_LEVEL}:
         raise RegionCatalogError(f"{region.id}: unsupported level {region.level}")
-    if region.coverage_type not in {REGIONAL_COVERAGE, PILOT_COVERAGE}:
+    if region.coverage_type not in {REGIONAL_COVERAGE, PILOT_COVERAGE, ADMINISTRATIVE_COVERAGE}:
         raise RegionCatalogError(f"{region.id}: unsupported coverage_type {region.coverage_type}")
     if region.level == COUNTRY_LEVEL and region.parent_id is not None:
         raise RegionCatalogError(f"{region.id}: country parent_id must be null")
@@ -158,6 +170,11 @@ def _validate_region(region: Region, by_id: dict[str, Region]) -> None:
             raise RegionCatalogError(f"{region.id}: pilot areas must be explicitly marked")
         if region.parent_id not in by_id:
             raise RegionCatalogError(f"{region.id}: parent_id does not exist")
+    if region.level == ADM1_LEVEL:
+        if region.is_pilot or region.coverage_type != ADMINISTRATIVE_COVERAGE:
+            raise RegionCatalogError(f"{region.id}: ADM1 regions must be administrative references")
+        if region.parent_id not in by_id or by_id[region.parent_id].level != COUNTRY_LEVEL:
+            raise RegionCatalogError(f"{region.id}: ADM1 parent_id must reference a country")
     if region.level == COUNTRY_LEVEL and region.coverage_type != REGIONAL_COVERAGE:
         raise RegionCatalogError(f"{region.id}: countries must use regional coverage")
     if region.geometry is region.ui_geometry or region.geometry == region.ui_geometry:
@@ -169,11 +186,19 @@ def _validate_region(region: Region, by_id: dict[str, Region]) -> None:
 def _validate_geojson(region_id: str, field: str, geometry: dict[str, Any]) -> None:
     geo_type = geometry.get("type")
     coordinates = geometry.get("coordinates")
-    if geo_type != "Polygon":
-        raise RegionCatalogError(f"{region_id}: {field} must be a Polygon GeoJSON object")
+    if geo_type not in {"Polygon", "MultiPolygon"}:
+        raise RegionCatalogError(f"{region_id}: {field} must be a Polygon or MultiPolygon GeoJSON object")
     if not isinstance(coordinates, list) or not coordinates:
         raise RegionCatalogError(f"{region_id}: {field} coordinates are empty")
-    outer_ring = coordinates[0]
+    polygons = coordinates if geo_type == "MultiPolygon" else [coordinates]
+    for polygon in polygons:
+        if not isinstance(polygon, list) or not polygon:
+            raise RegionCatalogError(f"{region_id}: {field} polygon is invalid")
+        _validate_polygon_rings(region_id, field, polygon)
+
+
+def _validate_polygon_rings(region_id: str, field: str, polygon: list[Any]) -> None:
+    outer_ring = polygon[0]
     if not isinstance(outer_ring, list) or len(outer_ring) < 4:
         raise RegionCatalogError(f"{region_id}: {field} polygon ring is invalid")
     if outer_ring[0] != outer_ring[-1]:
@@ -185,6 +210,70 @@ def _validate_geojson(region_id: str, field: str, geometry: dict[str, Any]) -> N
             or not all(isinstance(value, int | float) for value in point)
         ):
             raise RegionCatalogError(f"{region_id}: {field} contains an invalid coordinate")
+
+
+def _load_adm1_regions(base_regions: tuple[Region, ...]) -> tuple[Region, ...]:
+    asset_dir = Path(__file__).resolve().parents[3] / "frontend" / "public" / "maps"
+    country_by_iso = {region.iso3: region for region in base_regions if region.level == COUNTRY_LEVEL}
+    regions: list[Region] = []
+    for iso3, parent in sorted(country_by_iso.items()):
+        asset_path = asset_dir / f"{iso3}-ADM1.geojson"
+        try:
+            collection = json.loads(asset_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RegionCatalogError(f"could not read ADM1 boundary asset: {asset_path}") from exc
+        features = collection.get("features") if isinstance(collection, dict) else None
+        if not isinstance(features, list):
+            raise RegionCatalogError(f"invalid ADM1 boundary asset: {asset_path}")
+        for feature in features:
+            properties = feature.get("properties", {}) if isinstance(feature, dict) else {}
+            geometry = feature.get("geometry") if isinstance(feature, dict) else None
+            if not isinstance(properties, dict) or not isinstance(geometry, dict):
+                raise RegionCatalogError(f"invalid ADM1 feature in {asset_path}")
+            boundary_iso = _required_str(properties, "shapeISO")
+            boundary_id = _required_str(properties, "shapeID")
+            name = _required_str(properties, "shapeName")
+            analytical_geometry = copy.deepcopy(geometry)
+            ui_geometry = copy.deepcopy(geometry)
+            ui_geometry["bbox"] = _geometry_bbox(geometry)
+            regions.append(
+                Region(
+                    id=f"adm1-{boundary_iso.lower()}",
+                    name=name,
+                    iso3=iso3,
+                    level=ADM1_LEVEL,
+                    parent_id=parent.id,
+                    is_pilot=False,
+                    coverage_type=ADMINISTRATIVE_COVERAGE,
+                    source=ADM1_SOURCE,
+                    source_version=ADM1_SOURCE_VERSION,
+                    geometry=analytical_geometry,
+                    ui_geometry=ui_geometry,
+                    metadata={
+                        "boundary_id": boundary_id,
+                        "boundary_iso": boundary_iso,
+                        "boundary_level": "ADM1",
+                    },
+                )
+            )
+    return tuple(regions)
+
+
+def _geometry_bbox(geometry: dict[str, Any]) -> list[float]:
+    points: list[tuple[float, float]] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, list) and len(value) == 2 and all(isinstance(item, int | float) for item in value):
+            points.append((float(value[0]), float(value[1])))
+            return
+        if isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(geometry.get("coordinates"))
+    if not points:
+        return []
+    return [min(point[0] for point in points), min(point[1] for point in points), max(point[0] for point in points), max(point[1] for point in points)]
 
 
 def _duplicates(values: Iterable[str]) -> list[str]:

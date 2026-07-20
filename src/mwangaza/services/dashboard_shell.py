@@ -13,7 +13,7 @@ from mwangaza.config import ConfigurationError, load_settings
 from mwangaza.contracts import RiskSnapshot
 from mwangaza.data.exposure import display_exposure_value, exposure_detail, exposure_from_payload
 from mwangaza.maps import RegionalRiskMap, build_regional_risk_map, demo_regional_risk_map
-from mwangaza.regions import COUNTRY_LEVEL, PILOT_LEVEL, list_regions
+from mwangaza.regions import ADM1_LEVEL, COUNTRY_LEVEL, PILOT_LEVEL, list_regions
 from mwangaza.services.live_gee_dashboard import load_live_gee_dashboard_payloads
 
 DataMode = Literal["live", "cache", "demo"]
@@ -83,6 +83,27 @@ class PilotUnit:
 
 
 @dataclass(frozen=True)
+class AdministrativeUnit:
+    region_id: str
+    boundary_id: str
+    boundary_iso: str
+    name: str
+    parent_id: str
+    admin_level: str
+    score: float | None
+    risk_level: str
+    quality_flag: str
+    period_start: str
+    period_end: str
+    source_mode: str
+    geometry_source: str
+    ndvi: float | None
+    rainfall_mm: float | None
+    lst_c: float | None
+    rank: int = 0
+
+
+@dataclass(frozen=True)
 class TrendPoint:
     period_start: str
     period_end: str
@@ -149,6 +170,7 @@ class RegionProfile:
     trends: tuple[TrendSeries, ...] = ()
     historical_comparison: HistoricalComparison | None = None
     contributions: tuple[dict[str, Any], ...] = ()
+    administrative_units: tuple[AdministrativeUnit, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -545,6 +567,7 @@ def _region_profiles_from_payloads(
                 status="empty" if risk is None and not signals else "current",
                 historical_comparison=_historical_comparison_for_region(comparison_payloads, region_id),
                 contributions=_risk_contributions(risk),
+                administrative_units=_administrative_units_for_parent(region_id, payloads),
             )
         )
     return tuple(profiles)
@@ -617,6 +640,61 @@ def _pilot_units_for_parent(parent_id: str, payloads: tuple[dict[str, Any], ...]
         )
         for index, unit in enumerate(ranked, start=1)
     )
+
+
+def _administrative_units_for_parent(
+    parent_id: str,
+    payloads: tuple[dict[str, Any], ...],
+) -> tuple[AdministrativeUnit, ...]:
+    units: list[AdministrativeUnit] = []
+    for region in list_regions(level=ADM1_LEVEL, include_administrative=True):
+        if region.parent_id != parent_id.lower():
+            continue
+        risk = _latest_risk_snapshot(payloads, region_id=region.id)
+        snapshot = _latest_indicator_snapshot(payloads, region_id=region.id)
+        signals = _signals_for_view(payloads, snapshot, region_id=region.id)
+        if risk is None and not signals:
+            continue
+        quality = _first_text(risk.get("quality_flag") if risk else None) or "no_data"
+        score = _safe_score(risk)
+        conclusive = risk is not None and score is not None and quality == "ok"
+        metadata = risk.get("metadata", {}) if isinstance(risk, dict) else {}
+        risk_level = _risk_level(risk) if conclusive and risk is not None else "unknown"
+        units.append(
+            AdministrativeUnit(
+                region_id=region.id,
+                boundary_id=str(region.metadata.get("boundary_id", "")),
+                boundary_iso=str(region.metadata.get("boundary_iso", "")),
+                name=region.name,
+                parent_id=parent_id.lower(),
+                admin_level=region.level,
+                score=score if conclusive else None,
+                risk_level=risk_level,
+                quality_flag=quality,
+                period_start=_first_text(risk.get("period_start") if risk else None),
+                period_end=_first_text(risk.get("period_end") if risk else None),
+                source_mode=_first_text(metadata.get("source_mode") if isinstance(metadata, dict) else None),
+                geometry_source=f"{region.source} {region.source_version}",
+                ndvi=_signal_value(signals, "ndvi"),
+                rainfall_mm=_signal_value(signals, "rainfall_mm"),
+                lst_c=_signal_value(signals, "lst_c"),
+            )
+        )
+    ranked = sorted(
+        units,
+        key=lambda unit: (unit.score is None, -(unit.score or 0.0), unit.name.casefold()),
+    )
+    return tuple(
+        AdministrativeUnit(**{**unit.__dict__, "rank": index})
+        for index, unit in enumerate(ranked, start=1)
+    )
+
+
+def _signal_value(signals: tuple[dict[str, Any], ...], indicator: str) -> float | None:
+    for signal in signals:
+        if signal.get("indicator") == indicator:
+            return _safe_float(signal.get("value"))
+    return None
 
 
 def _latest_indicator_snapshot(

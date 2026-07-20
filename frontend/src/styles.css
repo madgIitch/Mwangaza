@@ -1580,6 +1580,7 @@ td {
 .map-tooltip span { color: #b7c8bc; font-size: 10px; letter-spacing: .08em; }
 .map-tooltip strong { font-size: 17px; margin: 3px 0; }
 .map-tooltip small { color: #e5ebe7; }
+.map-tooltip em { color: #b7c8bc; font-size: 11px; font-style: normal; margin-top: 4px; }
 
 .map-scale-note {
   background: rgba(255, 255, 255, .88);

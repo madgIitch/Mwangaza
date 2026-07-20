@@ -65,7 +65,9 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
         else:
             payload["gee"] = check_gee_auth().to_public_dict()
         payload["observability"] = {"run_id": current_run_id(), "status": "ok"}
-        _log("health checked", gee_status=payload["gee"].get("status", "unknown"))
+        gee_payload = payload["gee"]
+        gee_status = gee_payload.get("status", "unknown") if isinstance(gee_payload, dict) else "unknown"
+        _log("health checked", gee_status=gee_status)
         await _send_json(send, payload, HTTPStatus.OK)
         _log("request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started))
         return
@@ -490,6 +492,30 @@ def _serialize_region_profiles(source: Any) -> list[dict[str, Any]]:
                         "rank": unit.rank,
                     }
                     for unit in profile.pilot_units
+                ],
+                "administrative_units": [
+                    {
+                        "region_id": unit.region_id,
+                        "boundary_id": unit.boundary_id,
+                        "boundary_iso": unit.boundary_iso,
+                        "name": unit.name,
+                        "parent_id": unit.parent_id,
+                        "admin_level": unit.admin_level,
+                        "score": unit.score,
+                        "level": unit.risk_level,
+                        "quality": unit.quality_flag,
+                        "period_start": unit.period_start,
+                        "period_end": unit.period_end,
+                        "source_mode": unit.source_mode,
+                        "geometry_source": unit.geometry_source,
+                        "metrics": {
+                            "ndvi": unit.ndvi,
+                            "rainfall_mm": unit.rainfall_mm,
+                            "lst_c": unit.lst_c,
+                        },
+                        "rank": unit.rank,
+                    }
+                    for unit in profile.administrative_units
                 ],
                 "trends": [
                     {

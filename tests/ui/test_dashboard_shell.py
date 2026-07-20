@@ -177,6 +177,29 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(kenya.alerts[0].region, "KEN")
         self.assertIn("Activate urgent coordination review", kenya.recommendations[0])
 
+    def test_live_profile_exposes_conclusive_adm1_observations(self) -> None:
+        adm1_risk = _json_payload(
+            _risk_snapshot(region_id="adm1-so-hi", risk_level="warning", score=63.0, is_simulated=False)
+        )
+        payloads = [
+            _json_payload(_risk_snapshot(region_id="som", risk_level="watch", score=49.8, is_simulated=False)),
+            adm1_risk,
+            _signal_payload(region_id="adm1-so-hi", indicator="ndvi", period_end="2026-07-08T00:00:00Z", value=0.18, baseline=0.2, quality_flag="ok"),
+            _signal_payload(region_id="adm1-so-hi", indicator="rainfall_mm", period_end="2026-07-08T00:00:00Z", value=3.1, baseline=7.0, quality_flag="ok"),
+            _signal_payload(region_id="adm1-so-hi", indicator="lst_c", period_end="2026-07-08T00:00:00Z", value=31.2, baseline=29.0, quality_flag="ok"),
+        ]
+        with patch("mwangaza.services.dashboard_shell.load_live_gee_dashboard_payloads", return_value=payloads):
+            data = load_dashboard_shell_data()
+
+        somalia = next(profile for profile in data.region_profiles if profile.region_id == "som")
+        self.assertEqual(len(somalia.administrative_units), 1)
+        unit = somalia.administrative_units[0]
+        self.assertEqual(unit.boundary_iso, "SO-HI")
+        self.assertEqual(unit.score, 63.0)
+        self.assertEqual(unit.risk_level, "warning")
+        self.assertEqual(unit.ndvi, 0.18)
+        self.assertEqual(unit.rainfall_mm, 3.1)
+
     def test_temporal_periods_default_to_latest_available_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             cache_dir = Path(tmp) / "cache"

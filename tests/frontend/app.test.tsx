@@ -91,6 +91,42 @@ describe("React PWA dashboard", () => {
     expect(screen.getAllByText("Somalia Pilot Area").length).toBeGreaterThan(0);
   });
 
+  it("colors an ADM1 boundary only from an exact API boundary ISO", async () => {
+    window.history.pushState({}, "", "/region");
+    mockAdministrativeMap();
+    const withAdm1 = {
+      ...demoDashboard,
+      profiles: demoDashboard.profiles.map((profile) => profile.id === "som" ? {
+        ...profile,
+        administrativeUnits: [{
+          regionId: "adm1-so-hi",
+          boundaryId: "83879307B66756469447496",
+          boundaryIso: "SO-HI",
+          name: "Hiiraan",
+          parentId: "som",
+          adminLevel: "adm1",
+          score: 76,
+          level: "critical" as const,
+          quality: "ok",
+          periodStart: "2026-07-01T00:00:00Z",
+          periodEnd: "2026-07-15T00:00:00Z",
+          sourceMode: "live",
+          geometrySource: "geoBoundaries gbOpen wmgeolab/geoBoundaries@9469f09",
+          ndvi: 0.18,
+          rainfallMm: 3.1,
+          lstC: 31.2,
+          rank: 1
+        }]
+      } : profile)
+    };
+
+    render(<App initialData={withAdm1} skipApiLoad />);
+
+    const hiiraan = await screen.findByLabelText("Hiiraan: 76 critical");
+    expect(hiiraan).toHaveStyle({ fill: "#d92d20" });
+    expect(screen.getByRole("option", { name: "Hiiraan" })).toBeInTheDocument();
+  });
+
   it("uses page routes instead of hash anchors in the sidebar", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 

@@ -8,9 +8,11 @@ from mwangaza.data.ndvi import NdviCollectionConfig, NdviQueryResult
 from mwangaza.data.rainfall import RainfallCollectionConfig, RainfallQueryResult
 from mwangaza.services.live_gee_dashboard import (
     build_live_gee_payloads,
+    build_live_gee_payloads_for_adm1_regions,
     build_live_gee_payloads_for_recent_periods,
     build_live_gee_payloads_for_regions,
     comparable_period_windows,
+    dashboard_live_adm1_region_ids,
     dashboard_live_region_ids,
     recent_period_windows,
     resolve_live_gee_period,
@@ -80,6 +82,20 @@ class FakeLiveGeeAdapter:
         )
 
 
+class FakeBatchLiveGeeAdapter(FakeLiveGeeAdapter):
+    def query_adm1_values(
+        self,
+        regions: tuple[object, ...],
+        period_start: str,
+        period_end: str,
+    ) -> dict[str, dict[str, float]]:
+        del period_start, period_end
+        return {
+            str(getattr(region, "id")): {"ndvi": 0.22, "rainfall_mm": 8.5, "lst_c": 32.4}
+            for region in regions
+        }
+
+
 class LiveGeeDashboardTests(unittest.TestCase):
     def test_builds_real_gee_dashboard_payloads_from_adapter_results(self) -> None:
         payloads = build_live_gee_payloads(
@@ -127,6 +143,79 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertIn("somalia-pilot", region_ids)
         self.assertIn("northern-kenya-pilot", region_ids)
         self.assertNotIn("eth", region_ids)
+
+    def test_default_adm1_scope_is_somalia_and_northern_kenya_pilots(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            region_ids = dashboard_live_adm1_region_ids()
+
+        self.assertEqual(len(region_ids), 21)
+        self.assertIn("adm1-so-hi", region_ids)
+        self.assertIn("adm1-ke-43", region_ids)
+        self.assertIn("adm1-ke-25", region_ids)
+        self.assertIn("adm1-ke-09", region_ids)
+
+    def test_adm1_scope_can_be_disabled_or_expanded_by_country(self) -> None:
+        with patch.dict("os.environ", {"MWANGAZA_GEE_ADM1_ENABLED": "false"}, clear=True):
+            self.assertEqual(dashboard_live_adm1_region_ids(), ())
+        with patch.dict("os.environ", {"MWANGAZA_GEE_ADM1_COUNTRIES": "ETH"}, clear=True):
+            region_ids = dashboard_live_adm1_region_ids()
+
+        self.assertEqual(len(region_ids), 11)
+        self.assertTrue(all(region_id.startswith("adm1-et-") for region_id in region_ids))
+
+    def test_adm1_payload_keeps_exact_boundary_provenance(self) -> None:
+        payloads = build_live_gee_payloads(
+            "adm1-so-hi",
+            "2026-07-01T00:00:00Z",
+            "2026-07-15T00:00:00Z",
+            adapter=FakeLiveGeeAdapter(),  # type: ignore[arg-type]
+        )
+        risk = next(payload for payload in payloads if payload.get("payload_type") == "risk_snapshot")
+
+        self.assertEqual(risk["metadata"]["boundary_iso"], "SO-HI")
+        self.assertTrue(risk["metadata"]["boundary_id"])
+        self.assertEqual(risk["metadata"]["parent_region_id"], "som")
+
+    def test_adm1_failures_are_isolated_per_boundary(self) -> None:
+        def build(region_id: str, *_args: object, **_kwargs: object) -> list[dict[str, object]]:
+            if region_id == "adm1-so-hi":
+                raise RuntimeError("simulated unit failure")
+            return [{"region_id": region_id}]
+
+        with patch("mwangaza.services.live_gee_dashboard.build_live_gee_payloads", side_effect=build):
+            payloads = build_live_gee_payloads_for_adm1_regions(
+                ("adm1-so-hi", "adm1-so-bn"),
+                "2026-07-01T00:00:00Z",
+                "2026-07-15T00:00:00Z",
+                adapter=FakeLiveGeeAdapter(),  # type: ignore[arg-type]
+            )
+
+        self.assertEqual(payloads, [{"region_id": "adm1-so-bn"}])
+
+    def test_adm1_batch_builds_all_contracts_from_one_result_set(self) -> None:
+        payloads = build_live_gee_payloads_for_adm1_regions(
+            ("adm1-so-hi", "adm1-so-bn"),
+            "2026-07-01T00:00:00Z",
+            "2026-07-15T00:00:00Z",
+            adapter=FakeBatchLiveGeeAdapter(),  # type: ignore[arg-type]
+        )
+
+        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+        self.assertEqual({risk["region_id"] for risk in risks}, {"adm1-so-hi", "adm1-so-bn"})
+        self.assertTrue(all(risk["metadata"]["aggregation_mode"] == "reduceRegions" for risk in risks))
+        self.assertEqual(len(payloads), 10)
+
+    def test_country_and_pilot_payloads_share_one_batch_result_set(self) -> None:
+        payloads = build_live_gee_payloads_for_regions(
+            ("som", "somalia-pilot"),
+            "2026-07-01T00:00:00Z",
+            "2026-07-15T00:00:00Z",
+            adapter=FakeBatchLiveGeeAdapter(),  # type: ignore[arg-type]
+        )
+
+        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
+        self.assertEqual([risk["region_id"] for risk in risks], ["som", "somalia-pilot"])
+        self.assertTrue(all(risk["metadata"]["aggregation_mode"] == "reduceRegions" for risk in risks))
 
     def test_builds_live_payloads_for_pilot_regions(self) -> None:
         payloads = build_live_gee_payloads_for_regions(

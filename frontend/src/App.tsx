@@ -5,7 +5,7 @@ import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { LandingPage } from "./pages/LandingPage";
-import type { AdminConfigResponse, AdminConfiguration, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
+import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -1203,7 +1203,16 @@ function RegionExplorer({
   const composite = metricByLabel(displayMetrics, "Composite");
   const exposure = metricByLabel(displayMetrics, "potentially_exposed");
   const indicatorMetrics = [ndvi, rainfall, lst, composite, exposure].filter((metric): metric is Metric => Boolean(metric));
-  const rankedPilotRows = [...(effectiveProfile.pilotRows ?? [])].sort((left, right) =>
+  const administrativeRows = (effectiveProfile.administrativeUnits ?? []).map((unit) => ({
+    id: unit.regionId,
+    name: unit.name,
+    adminLevel: unit.adminLevel,
+    score: unit.score,
+    level: unit.level,
+    quality: unit.quality,
+    rank: unit.rank
+  }));
+  const rankedPilotRows = [...(administrativeRows.length ? administrativeRows : (effectiveProfile.pilotRows ?? []))].sort((left, right) =>
     left.score === null ? 1 : right.score === null ? -1 : right.score - left.score || left.name.localeCompare(right.name)
   );
   const availablePeriods = data.periods ?? [];
@@ -1256,7 +1265,7 @@ function RegionExplorer({
       {selectedRegion.id === "ken" ? <NorthernKenyaScenario /> : null}
 
       <div className="region-main-grid">
-        <RegionRiskSurface data={data} selectedRegion={selectedRegion} onSelectRegion={onSelectRegion} />
+        <RegionRiskSurface profile={effectiveProfile} selectedRegion={selectedRegion} />
         <section className="region-summary">
           <div className="section-heading">
             <h2>Region Summary</h2>
@@ -1398,21 +1407,19 @@ function appLog(message: string, fields: Record<string, unknown> = {}): void {
 }
 
 function RegionRiskSurface({
-  data,
+  profile,
   selectedRegion
 }: {
-  data: DashboardData;
+  profile: RegionProfile;
   selectedRegion: RegionRisk;
-  onSelectRegion: (id: string) => void;
 }): JSX.Element {
   const [administrativeMap, setAdministrativeMap] = useState<AdministrativeFeatureCollection | null>(null);
   const [mapState, setMapState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [activeUnit, setActiveUnit] = useState<AdministrativeFeature | null>(null);
   const boundaryAsset = ADMIN_BOUNDARY_ASSETS[selectedRegion.id];
-  const selectedProfile = data.profiles.find((profile) => profile.id === selectedRegion.id);
-  const measuredUnits = useMemo(() => new Map(
-    (selectedProfile?.pilotRows ?? []).map((unit) => [normalizeBoundaryName(unit.name), unit])
-  ), [selectedProfile]);
+  const measuredUnits = useMemo(() => new Map<string, AdministrativeUnit>(
+    (profile.administrativeUnits ?? []).map((unit) => [unit.boundaryIso, unit])
+  ), [profile.administrativeUnits]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1439,7 +1446,7 @@ function RegionRiskSurface({
   }, [boundaryAsset]);
 
   const mapView = ADMIN_MAP_VIEWS[selectedRegion.id] ?? ADMIN_MAP_VIEWS.som;
-  const activeMeasurement = activeUnit ? measuredUnits.get(normalizeBoundaryName(activeUnit.properties.shapeName)) : undefined;
+  const activeMeasurement = activeUnit ? measuredUnits.get(activeUnit.properties.shapeISO) : undefined;
   return (
     <section className="region-map-panel">
       <div className="region-map-heading">
@@ -1466,7 +1473,7 @@ function RegionRiskSurface({
             <Geographies geography={administrativeMap}>
               {({ geographies }) => geographies.map((geo) => {
                 const feature = geo as unknown as AdministrativeFeature & { rsmKey: string };
-                const unit = measuredUnits.get(normalizeBoundaryName(feature.properties.shapeName));
+                const unit = measuredUnits.get(feature.properties.shapeISO);
                 return (
                   <Geography
                     aria-label={`${feature.properties.shapeName}: ${unit ? `${unit.score ?? "No data"} ${unit.level}` : "not individually assessed"}`}
@@ -1501,7 +1508,8 @@ function RegionRiskSurface({
           <div className="map-tooltip" role="status">
             <span>{activeUnit.properties.shapeISO}</span>
             <strong>{activeUnit.properties.shapeName}</strong>
-            <small>{activeMeasurement ? `${severityLabel(activeMeasurement.level)} · ${activeMeasurement.score ?? "No score"}` : "Not individually assessed"}</small>
+            <small>{activeMeasurement ? `${severityLabel(activeMeasurement.level)} · ${formatScoreValue(activeMeasurement.score)}` : "Not individually assessed"}</small>
+            {activeMeasurement ? <em>NDVI {formatMapMetric(activeMeasurement.ndvi)} · Rain {formatMapMetric(activeMeasurement.rainfallMm, " mm")}</em> : null}
           </div>
         ) : null}
         <div className="map-scale-note">ADM1 · locally cached</div>
@@ -1598,8 +1606,8 @@ const ADMIN_MAP_VIEWS: Record<string, { center: [number, number]; scale: number 
   uga: { center: [32.35, 1.35], scale: 3200 }
 };
 
-function normalizeBoundaryName(value: string): string {
-  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+function formatMapMetric(value: number | null, suffix = ""): string {
+  return value === null ? "—" : `${value.toLocaleString("en-GB", { maximumFractionDigits: 2 })}${suffix}`;
 }
 
 function formatPeriodLabel(value: string): string {

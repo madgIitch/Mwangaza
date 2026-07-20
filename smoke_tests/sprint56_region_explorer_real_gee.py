@@ -39,8 +39,20 @@ def main() -> int:
         "trends": profile is not None and bool(profile.trends),
         "historical": profile is not None and profile.historical_comparison is not None,
         "recommendations": profile is not None and bool(profile.recommendations),
+        "adm1_contract": profile is not None and bool(profile.administrative_units),
+        "adm1_boundary_ids": profile is not None and all(
+            unit.boundary_id and unit.boundary_iso for unit in profile.administrative_units
+        ),
+        "adm1_conclusive": profile is not None and any(
+            unit.score is not None and unit.quality_flag == "ok" for unit in profile.administrative_units
+        ),
     }
-    print(json.dumps({"ok": all(checks.values()), "region_id": args.region_id, "checks": checks}, sort_keys=True))
+    print(json.dumps({
+        "ok": all(checks.values()),
+        "region_id": args.region_id,
+        "adm1_units": 0 if profile is None else len(profile.administrative_units),
+        "checks": checks,
+    }, sort_keys=True))
     return 0 if all(checks.values()) else 2
 
 

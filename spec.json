@@ -3807,7 +3807,8 @@
         "Exponer y consumir contribuciones reales del composite score para sustituir los pesos placeholder.",
         "Añadir comparaciones mensuales de indicadores cuando existan snapshots comparables.",
         "Implementar deep-link desde `View all alerts` al Alerts Center filtrado por región, periodo y estado activo.",
-        "Reemplazar placeholders de notificación/cuenta por estados funcionales o placeholders aprobados por los sprints de admin/notificaciones."
+        "Reemplazar placeholders de notificación/cuenta por estados funcionales o placeholders aprobados por los sprints de admin/notificaciones.",
+        "Publicar observaciones ADM1 de GEE con identificadores de frontera estables y colorear únicamente las unidades con score propio concluyente."
       ],
       "deliverable": "Region Explorer sin placeholders silenciosos y con degradación explícita cuando falten datos.",
       "acceptance": [
@@ -3822,7 +3823,10 @@
         "En live/cache no se mezclan fixtures demo. Producción nunca cae silenciosamente a demo; una región o módulo incompleto se marca degradado/fallido con procedencia explícita.",
         "Las interacciones de país, subregión, periodo y vista actualizan datos ya cargados y no disparan consultas Earth Engine desde el navegador.",
         "Existe un smoke versionado contra GEE real que comprueba al menos una región habilitada y verifica que el payload live alimenta todos los módulos del panel sin datos demo.",
-        "Cuenta y notificaciones permanecen como placeholders explícitos no interactivos hasta que sus contratos sean aprobados."
+        "Cuenta y notificaciones permanecen como placeholders explícitos no interactivos hasta que sus contratos sean aprobados.",
+        "El perfil regional publica `administrative_units` aditivo con `region_id`, `boundary_id`, `boundary_iso`, nombre, periodo, score, nivel, calidad, source_mode y métricas GEE por unidad.",
+        "El loader live procesa ADM1 sólo para el periodo actual y limita la cobertura subnacional por configuración; no multiplica tendencias ni históricos por distrito.",
+        "El mapa enlaza observaciones y fronteras por `boundary_iso`; sólo colorea unidades con score y calidad concluyentes y mantiene en gris cualquier unidad ausente, fallida o `no_data`."
       ],
       "scope": [
         "frontend/**",
@@ -3831,6 +3835,11 @@
         "tests/api/**",
         "src/mwangaza/services/live_gee_dashboard.py",
         "src/mwangaza/services/dashboard_shell.py",
+        "src/mwangaza/regions/**",
+        "src/mwangaza/data/**",
+        "data/regions/**",
+        "tests/regions/**",
+        "tests/data/**",
         "tests/services/**",
         "smoke_tests/**",
         "docs/region-interface.md",
