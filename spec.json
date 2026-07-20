@@ -3439,7 +3439,7 @@
     {
       "id": "sprint-50-landing-page",
       "name": "Sprint 50 - Landing Page",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.8",
       "estimated_hours": 5,
@@ -3503,7 +3503,7 @@
       "estimated_hours": 6,
       "demo_critical": true,
       "dependencies": [
-        "sprint-50-landing-page"
+        "sprint-60-about-methodology-completion"
       ],
       "objective": "Preparar una narrativa de presentación centrada en alerta y acción temprana.",
       "user_stories": [
@@ -3787,7 +3787,7 @@
       "estimated_hours": 7,
       "demo_critical": false,
       "dependencies": [
-        "sprint-55-mwangaza-1-0-release"
+        "sprint-50-landing-page"
       ],
       "objective": "Rellenar los placeholders de la pantalla `/region` con contratos API/PWA completos y rutas internas funcionales, sin disparar consultas Earth Engine desde la interacción de usuario.",
       "user_stories": [
@@ -3840,7 +3840,7 @@
       "estimated_hours": 7,
       "demo_critical": false,
       "dependencies": [
-        "sprint-55-mwangaza-1-0-release"
+        "sprint-50-landing-page"
       ],
       "objective": "Rellenar los placeholders de la pantalla `/overview` con controles, rutas y contratos API/PWA completos, manteniendo `/overview` como cockpit operativo independiente.",
       "user_stories": [
@@ -3892,7 +3892,7 @@
       "estimated_hours": 8,
       "demo_critical": false,
       "dependencies": [
-        "sprint-55-mwangaza-1-0-release"
+        "sprint-50-landing-page"
       ],
       "objective": "Rellenar los placeholders de `/alerts` con contratos API/PWA completos para triage, detalle, notificaciones simuladas, ciclo de vida y resoluciones.",
       "user_stories": [
@@ -3944,7 +3944,7 @@
       "estimated_hours": 8,
       "demo_critical": false,
       "dependencies": [
-        "sprint-55-mwangaza-1-0-release"
+        "sprint-50-landing-page"
       ],
       "objective": "Rellenar los placeholders de `/reports` con contratos API/PWA completos para generacion, preview, descarga, programacion y distribucion de reportes.",
       "user_stories": [
@@ -3996,7 +3996,7 @@
       "estimated_hours": 6,
       "demo_critical": false,
       "dependencies": [
-        "sprint-55-mwangaza-1-0-release"
+        "sprint-50-landing-page"
       ],
       "objective": "Rellenar los placeholders de `/about` con metodologia, fuentes, estado documental, tema persistente, enlaces legales/contacto y metadata versionada.",
       "user_stories": [
