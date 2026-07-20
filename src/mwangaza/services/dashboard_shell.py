@@ -148,6 +148,7 @@ class RegionProfile:
     status: Freshness = "current"
     trends: tuple[TrendSeries, ...] = ()
     historical_comparison: HistoricalComparison | None = None
+    contributions: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -543,9 +544,28 @@ def _region_profiles_from_payloads(
                 pilot_units=_pilot_units_for_parent(region_id, payloads),
                 status="empty" if risk is None and not signals else "current",
                 historical_comparison=_historical_comparison_for_region(comparison_payloads, region_id),
+                contributions=_risk_contributions(risk),
             )
         )
     return tuple(profiles)
+
+
+def _risk_contributions(risk: dict[str, Any] | None) -> tuple[dict[str, Any], ...]:
+    metadata = risk.get("metadata", {}) if isinstance(risk, dict) else {}
+    raw = metadata.get("contributions", {}) if isinstance(metadata, dict) else {}
+    if not isinstance(raw, dict):
+        return ()
+    return tuple(
+        {
+            "indicator": indicator,
+            "weight": _safe_float(item.get("weight")),
+            "score": _safe_float(item.get("score")),
+            "source": _first_text(item.get("source")),
+            "quality": _first_text(item.get("quality_flag")) or "unknown",
+        }
+        for indicator, item in sorted(raw.items())
+        if isinstance(item, dict)
+    )
 
 
 def _pilot_units_for_parent(parent_id: str, payloads: tuple[dict[str, Any], ...]) -> tuple[PilotUnit, ...]:
@@ -1343,6 +1363,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 trends=som_trends,
                 historical_comparison=som_history,
+                contributions=_demo_contributions(),
             ),
             RegionProfile(
                 "ken",
@@ -1375,6 +1396,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 trends=ken_trends,
                 historical_comparison=ken_history,
+                contributions=_demo_contributions(),
             ),
             RegionProfile(
                 "eth",
@@ -1391,8 +1413,17 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ("Prepare early action checklist.",),
                 trends=eth_trends,
                 historical_comparison=eth_history,
+                contributions=_demo_contributions(),
             ),
         ),
+    )
+
+
+def _demo_contributions() -> tuple[dict[str, Any], ...]:
+    return (
+        {"indicator": "ndvi", "weight": 0.4, "score": 72.0, "source": "Demo fixture", "quality": "ok"},
+        {"indicator": "rainfall_mm", "weight": 0.4, "score": 84.0, "source": "Demo fixture", "quality": "ok"},
+        {"indicator": "lst_c", "weight": 0.2, "score": 64.0, "source": "Demo fixture", "quality": "ok"},
     )
 
 

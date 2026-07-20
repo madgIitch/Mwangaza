@@ -532,3 +532,16 @@ Decisiones registradas:
 - **tests:** Quedan como mínimos bloqueantes: smoke de contenido visible con exactamente tres capacidades; verificación de URLs configuradas y omisión de CTAs inválidos; prueba de que `/landing` es aditiva y no altera rutas existentes; comprobación CSS/DOM a 320 px sin overflow horizontal; ausencia de inicialización o llamadas remotas/GEE; y prueba que rechaza claims cuantitativos sin cita visible o referencia explícita aprobada.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-56-region-explorer-completion -->
+## 2026-07-20 · sprint-56-region-explorer-completion aprobado
+
+Contexto: se aprobó el spec `sprint-56-region-explorer-completion` (Sprint 56 - Region Explorer Completion).
+
+Decisiones registradas:
+
+- **auth_secrets:** Sin secretos ni GEE desde el navegador; demo local.
+- **rollback_compat:** Rutas y contratos previos preservados.
+- **tests:** Matriz bloqueante demo/live y smoke real GEE definida.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

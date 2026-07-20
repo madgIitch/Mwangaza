@@ -67,6 +67,8 @@ export interface RegionProfile {
   alerts: Alert[];
   recommendations: string[];
   pilotUnits: string[];
+  pilotRows?: Array<{ id: string; name: string; adminLevel: string; score: number | null; level: Severity; quality: string; rank: number }>;
+  contributions?: Array<{ indicator: string; weight: number | null; score: number | null; source: string; quality: string }>;
   trends: TrendSeries[];
   historicalRows: HistoricalRow[];
 }
@@ -87,6 +89,7 @@ export interface DashboardData {
   alerts: Alert[];
   recommendations: string[];
   profiles: RegionProfile[];
+  periods?: Array<{ key: string; label: string; regions: RegionRisk[]; profiles: RegionProfile[] }>;
   exposureNote: string;
   reportFilename: string;
   exportFilenames: { csv: string; json: string };
@@ -128,6 +131,23 @@ export interface PublicSnapshotResponse {
       selected: boolean;
       source_mode: string;
       ui_geometry?: GeoJsonGeometry | null;
+    }>;
+    region_profiles?: Array<{
+      id: string;
+      name: string;
+      status: string;
+      metrics: Metric[];
+      pilot_units: Array<{ id: string; name: string; admin_level: string; score: number | null; level: string; quality: string; rank: number }>;
+      trends: Array<{ indicator: string; label: string; unit: string; source: string; points: Array<{ period: string; value: number | null; baseline: number | null }> }>;
+      historical_rows: HistoricalRow[];
+      recommendations: string[];
+      contributions: Array<{ indicator: string; weight: number | null; score: number | null; source: string; quality: string }>;
+    }>;
+    periods?: Array<{
+      key: string;
+      label: string;
+      regions: PublicSnapshotResponse["snapshot"]["regional_risk"];
+      profiles: NonNullable<PublicSnapshotResponse["snapshot"]["region_profiles"]>;
     }>;
     source_metadata: Record<string, unknown>;
   };

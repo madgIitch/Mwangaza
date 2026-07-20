@@ -1,19 +1,14 @@
 # Sesión actual
 
-Feature: **sprint-50-landing-page - Sprint 50 - Landing Page** - estado: `review_pending`.
-
-- agente: codex
-- rama: `main`
-- intentos: 1
+Feature: **sprint-56-region-explorer-completion - Sprint 56 - Region Explorer Completion** - estado: `review_pending`.
 
 ## Siguiente acción
 
-- Smoke humano: abrir `/landing` a 1440 px y 320 px, validar CTAs, ausencia de overflow y conservación de rutas. Cerrar con `node .harness/spec.mjs done sprint-50-landing-page` si pasa.
+- Repetir smoke humano en `/region?api=1` tras el rechazo visual inicial: verificar encuadre ADM1 real, ausencia de rectángulos sintéticos y composición compacta; después seleccionar país, piloto y periodo y revisar low-bandwidth. Cerrar sólo con aprobación visual.
 
 ## Último resultado
 
-| intento | resultado | gate fallido |
-|--:|--|--|
-| 1 | OK | - |
-
-Validaciones ejecutadas: 232 tests Python, 33 tests frontend, typecheck, lint, build y gates del harness.
+- Smoke GEE real: PASS (10/10).
+- 288 tests Python + 11 subtests y 35 frontend.
+- Typecheck, lint, build y gates: PASS.
+- Primera revisión visual: FAIL; mapa y layout rehechos, segunda revisión pendiente.

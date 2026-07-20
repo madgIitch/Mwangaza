@@ -203,3 +203,7 @@
 
 - Landing pública en `/landing`, CTAs configurables, ruta aditiva y diseño responsive.
 - 232 tests Python, 33 frontend, typecheck, lint, build y gates pasan.
+# 2026-07-20T21:04:00Z - #sprint-56-region-explorer-completion -> review_pending
+
+- Contrato regional completo demo/live, controles funcionales y smoke GEE real 10/10.
+- 233 tests Python, 35 frontend, typecheck, lint, build y gates pasan.

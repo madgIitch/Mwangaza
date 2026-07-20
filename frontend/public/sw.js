@@ -1,5 +1,17 @@
-const CACHE_NAME = "mwangaza-shell-v1";
-const SHELL_ASSETS = ["/", "/manifest.webmanifest", "/icons/icon.svg"];
+const CACHE_NAME = "mwangaza-shell-v2";
+const SHELL_ASSETS = [
+  "/",
+  "/manifest.webmanifest",
+  "/icons/icon.svg",
+  "/maps/DJI-ADM1.geojson",
+  "/maps/ERI-ADM1.geojson",
+  "/maps/ETH-ADM1.geojson",
+  "/maps/KEN-ADM1.geojson",
+  "/maps/SDN-ADM1.geojson",
+  "/maps/SOM-ADM1.geojson",
+  "/maps/SSD-ADM1.geojson",
+  "/maps/UGA-ADM1.geojson"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

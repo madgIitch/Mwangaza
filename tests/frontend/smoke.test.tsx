@@ -19,6 +19,7 @@ describe("canonical React route smoke", () => {
 
   it.each(routes)("opens %s with deterministic fixtures", (route, heading) => {
     window.history.pushState({}, "", route);
+    if (route === "/region") vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
     render(<App initialData={demoDashboard} skipApiLoad />);
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Demo data");

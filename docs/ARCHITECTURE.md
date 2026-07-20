@@ -1337,3 +1337,30 @@ Objetivo no negociable:
 - **edge_cases:** La validación responsive cubre 320 px de ancho mínimo y breakpoints de 375/768/1280. Ningún contenedor puede introducir overflow horizontal; textos largos deben hacer wrapping. Las listas de pilotos y limitaciones crecen verticalmente y cualquier grid colapsa a una sola columna en móvil estrecho.
 - **ui_states:** La landing no tiene estado de carga ni dependencias remotas. El contenido principal es estático/versionado y no depende de la disponibilidad de los CTAs opcionales. Los CTAs no disponibles se omiten sin mensaje de error y sin dejar huecos visuales.
 
+<!-- harness:sprint-56-region-explorer-completion -->
+## sprint-56-region-explorer-completion · Sprint 56 - Region Explorer Completion
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `src/mwangaza/services/live_gee_dashboard.py`
+  - `src/mwangaza/services/dashboard_shell.py`
+  - `tests/services/**`
+  - `smoke_tests/**`
+  - `docs/region-interface.md`
+  - `docs/contracts.md`
+  - `spec/sprint-56-region-explorer-completion-*/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Contrato subnacional completo y equivalente para demo y live GEE, con valores ausentes explícitos.
+- **external_contracts:** Deep-link, geometrías y salida completa del pipeline live GEE definidos.
+- **edge_cases:** Orden, comparación y selección deterministas.
+- **ui_states:** Panel funcional completo en live y demo, low-bandwidth y payload incompleto.
+

@@ -10,6 +10,7 @@ from mwangaza.services.live_gee_dashboard import (
     build_live_gee_payloads,
     build_live_gee_payloads_for_recent_periods,
     build_live_gee_payloads_for_regions,
+    comparable_period_windows,
     dashboard_live_region_ids,
     recent_period_windows,
     resolve_live_gee_period,
@@ -151,6 +152,15 @@ class LiveGeeDashboardTests(unittest.TestCase):
             ),
         )
         self.assertEqual(len(recent_period_windows("2026-07-15T00:00:00Z", point_count=99)), 8)
+
+    def test_builds_bounded_seasonally_comparable_history_windows(self) -> None:
+        self.assertEqual(
+            comparable_period_windows("2026-07-15T00:00:00Z", years=2),
+            (
+                ("2025-07-01T00:00:00Z", "2025-07-15T00:00:00Z"),
+                ("2024-07-01T00:00:00Z", "2024-07-15T00:00:00Z"),
+            ),
+        )
 
     def test_builds_recent_live_payloads_for_series_points(self) -> None:
         payloads = build_live_gee_payloads_for_recent_periods(

@@ -69,6 +69,8 @@ Language changes labels and recommendations when translations exist. It must not
 
 Primary target: a district or pilot-area choropleth with visible legend.
 
+The page uses locally cached, version-pinned geoBoundaries gbOpen ADM1 files as a neutral administrative reference layer for all eight IGAD countries. This reference layer is separate from the analytical region geometry used by GEE. A subdivision remains `Not assessed` unless the API provides a matching unit-level observation; a national score is never copied across all districts.
+
 Implementation choice: the React PWA uses `react-simple-maps` for SVG choropleths. This is intentional because it can render GeoJSON/TopoJSON shapes directly, does not require external map tiles, and fits low-bandwidth/offline constraints better than a tile-first map stack.
 
 Severity colors:
@@ -81,7 +83,7 @@ Severity colors:
 
 Hover/focus details should include district/region name, alert level, score, NDVI anomaly, rainfall anomaly, data quality and snapshot date.
 
-Current React implementation renders a real SVG map surface only when `ui_geometry` is present. If the public API does not expose geometries for the selected units, it shows an explicit `Map geometry pending` placeholder plus the regional readout table; it must not draw synthetic shapes as if they were geography.
+The React implementation renders validated ADM1 boundaries from local assets and overlays only matching API observations. If a validated boundary asset is unavailable it shows an explicit unavailable state; it must not draw the coarse prototype bounding boxes as if they were geography. Polygon winding is normalized for the D3 projection before rendering so the country fits the viewport correctly.
 
 ### Region Summary
 
@@ -169,6 +171,11 @@ Explains:
 Must state that Mwangaza is a decision-support prototype and estimates should be used alongside local knowledge. Institutional logos should only be used when permission is confirmed; otherwise use text attribution such as `Developed for the IGAD Hackathon 2026`.
 
 ## Implemented Now
+
+- The public API exposes complete region profiles and processed temporal cuts for both explicit demo and live/cache data.
+- Region Explorer consumes explicit composite contributions, deterministic pilot rankings, live trends and seasonally comparable history.
+- Country, pilot view and period controls operate on already-loaded payloads; `View all alerts` preserves region, period and active status.
+- `smoke_tests/sprint56_region_explorer_real_gee.py` verifies the complete panel contract against real GEE without demo data.
 
 - Northern Kenya demo selection covers Turkana, Marsabit and Isiolo offline; the active district drives its detail, report reference and simulated notification language.
 - `/region` route renders a Region Explorer workspace in the React PWA.

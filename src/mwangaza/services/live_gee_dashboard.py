@@ -162,6 +162,7 @@ def load_live_gee_dashboard_payloads(
         end,
         adapter=adapter,
         point_count=_live_trend_points(),
+        history_years=2,
     )
 
 
@@ -241,11 +242,31 @@ def build_live_gee_payloads_for_recent_periods(
     *,
     adapter: RealGeeRegionalAdapter,
     point_count: int = DEFAULT_TREND_POINTS,
+    history_years: int = 0,
 ) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
     for period_start, period_end in recent_period_windows(latest_period_end, point_count=point_count):
         payloads.extend(build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter))
+    for period_start, period_end in comparable_period_windows(latest_period_end, years=history_years):
+        payloads.extend(build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter))
     return payloads
+
+
+def comparable_period_windows(latest_period_end: str, *, years: int = 2) -> tuple[tuple[str, str], ...]:
+    bounded_years = max(0, min(int(years), 5))
+    end = datetime.fromisoformat(latest_period_end.replace("Z", "+00:00")).astimezone(UTC)
+    windows = []
+    for offset in range(1, bounded_years + 1):
+        try:
+            historical_end = end.replace(year=end.year - offset)
+        except ValueError:
+            historical_end = end.replace(year=end.year - offset, day=28)
+        historical_start = historical_end - timedelta(days=DEFAULT_LOOKBACK_DAYS - 1)
+        windows.append((
+            historical_start.replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
+            historical_end.replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
+        ))
+    return tuple(windows)
 
 
 def recent_period_windows(
@@ -380,6 +401,7 @@ __all__ = [
     "build_live_gee_payloads",
     "build_live_gee_payloads_for_regions",
     "build_live_gee_payloads_for_recent_periods",
+    "comparable_period_windows",
     "dashboard_live_region_ids",
     "load_live_gee_dashboard_payloads",
     "recent_period_windows",

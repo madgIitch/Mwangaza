@@ -102,6 +102,16 @@ demoDashboard.profiles = demoDashboard.regions.map((region) => ({
   alerts: demoDashboard.alerts.filter((alert) => alert.regionId === region.id),
   recommendations: region.id === "som" ? demoDashboard.recommendations : ["Prepare early action checklist."],
   pilotUnits: region.id === "som" ? ["Somalia Pilot Area"] : region.id === "ken" ? ["Northern Kenya Pilot Area"] : [],
+  pilotRows: region.id === "som"
+    ? [{ id: "somalia-pilot", name: "Somalia Pilot Area", adminLevel: "pilot_area", score: 78, level: "critical", quality: "ok", rank: 1 }]
+    : region.id === "ken"
+      ? [{ id: "northern-kenya-pilot", name: "Northern Kenya Pilot Area", adminLevel: "pilot_area", score: 61, level: "warning", quality: "ok", rank: 1 }]
+      : [],
+  contributions: [
+    { indicator: "ndvi", weight: 0.4, score: 72, source: "Demo fixture", quality: "ok" },
+    { indicator: "rainfall_mm", weight: 0.4, score: 84, source: "Demo fixture", quality: "ok" },
+    { indicator: "lst_c", weight: 0.2, score: 64, source: "Demo fixture", quality: "ok" }
+  ],
   trends: [
     {
       indicator: "ndvi",

@@ -6,6 +6,12 @@ import { loadApiDashboard } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
 import { demoDashboard } from "../../frontend/src/fixtures";
 
+const somaliaAdm1 = JSON.parse(readFileSync(resolve("frontend/public/maps/SOM-ADM1.geojson"), "utf8"));
+
+function mockAdministrativeMap(): void {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => somaliaAdm1 }));
+}
+
 describe("React PWA dashboard", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
@@ -49,17 +55,40 @@ describe("React PWA dashboard", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("renders Region Explorer as an internal app screen on /region", () => {
+  it("renders Region Explorer as an internal app screen on /region", async () => {
     window.history.pushState({}, "", "/region");
+    mockAdministrativeMap();
 
     render(<App initialData={demoDashboard} skipApiLoad />);
 
     expect(screen.getByRole("heading", { name: "Region Explorer" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Somalia Risk Map" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Somalia" })).toBeInTheDocument();
     expect(screen.getByLabelText("Regions map")).toBeInTheDocument();
+    expect(screen.getByText(/score shown above is national/i)).toBeInTheDocument();
+    expect(document.querySelector(".map-readout")).not.toBeInTheDocument();
+    await waitFor(() => expect(document.querySelector(".region-svg-map")).toBeInTheDocument());
+    await waitFor(() => expect(document.querySelectorAll(".region-svg-map path").length).toBe(18));
+    expect([...document.querySelectorAll<SVGPathElement>(".region-svg-map path")].every((path) => path.style.fill !== "#f08c2e")).toBe(true);
     expect(screen.getByText("Why this region is at risk")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Subnational ranking" })).toBeInTheDocument();
     expect(screen.getByText("Methodology page pending")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Subregion / District" })).toBeEnabled();
+    expect(screen.getByRole("link", { name: "View all alerts" })).toHaveAttribute(
+      "href",
+      "/alerts?region=som&period=2026-07-01+to+2026-07-15&status=active"
+    );
+    expect(screen.queryByText(/Placeholder contribution weights/)).not.toBeInTheDocument();
+    expect(screen.getByText("NDVI anomaly", { selector: ".contribution-row span" })).toBeInTheDocument();
+  });
+
+  it("switches Region Explorer into an available pilot view", () => {
+    window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Subregion / District" }), { target: { value: "somalia-pilot" } });
+    expect(screen.getByRole("button", { name: "Pilot subnational view" })).toHaveAttribute("data-active", "true");
+    expect(screen.getAllByText("Somalia Pilot Area").length).toBeGreaterThan(0);
   });
 
   it("uses page routes instead of hash anchors in the sidebar", () => {
@@ -136,8 +165,9 @@ describe("React PWA dashboard", () => {
     expect(screen.getByLabelText("Data lineage")).toHaveTextContent("Source → Transformation and QA → Cache → API → UI → Report");
   });
 
-  it("does not draw provisional geography while the public API is loading on /region", () => {
+  it("does not draw synthetic risk geometry while administrative boundaries are loading", () => {
     window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
     const loadingRegionData = {
       ...demoDashboard,
       dataMode: "cache" as const,
@@ -154,12 +184,13 @@ describe("React PWA dashboard", () => {
 
     render(<App initialData={loadingRegionData} skipApiLoad />);
 
-    expect(screen.getByText("Map geometry pending")).toBeInTheDocument();
+    expect(screen.getByText("Loading administrative boundaries…")).toBeInTheDocument();
     expect(document.querySelector(".region-svg-map")).not.toBeInTheDocument();
   });
 
   it("selects Northern Kenya districts and keeps report and notification aligned", () => {
     window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
     render(<App initialData={demoDashboard} skipApiLoad />);
     fireEvent.change(screen.getByLabelText("Country", { selector: "select" }), { target: { value: "ken" } });
     expect(screen.getByRole("heading", { name: "Northern Kenya subnational scenario" })).toBeInTheDocument();

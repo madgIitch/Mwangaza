@@ -1188,15 +1188,32 @@ function RegionExplorer({
   activeAlerts: DashboardData["alerts"];
   onSelectRegion: (id: string) => void;
 }): JSX.Element {
+  const [selectedPilotId, setSelectedPilotId] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [regionView, setRegionView] = useState<"national" | "pilot">("national");
+  const periodPayload = data.periods?.find((period) => period.key === selectedPeriod);
+  const periodProfile = periodPayload?.profiles.find((profile) => profile.id === selectedRegion.id);
+  const effectiveProfile = periodProfile ?? selectedProfile;
   const selectedAlerts = activeAlerts.filter((alert) => alert.regionId === selectedRegion.id);
   const primaryAlert = selectedAlerts[0] ?? activeAlerts[0];
-  const displayMetrics = selectedProfile.metrics.length ? selectedProfile.metrics : data.metrics;
+  const displayMetrics = effectiveProfile.metrics.length ? effectiveProfile.metrics : data.metrics;
   const ndvi = metricByLabel(displayMetrics, "NDVI");
   const rainfall = metricByLabel(displayMetrics, "Rainfall");
   const lst = metricByLabel(displayMetrics, "LST");
   const composite = metricByLabel(displayMetrics, "Composite");
   const exposure = metricByLabel(displayMetrics, "potentially_exposed");
   const indicatorMetrics = [ndvi, rainfall, lst, composite, exposure].filter((metric): metric is Metric => Boolean(metric));
+  const rankedPilotRows = [...(effectiveProfile.pilotRows ?? [])].sort((left, right) =>
+    left.score === null ? 1 : right.score === null ? -1 : right.score - left.score || left.name.localeCompare(right.name)
+  );
+  const availablePeriods = data.periods ?? [];
+  const selectedPilot = rankedPilotRows.find((unit) => unit.id === selectedPilotId);
+  useEffect(() => {
+    setSelectedPilotId("");
+    setSelectedPeriod("");
+    setRegionView("national");
+  }, [selectedRegion.id]);
+  const alertsHref = `/alerts?${new URLSearchParams({ region: selectedRegion.id, period: selectedRegion.period, status: "active" })}`;
 
   return (
     <section className="region-screen" aria-label="Region Explorer">
@@ -1211,25 +1228,27 @@ function RegionExplorer({
             <span>Country</span>
             <select value={selectedRegion.id} onChange={(event) => onSelectRegion(event.target.value)}>
               {data.regions.map((region) => (
-                <option key={region.id} value={region.id}>{region.name}</option>
+                <option key={region.id} value={region.id}>{countryDisplayName(region)}</option>
               ))}
             </select>
           </label>
           <label>
             <span>Subregion / District</span>
-            <select disabled>
-              <option>{selectedProfile.pilotUnits.length ? "All pilot areas" : "Subnational unavailable"}</option>
+            <select disabled={!rankedPilotRows.length} value={selectedPilotId} onChange={(event) => { setSelectedPilotId(event.target.value); setRegionView(event.target.value ? "pilot" : "national"); }}>
+              <option value="">{rankedPilotRows.length ? "All pilot areas" : "Subnational unavailable"}</option>
+              {rankedPilotRows.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
             </select>
           </label>
           <label>
             <span>Time period</span>
-            <select disabled>
-              <option>{selectedRegion.period}</option>
+            <select disabled={!availablePeriods.length} value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
+              <option value="">{selectedRegion.period}</option>
+              {availablePeriods.map((period) => <option key={period.key} value={period.key}>{period.label}</option>)}
             </select>
           </label>
           <div className="segmented" aria-label="View">
-            <button type="button" data-active="true">National view</button>
-            <button type="button" disabled>Pilot subnational view</button>
+            <button type="button" data-active={regionView === "national"} onClick={() => { setRegionView("national"); setSelectedPilotId(""); }}>National view</button>
+            <button type="button" data-active={regionView === "pilot"} disabled={!rankedPilotRows.length} onClick={() => setRegionView("pilot")}>Pilot subnational view</button>
           </div>
         </div>
       </div>
@@ -1244,17 +1263,17 @@ function RegionExplorer({
             <span className="info-dot" title="Operational summary for the selected region.">i</span>
           </div>
           <dl className="summary-list">
-            <div><dt>Region</dt><dd>{selectedRegion.name}</dd></div>
+            <div><dt>Region</dt><dd>{selectedPilot?.name ?? selectedRegion.name}</dd></div>
             <div><dt>Level</dt><dd>{selectedProfile.pilotUnits.length ? "Country with pilot coverage" : "Country"}</dd></div>
             <div><dt>Potentially exposed population</dt><dd>{exposure?.value ?? "No data"} {exposure?.unit ?? ""}</dd></div>
             <div><dt>Last updated</dt><dd>{selectedRegion.period}</dd></div>
             <div><dt>Data quality</dt><dd>{qualityLabel(selectedRegion.quality)}</dd></div>
-            <div><dt>Current alert level</dt><dd><span className="severity-badge" data-severity={selectedRegion.level}>{severityLabel(selectedRegion.level)}</span></dd></div>
+            <div><dt>Current alert level</dt><dd><span className="severity-badge" data-severity={selectedPilot?.level ?? selectedRegion.level}>{severityLabel(selectedPilot?.level ?? selectedRegion.level)}</span></dd></div>
           </dl>
           <div className="featured-alert" data-severity={primaryAlert?.severity ?? selectedRegion.level}>
             <strong>{primaryAlert?.title ?? `${severityLabel(selectedRegion.level)} drought status`}</strong>
             <p>{primaryAlert?.action ?? "No active regional alert is available for this period."}</p>
-            <a href="/alerts">View all alerts</a>
+            <a href={alertsHref}>View all alerts</a>
           </div>
         </section>
       </div>
@@ -1272,11 +1291,10 @@ function RegionExplorer({
 
       <div className="region-lower-grid">
         <section>
-          <h2>Why this region is at risk <span className="info-dot" title="Estimated from visible indicators until contribution payloads are exposed.">i</span></h2>
-          <ContributionRow label="NDVI anomaly" value={0.34} max={0.4} severity={ndvi?.severity ?? "unknown"} />
-          <ContributionRow label="Rainfall anomaly" value={0.32} max={0.35} severity={rainfall?.severity ?? "unknown"} />
-          <ContributionRow label="Temperature anomaly" value={0.2} max={0.25} severity={lst?.severity ?? "unknown"} />
-          <p className="muted">Placeholder contribution weights; replace with backend contribution payload in a future sprint.</p>
+          <h2>Why this region is at risk <span className="info-dot" title="Contributions reported by the composite-risk payload.">i</span></h2>
+          {effectiveProfile.contributions?.length ? effectiveProfile.contributions.map((item) => (
+            <ContributionRow key={item.indicator} label={indicatorLabel(item.indicator)} value={item.weight ?? 0} max={1} severity={severityForContribution(item.score)} />
+          )) : <Placeholder title="Contribution payload pending" detail="The API has not provided explicit composite-score contributions for this region." />}
         </section>
 
         <section>
@@ -1284,12 +1302,12 @@ function RegionExplorer({
             <h2>Subnational ranking</h2>
             <span className="muted">Pilot districts</span>
           </div>
-          {selectedProfile.pilotUnits.length ? (
+          {rankedPilotRows.length ? (
             <table>
               <thead><tr><th>#</th><th>District / Area</th><th>Alert level</th><th>Composite score</th><th>Data quality</th></tr></thead>
               <tbody>
-                {selectedProfile.pilotUnits.map((unit, index) => (
-                  <tr key={unit}><td>{index + 1}</td><td>{unit}</td><td>{severityLabel(selectedRegion.level)}</td><td>{selectedRegion.score ?? "No data"}</td><td>{selectedRegion.quality}</td></tr>
+                {rankedPilotRows.map((unit, index) => (
+                  <tr key={unit.id}><td>{index + 1}</td><td>{unit.name}</td><td>{severityLabel(unit.level)}</td><td>{unit.score === null ? "No data" : formatScoreValue(unit.score)}</td><td>{qualityLabel(unit.quality)}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -1298,18 +1316,18 @@ function RegionExplorer({
           )}
         </section>
 
-        <TrendPanel trends={selectedProfile.trends} />
+        <TrendPanel trends={effectiveProfile.trends} />
       </div>
 
       <div className="region-lower-grid region-final-grid">
         <section>
           <h2>Historical comparison</h2>
-          {selectedProfile.historicalRows.length ? (
+          {effectiveProfile.historicalRows.length ? (
             <table>
               <thead><tr><th>Period</th><th>Indicator</th><th>Current</th><th>Historical</th><th>Difference</th></tr></thead>
               <tbody>
-                {selectedProfile.historicalRows.map((row) => (
-                  <tr key={`${row.period}-${row.indicator}`}><td>{row.period}</td><td>{row.indicator}</td><td>{row.current}</td><td>{row.historical}</td><td>{row.difference}</td></tr>
+                {effectiveProfile.historicalRows.map((row) => (
+                  <tr key={`${row.period}-${row.indicator}`}><td>{formatPeriodLabel(row.period)}</td><td>{row.indicator}</td><td>{formatMeasuredValue(row.current)}</td><td>{formatMeasuredValue(row.historical)}</td><td>{formatMeasuredValue(row.difference)}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -1320,7 +1338,7 @@ function RegionExplorer({
         <section>
           <h2>Recommended early actions</h2>
           <ul className="action-list">
-            {(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => (
+            {(effectiveProfile.recommendations.length ? effectiveProfile.recommendations : data.recommendations).map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
@@ -1381,49 +1399,92 @@ function appLog(message: string, fields: Record<string, unknown> = {}): void {
 
 function RegionRiskSurface({
   data,
-  selectedRegion,
-  onSelectRegion
+  selectedRegion
 }: {
   data: DashboardData;
   selectedRegion: RegionRisk;
   onSelectRegion: (id: string) => void;
 }): JSX.Element {
-  const geography = useMemo(() => buildRiskFeatureCollection(data.regions), [data.regions]);
-  const hasGeometry = geography.features.length > 0;
+  const [administrativeMap, setAdministrativeMap] = useState<AdministrativeFeatureCollection | null>(null);
+  const [mapState, setMapState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [activeUnit, setActiveUnit] = useState<AdministrativeFeature | null>(null);
+  const boundaryAsset = ADMIN_BOUNDARY_ASSETS[selectedRegion.id];
+  const selectedProfile = data.profiles.find((profile) => profile.id === selectedRegion.id);
+  const measuredUnits = useMemo(() => new Map(
+    (selectedProfile?.pilotRows ?? []).map((unit) => [normalizeBoundaryName(unit.name), unit])
+  ), [selectedProfile]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setAdministrativeMap(null);
+    setActiveUnit(null);
+    if (!boundaryAsset) {
+      setMapState("unavailable");
+      return () => controller.abort();
+    }
+    setMapState("loading");
+    void fetch(boundaryAsset, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Boundary asset returned ${response.status}`);
+        return response.json() as Promise<AdministrativeFeatureCollection>;
+      })
+      .then((collection) => {
+        setAdministrativeMap(normalizeAdministrativeRings(collection));
+        setMapState("ready");
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setMapState("unavailable");
+      });
+    return () => controller.abort();
+  }, [boundaryAsset]);
+
+  const mapView = ADMIN_MAP_VIEWS[selectedRegion.id] ?? ADMIN_MAP_VIEWS.som;
+  const activeMeasurement = activeUnit ? measuredUnits.get(normalizeBoundaryName(activeUnit.properties.shapeName)) : undefined;
   return (
     <section className="region-map-panel">
-      <div className="section-heading">
-        <h2>{selectedRegion.name} Risk Map</h2>
-        <span className="info-dot" title="Country and pilot area risk from the current dashboard payload.">i</span>
+      <div className="region-map-heading">
+        <div>
+          <p className="eyebrow">Administrative atlas</p>
+          <h2>{countryDisplayName(selectedRegion)}</h2>
+          <p>First-level boundaries · national drought observation</p>
+        </div>
+        <div className="region-map-score" data-severity={selectedRegion.level}>
+          <span>National score</span>
+          <strong>{formatScoreValue(selectedRegion.score)}</strong>
+          <small>{severityLabel(selectedRegion.level)}</small>
+        </div>
       </div>
       <div className="region-map-stage" aria-label="Regions map">
-        {hasGeometry ? (
+        {mapState === "ready" && administrativeMap ? (
           <ComposableMap
             projection="geoMercator"
-            projectionConfig={{ center: [38, 8], scale: 760 }}
-            width={760}
-            height={360}
+            projectionConfig={{ center: mapView.center, scale: mapView.scale }}
+            width={820}
+            height={500}
             className="region-svg-map"
           >
-            <Geographies geography={geography}>
+            <Geographies geography={administrativeMap}>
               {({ geographies }) => geographies.map((geo) => {
-                const region = geo.properties.region as RegionRisk;
+                const feature = geo as unknown as AdministrativeFeature & { rsmKey: string };
+                const unit = measuredUnits.get(normalizeBoundaryName(feature.properties.shapeName));
                 return (
                   <Geography
-                    aria-label={`${region.name}: ${region.score ?? "No data"} ${region.level}`}
+                    aria-label={`${feature.properties.shapeName}: ${unit ? `${unit.score ?? "No data"} ${unit.level}` : "not individually assessed"}`}
                     geography={geo}
                     key={geo.rsmKey}
-                    onClick={() => onSelectRegion(region.id)}
-                    role="button"
+                    onBlur={() => setActiveUnit(null)}
+                    onFocus={() => setActiveUnit(feature)}
+                    onMouseEnter={() => setActiveUnit(feature)}
+                    onMouseLeave={() => setActiveUnit(null)}
                     style={{
                       default: {
-                        fill: mapFill(region.level),
-                        stroke: region.id === selectedRegion.id ? "#172033" : "#ffffff",
-                        strokeWidth: region.id === selectedRegion.id ? 2.8 : 1.3,
+                        fill: unit ? mapFill(unit.level) : "#dce5dc",
+                        stroke: "#ffffff",
+                        strokeWidth: 1.15,
                         outline: "none"
                       },
-                      hover: { fill: mapHoverFill(region.level), outline: "none" },
-                      pressed: { fill: mapHoverFill(region.level), outline: "none" }
+                      hover: { fill: unit ? mapHoverFill(unit.level) : "#bdcdbf", outline: "none" },
+                      pressed: { fill: unit ? mapHoverFill(unit.level) : "#afc2b2", outline: "none" }
                     }}
                     tabIndex={0}
                   />
@@ -1431,32 +1492,31 @@ function RegionRiskSurface({
               })}
             </Geographies>
           </ComposableMap>
+        ) : mapState === "loading" ? (
+          <div aria-live="polite" className="map-loading"><span />Loading administrative boundaries…</div>
         ) : (
-          <Placeholder title="Map geometry pending" detail="The public API has not provided GeoJSON UI geometry for this payload yet." />
+          <Placeholder title="Administrative boundaries unavailable" detail="A validated local boundary asset is not available for this country yet. No synthetic geometry is shown." />
         )}
-        <div className="map-readout" role="list">
-          {data.regions.map((region) => (
-            <button
-              data-selected={region.id === selectedRegion.id ? "true" : "false"}
-              key={region.id}
-              onClick={() => onSelectRegion(region.id)}
-              type="button"
-            >
-              <span>{region.name}</span>
-              <strong>{region.score ?? "No data"}</strong>
-              <small>{region.level} | {region.quality}</small>
-            </button>
-          ))}
+        {activeUnit ? (
+          <div className="map-tooltip" role="status">
+            <span>{activeUnit.properties.shapeISO}</span>
+            <strong>{activeUnit.properties.shapeName}</strong>
+            <small>{activeMeasurement ? `${severityLabel(activeMeasurement.level)} · ${activeMeasurement.score ?? "No score"}` : "Not individually assessed"}</small>
+          </div>
+        ) : null}
+        <div className="map-scale-note">ADM1 · locally cached</div>
+      </div>
+      <div className="region-map-footer">
+        <div className="map-legend" aria-label="Risk legend">
+          <span data-severity="normal">Low</span>
+          <span data-severity="watch">Watch</span>
+          <span data-severity="warning">Alert</span>
+          <span data-severity="critical">Severe</span>
+          <span data-severity="unknown">Not assessed</span>
         </div>
+        <p>Boundaries: geoBoundaries gbOpen · ADM1 · pinned source revision</p>
       </div>
-      <div className="map-legend" aria-label="Risk legend">
-        <span data-severity="normal">Low</span>
-        <span data-severity="watch">Watch</span>
-        <span data-severity="warning">Alert</span>
-        <span data-severity="critical">Severe</span>
-        <span data-severity="unknown">Not assessed</span>
-      </div>
-      <p className="muted">Risk levels indicate current drought risk relative to the historical baseline.</p>
+      <p className="map-integrity-note"><strong>Coverage note.</strong> The score shown above is national. Administrative units stay neutral unless the API supplies a unit-specific observation.</p>
     </section>
   );
 }
@@ -1476,7 +1536,7 @@ function ContributionRow({
     <div className="contribution-row">
       <div>
         <span>{label}</span>
-        <strong>{value.toFixed(2)} / {max.toFixed(2)}</strong>
+        <strong>{Math.round((value / max) * 100)}%</strong>
       </div>
       <div className="contribution-track">
         <span data-severity={severity} style={{ width: `${Math.min(100, (value / max) * 100)}%` }} />
@@ -1494,6 +1554,17 @@ function Placeholder({ title, detail }: { title: string; detail: string }): JSX.
   );
 }
 
+interface AdministrativeFeature {
+  type: "Feature";
+  properties: { shapeName: string; shapeISO: string; shapeID: string };
+  geometry: GeoJsonGeometry;
+}
+
+interface AdministrativeFeatureCollection {
+  type: "FeatureCollection";
+  features: AdministrativeFeature[];
+}
+
 interface RiskFeature {
   type: "Feature";
   properties: { region: RegionRisk };
@@ -1503,6 +1574,86 @@ interface RiskFeature {
 interface RiskFeatureCollection {
   type: "FeatureCollection";
   features: RiskFeature[];
+}
+
+const ADMIN_BOUNDARY_ASSETS: Record<string, string> = {
+  dji: "/maps/DJI-ADM1.geojson",
+  eri: "/maps/ERI-ADM1.geojson",
+  eth: "/maps/ETH-ADM1.geojson",
+  ken: "/maps/KEN-ADM1.geojson",
+  sdn: "/maps/SDN-ADM1.geojson",
+  som: "/maps/SOM-ADM1.geojson",
+  ssd: "/maps/SSD-ADM1.geojson",
+  uga: "/maps/UGA-ADM1.geojson"
+};
+
+const ADMIN_MAP_VIEWS: Record<string, { center: [number, number]; scale: number }> = {
+  dji: { center: [42.55, 11.75], scale: 8200 },
+  eri: { center: [39.7, 15.2], scale: 2500 },
+  eth: { center: [40.4, 8.9], scale: 1450 },
+  ken: { center: [37.75, 0.35], scale: 2150 },
+  sdn: { center: [30.2, 15.4], scale: 1350 },
+  som: { center: [46.1, 5.45], scale: 1800 },
+  ssd: { center: [30.4, 7.7], scale: 1800 },
+  uga: { center: [32.35, 1.35], scale: 3200 }
+};
+
+function normalizeBoundaryName(value: string): string {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+function formatPeriodLabel(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+function formatMeasuredValue(value: string): string {
+  const match = value.match(/^([+-]?\d+(?:\.\d+)?)(.*)$/);
+  if (!match) return value;
+  const number = Number(match[1]);
+  const prefix = match[1].startsWith("+") && number > 0 ? "+" : "";
+  return `${prefix}${number.toLocaleString("en-GB", { maximumFractionDigits: 2 })}${match[2]}`;
+}
+
+function formatScoreValue(value: number | null): string {
+  return value === null ? "—" : value.toLocaleString("en-GB", { maximumFractionDigits: 1 });
+}
+
+function countryDisplayName(region: RegionRisk): string {
+  const countries: Record<string, string> = {
+    dji: "Djibouti",
+    eri: "Eritrea",
+    eth: "Ethiopia",
+    ken: "Kenya",
+    sdn: "Sudan",
+    som: "Somalia",
+    ssd: "South Sudan",
+    uga: "Uganda"
+  };
+  return countries[region.id] ?? region.name;
+}
+
+function normalizeAdministrativeRings(collection: AdministrativeFeatureCollection): AdministrativeFeatureCollection {
+  const signedArea = (ring: number[][]): number => ring.slice(0, -1).reduce(
+    (area, point, index) => area + point[0] * ring[index + 1][1] - ring[index + 1][0] * point[1],
+    0
+  ) / 2;
+  const normalizePolygon = (polygon: number[][][]): number[][][] => polygon.map((ring, index) => {
+    const area = signedArea(ring);
+    const shouldReverse = index === 0 ? area > 0 : area < 0;
+    return shouldReverse ? [...ring].reverse() : ring;
+  });
+  return {
+    ...collection,
+    features: collection.features.map((feature) => ({
+      ...feature,
+      geometry: feature.geometry.type === "Polygon"
+        ? { ...feature.geometry, coordinates: normalizePolygon(feature.geometry.coordinates as number[][][]) }
+        : { ...feature.geometry, coordinates: (feature.geometry.coordinates as number[][][][]).map(normalizePolygon) }
+    }))
+  };
 }
 
 function buildRiskFeatureCollection(regions: RegionRisk[]): RiskFeatureCollection {
@@ -1540,6 +1691,18 @@ function mapHoverFill(severity: Severity): string {
 
 function metricByLabel(metrics: Metric[], label: string): Metric | undefined {
   return metrics.find((metric) => metric.label.toLowerCase().includes(label.toLowerCase()));
+}
+
+function indicatorLabel(indicator: string): string {
+  return ({ ndvi: "NDVI anomaly", rainfall_mm: "Rainfall anomaly", lst_c: "Temperature anomaly" } as Record<string, string>)[indicator] ?? indicator;
+}
+
+function severityForContribution(score: number | null): Severity {
+  if (score === null) return "unknown";
+  if (score >= 75) return "critical";
+  if (score >= 50) return "warning";
+  if (score >= 25) return "watch";
+  return "normal";
 }
 
 function severityLabel(severity: Severity): string {

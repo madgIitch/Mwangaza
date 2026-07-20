@@ -161,6 +161,8 @@ def _route_v1(
                 "period": export.period,
                 "rows": export.rows,
                 "regional_risk": _regional_risk(data),
+                "region_profiles": _region_profiles(data),
+                "periods": _dashboard_periods(data),
                 "source_metadata": export.source_metadata,
             },
         }, HTTPStatus.OK, 60
@@ -452,3 +454,103 @@ def _regional_risk(data: Any) -> list[dict[str, Any]]:
             }
         )
     return regions
+
+
+def _region_profiles(data: Any) -> list[dict[str, Any]]:
+    return _serialize_region_profiles(getattr(data, "region_profiles", ()))
+
+
+def _serialize_region_profiles(source: Any) -> list[dict[str, Any]]:
+    profiles = []
+    for profile in source:
+        comparison = getattr(profile, "historical_comparison", None)
+        profiles.append(
+            {
+                "id": profile.region_id,
+                "name": profile.label,
+                "status": profile.status,
+                "metrics": [
+                    {
+                        "label": metric.label,
+                        "value": metric.value,
+                        "unit": metric.unit,
+                        "severity": metric.severity,
+                        "detail": metric.detail,
+                    }
+                    for metric in profile.metrics
+                ],
+                "pilot_units": [
+                    {
+                        "id": unit.pilot_id,
+                        "name": unit.name,
+                        "admin_level": unit.level,
+                        "score": unit.score,
+                        "level": unit.risk_level,
+                        "quality": unit.quality_flag,
+                        "rank": unit.rank,
+                    }
+                    for unit in profile.pilot_units
+                ],
+                "trends": [
+                    {
+                        "indicator": trend.indicator,
+                        "label": trend.label,
+                        "unit": trend.unit,
+                        "source": trend.source,
+                        "points": [
+                            {
+                                "period": f"{point.period_start} to {point.period_end}",
+                                "value": point.value,
+                                "baseline": point.baseline_value,
+                                "anomaly": point.anomaly_value,
+                                "quality": point.quality_flag,
+                                "is_gap": point.is_gap,
+                            }
+                            for point in trend.points
+                        ],
+                    }
+                    for trend in profile.trends
+                ],
+                "historical_rows": [
+                    {
+                        "period": row.period_key,
+                        "indicator": row.label,
+                        "current": f"{row.current_value:g} {row.unit}".strip(),
+                        "historical": f"{row.historical_value:g} {row.unit}".strip(),
+                        "difference": f"{row.difference:+g} {row.unit}".strip(),
+                        "version": row.data_version,
+                    }
+                    for row in (() if comparison is None else comparison.rows)
+                ],
+                "recommendations": list(profile.recommendations),
+                "contributions": list(profile.contributions),
+            }
+        )
+    return profiles
+
+
+def _dashboard_periods(data: Any) -> list[dict[str, Any]]:
+    return [
+        {
+            "key": period.period_key,
+            "label": period.label,
+            "regions": [
+                {
+                    "id": region.region_id,
+                    "name": region.name,
+                    "score": region.score,
+                    "level": region.risk_level,
+                    "color_level": region.color_level,
+                    "quality": region.quality_flag,
+                    "period_start": region.period_start,
+                    "period_end": region.period_end,
+                    "selected": region.selected,
+                    "source_mode": region.source_mode,
+                    "ui_geometry": region.ui_geometry,
+                }
+                for region in period.risk_map.regions
+            ],
+            "profiles": _serialize_region_profiles(period.region_profiles),
+        }
+        for period in getattr(data, "temporal_periods", ())
+    ]

@@ -44,3 +44,6 @@ Fixtures and demo payloads must set `is_simulated=true`.
 Fixture-derived payloads add `is_demo=true` plus `reference_date` or
 `snapshot_id`. Existing `is_simulated` fields remain independent: they indicate
 that an action or delivery was simulated, while `is_demo` identifies data origin.
+# Region Explorer profiles (Sprint 56)
+
+`GET /api/v1/snapshots/latest` includes additive `snapshot.region_profiles` and `snapshot.periods`. Profiles carry processed metrics, pilot-unit ranking, composite contributions, trends, seasonally comparable historical rows and recommendations. Period entries contain complete region/profile cuts already loaded by the backend; changing UI controls never calls Earth Engine directly. Production responses never fill missing live/cache modules with demo fixtures.

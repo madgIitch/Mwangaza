@@ -40,6 +40,12 @@ class PublicApiTests(unittest.TestCase):
         self.assertIn("regional_risk", payload["snapshot"])
         self.assertTrue(payload["snapshot"]["regional_risk"])
         self.assertIn("ui_geometry", payload["snapshot"]["regional_risk"][0])
+        self.assertTrue(payload["snapshot"]["region_profiles"])
+        profile = payload["snapshot"]["region_profiles"][0]
+        self.assertTrue(profile["pilot_units"])
+        self.assertTrue(profile["trends"])
+        self.assertTrue(profile["historical_rows"])
+        self.assertTrue(profile["contributions"])
         self.assertTrue(payload["snapshot"]["rows"])
 
     def test_alerts_and_forecasts_endpoints_exist(self) -> None:

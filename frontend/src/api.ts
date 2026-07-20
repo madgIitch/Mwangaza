@@ -136,6 +136,12 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
     alerts: [],
     recommendations: profiles[0]?.recommendations ?? [],
     profiles,
+    periods: (snapshot.snapshot.periods ?? []).map((period) => ({
+      key: period.key,
+      label: period.label,
+      regions: (period.regions ?? []).map(apiRegion),
+      profiles: profilesFromApi(period.profiles)
+    })),
     exposureNote: exposureNoteFromSnapshot(snapshot),
     reportFilename: reportFilenameFromSnapshot(snapshot),
     exportFilenames: exportFilenamesFromSnapshot(snapshot),
@@ -262,6 +268,10 @@ function profilesFromSnapshot(
   regions: RegionRisk[],
   dataMode: DashboardData["dataMode"]
 ): RegionProfile[] {
+  const apiProfiles = snapshot.snapshot.region_profiles ?? [];
+  if (apiProfiles.length) {
+    return profilesFromApi(apiProfiles);
+  }
   if (dataMode === "demo") {
     return demoDashboard.profiles;
   }
@@ -290,6 +300,47 @@ function profilesFromSnapshot(
       historicalRows: []
     }))
   ];
+}
+
+function profilesFromApi(apiProfiles: NonNullable<PublicSnapshotResponse["snapshot"]["region_profiles"]>): RegionProfile[] {
+  return apiProfiles.map((profile) => ({
+      id: profile.id,
+      name: profile.name,
+      metrics: profile.metrics,
+      alerts: [],
+      recommendations: profile.recommendations,
+      pilotUnits: profile.pilot_units.map((unit) => unit.name),
+      pilotRows: profile.pilot_units.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        adminLevel: unit.admin_level,
+        score: unit.score,
+        level: normalizeSeverity(unit.level),
+        quality: unit.quality,
+        rank: unit.rank
+      })),
+      trends: profile.trends.map((trend) => ({
+        indicator: trend.indicator,
+        label: trend.label,
+        unit: trend.unit,
+        source: trend.source,
+        points: trend.points.map((point) => ({ label: point.period, value: point.value, baseline: point.baseline }))
+      })),
+      historicalRows: profile.historical_rows,
+      contributions: profile.contributions
+    }));
+}
+
+function apiRegion(region: NonNullable<PublicSnapshotResponse["snapshot"]["regional_risk"]>[number]): RegionRisk {
+  return {
+    id: region.id,
+    name: region.name || region.id.toUpperCase(),
+    score: numericValue(region.score),
+    level: normalizeRiskLevel(region.level, region.color_level),
+    quality: region.quality || "unknown",
+    period: periodLabel(region.period_start, region.period_end),
+    uiGeometry: region.ui_geometry ?? undefined
+  };
 }
 
 function mergeAlertsIntoProfiles(profiles: RegionProfile[], alerts: Alert[], selectedRegionId: string): RegionProfile[] {
