@@ -3781,7 +3781,7 @@
     {
       "id": "sprint-56-region-explorer-completion",
       "name": "Sprint 56 - Region Explorer Completion",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.0.1",
       "estimated_hours": 7,
