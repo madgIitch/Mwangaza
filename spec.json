@@ -3831,7 +3831,8 @@
         "El ranking ADM1 es plegable, conserva una tabla accesible y no vuelve a imponer su altura sobre el mapa o el inspector; low-bandwidth mantiene selección y detalle equivalentes sin SVG.",
         "Las tendencias representan anomalías contra una línea base cero con fechas, escala y tooltip; las contribuciones usan una barra apilada neutral; ranking e histórico refuerzan jerarquía mediante badges, top tres y deltas agrupados por año sin añadir acciones ni metodología inexistentes.",
         "Live GEE publica por defecto 24 agregados mensuales nacionales por indicador, configurables entre 12 y 24, resueltos en un único lote remoto y con baseline explícito de fuente o media de la serie claramente etiquetada; las fechas se presentan de forma compacta sin solaparse.",
-        "Why this region is at risk muestra aportes efectivos en puntos del composite (`signal_score × effective_weight`), score normalizado, peso, calidad y fuente; al seleccionar ADM1 consume las contribuciones propias de esa unidad y nunca reutiliza las nacionales."
+        "Why this region is at risk muestra aportes efectivos en puntos del composite (`signal_score × effective_weight`), score normalizado, peso, calidad y fuente; al seleccionar ADM1 consume las contribuciones propias de esa unidad y nunca reutiliza las nacionales.",
+        "La API live sirve inmediatamente el último snapshot materializado utilizable, refresca GEE una sola vez en segundo plano y no bloquea `/alerts` ni `/forecasts`; la PWA promociona automáticamente `cache` a `live` y un fallo opcional de tendencias o ADM1 no descarta el payload nacional."
       ],
       "scope": [
         "frontend/**",

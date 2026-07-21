@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadApiDashboard } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
@@ -42,6 +42,7 @@ describe("React PWA dashboard", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -77,6 +78,31 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Demo data");
     expect(screen.getByRole("status")).toHaveTextContent("mwangaza-offline-demo-v1");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("polls a materialized snapshot until the background live refresh is available", async () => {
+    vi.useFakeTimers();
+    let snapshotRequests = 0;
+    vi.stubGlobal("fetch", vi.fn(async (path: RequestInfo | URL) => {
+      const url = String(path);
+      if (url.startsWith("/api/v1/snapshots/latest")) {
+        snapshotRequests += 1;
+        return jsonResponse(refreshSnapshotResponse(snapshotRequests === 1 ? "cache" : "live"));
+      }
+      if (url.startsWith("/api/v1/alerts")) {
+        return jsonResponse({ schema_version: "mwangaza.api.v1", items: [], limit: 20, offset: 0, total: 0 });
+      }
+      return jsonResponse({ schema_version: "mwangaza.api.v1", available: false, message: "Not available", items: [] });
+    }));
+
+    render(<App skipApiLoad={false} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
+    expect(screen.getByText("CACHE", { selector: ".status-strip span" })).toBeInTheDocument();
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+
+    expect(snapshotRequests).toBe(2);
+    expect(screen.getByText("LIVE", { selector: ".status-strip span" })).toBeInTheDocument();
   });
 
   it("renders Region Explorer as an internal app screen on /region", async () => {
@@ -576,6 +602,40 @@ function jsonResponse(body: unknown): Response {
     ok: true,
     json: async () => body
   } as Response;
+}
+
+function refreshSnapshotResponse(dataMode: "cache" | "live") {
+  const score = dataMode === "live" ? 61 : null;
+  return {
+    schema_version: "mwangaza.api.v1",
+    data_mode: dataMode,
+    snapshot: {
+      region_id: "som",
+      region_label: "Somalia",
+      period: "2026-06-12 to 2026-06-26",
+      rows: [{
+        row_type: "metric",
+        name: "Composite score",
+        value: score,
+        unit: "/100",
+        quality: dataMode === "live" ? "warning" : "unknown",
+        source: dataMode === "live" ? "Google Earth Engine live query" : "Materialized observed data"
+      }],
+      regional_risk: [{
+        id: "som",
+        name: "Somalia",
+        score,
+        level: dataMode === "live" ? "warning" : "unknown",
+        color_level: dataMode === "live" ? "orange" : "unknown",
+        quality: dataMode === "live" ? "ok" : "invalid",
+        period_start: "2026-06-12T00:00:00Z",
+        period_end: "2026-06-26T00:00:00Z",
+        selected: true,
+        source_mode: dataMode
+      }],
+      source_metadata: { source: dataMode === "live" ? "Google Earth Engine live query" : "Materialized observed data" }
+    }
+  };
 }
 
 function adminResponse(versionId = "cfg-active-001", status = "active", warningAction = "Preposition supplies and brief partners") {

@@ -23,6 +23,8 @@ const severityRank: Record<Severity, number> = {
   normal: 1,
   unknown: 0
 };
+const LIVE_REFRESH_POLL_MS = 3000;
+const LIVE_REFRESH_MAX_ATTEMPTS = 30;
 
 export function App({
   initialData,
@@ -48,16 +50,12 @@ export function App({
       return;
     }
     let cancelled = false;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
     appLog("api load effect start");
-    loadApiDashboardSnapshot()
-      .then((snapshotData) => {
-        if (cancelled) {
-          appLog("snapshot ignored after cancellation", {
-            dataMode: snapshotData.dataMode,
-            selectedRegionId: snapshotData.selectedRegionId
-          });
-          return null;
-        }
+    const loadSnapshot = async (): Promise<void> => {
+      try {
+        const snapshotData = await loadApiDashboardSnapshot();
         if (!cancelled) {
           appLog("snapshot applied", {
             dataMode: snapshotData.dataMode,
@@ -68,30 +66,40 @@ export function App({
           });
           setData(snapshotData);
           setSelectedRegionId(snapshotData.selectedRegionId);
-        }
-        return loadApiDashboardDetails(snapshotData);
-      })
-      .then((next) => {
-        if (!cancelled && next) {
-          appLog("details applied", {
-            alerts: next.alerts.length,
-            forecastAvailable: next.forecastDiagnostics.available,
-            selectedRegionId: next.selectedRegionId
+          const next = await loadApiDashboardDetails(snapshotData);
+          if (!cancelled) {
+            appLog("details applied", {
+              alerts: next.alerts.length,
+              forecastAvailable: next.forecastDiagnostics.available,
+              selectedRegionId: next.selectedRegionId
+            });
+            setData(next);
+            setSelectedRegionId(next.selectedRegionId);
+          }
+          if (!cancelled && snapshotData.dataMode === "cache" && attempt < LIVE_REFRESH_MAX_ATTEMPTS) {
+            attempt += 1;
+            appLog("live snapshot retry scheduled", { attempt, delayMs: LIVE_REFRESH_POLL_MS });
+            refreshTimer = setTimeout(() => { void loadSnapshot(); }, LIVE_REFRESH_POLL_MS);
+          }
+        } else {
+          appLog("snapshot ignored after cancellation", {
+            dataMode: snapshotData.dataMode,
+            selectedRegionId: snapshotData.selectedRegionId
           });
-          setData(next);
-          setSelectedRegionId(next.selectedRegionId);
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           appLog("api fallback applied");
           setApiFallback(true);
           setData(demoDashboard);
           setSelectedRegionId(demoDashboard.selectedRegionId);
         }
-      });
+      }
+    };
+    void loadSnapshot();
     return () => {
       cancelled = true;
+      if (refreshTimer !== undefined) clearTimeout(refreshTimer);
       appLog("api load effect cancelled");
     };
   }, [initialData, skipApiLoad]);

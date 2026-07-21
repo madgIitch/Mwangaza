@@ -235,6 +235,67 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.data_status.last_updated, "2026-07-15 00:00:00 UTC")
         self.assertIn("68", {metric.value for metric in data.metrics})
 
+    def test_materialized_dashboard_keeps_latest_usable_preferred_region_period(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            older_end = "2026-06-26T00:00:00Z"
+            latest_end = "2026-07-16T00:00:00Z"
+            older = [
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="watch",
+                    score=49.8,
+                    period_start="2026-06-12T00:00:00Z",
+                    period_end=older_end,
+                ).to_dict(),
+                *[
+                    _signal_payload(
+                        region_id="som",
+                        indicator=indicator,
+                        period_end=older_end,
+                        value=value,
+                        baseline=baseline,
+                        quality_flag="ok",
+                    )
+                    for indicator, value, baseline in (
+                        ("ndvi", 0.18, 0.2),
+                        ("rainfall_mm", 3.1, 7.0),
+                        ("lst_c", 29.4, 31.0),
+                    )
+                ],
+            ]
+            latest_risk = _risk_snapshot(
+                region_id="som",
+                risk_level="unknown",
+                score=0.0,
+                period_start="2026-07-02T00:00:00Z",
+                period_end=latest_end,
+            ).to_dict()
+            latest_risk["composite_score"] = None
+            latest_risk["quality_flag"] = "invalid"
+            latest = [
+                latest_risk,
+                _signal_payload(
+                    region_id="som",
+                    indicator="lst_c",
+                    period_end=latest_end,
+                    value=28.98,
+                    baseline=31.0,
+                    quality_flag="ok",
+                ),
+            ]
+            (cache_dir / "payloads.json").write_text(
+                json.dumps({"payload": [*older, *latest]}), encoding="utf-8"
+            )
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        self.assertEqual(data.selected_region_id, "som")
+        self.assertEqual(data.data_status.last_updated, "2026-06-26 00:00:00 UTC")
+        self.assertIn("49.8", {metric.value for metric in data.metrics})
+        self.assertEqual([period.label for period in data.temporal_periods], ["2026-07-16", "2026-06-26"])
+
     def test_temporal_selector_embeds_loaded_periods_without_recalculation_hooks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             cache_dir = Path(tmp) / "cache"

@@ -39,6 +39,7 @@
 - Reforzar la lectura transversal del estado con badges coherentes, destacar el top tres del ranking, agrupar el histórico por año y conservar una sola acción principal. La metodología pendiente no se presenta como enlace o CTA.
 - Materializar 24 ventanas mensuales nacionales en un único grafo/request GEE con `reduceRegions`, sin extender la serie a ADM1. El shell calcula un baseline de media de serie solo cuando la fuente no lo publica y expone su etiqueta en el contrato aditivo.
 - Convertir `contributions` en una explicación del cálculo: `weighted_contribution = signal_score × effective_weight`, participación sobre el score y procedencia/calidad. Extender `administrative_units` de forma aditiva con su propio desglose y no hacer fallback nacional para una unidad seleccionada.
+- Separar lectura y actualización live mediante stale-while-revalidate: responder desde el último materializado válido, ejecutar como máximo un refresh GEE en segundo plano y persistirlo de forma atómica. Aislar tendencias y ADM1 como módulos opcionales para conservar el payload nacional, y hacer que la PWA consulte de nuevo hasta promocionar `cache` a `live`.
 
 ## Decisiones de la entrevista
 

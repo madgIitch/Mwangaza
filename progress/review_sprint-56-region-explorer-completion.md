@@ -7,7 +7,7 @@ El contrato API publica perfiles regionales completos y cortes temporales proces
 Validación:
 
 - Smoke GEE real para Somalia: 19/19 checks, `mode_live=true`, `not_demo=true`.
-- 300 tests Python y 40 tests frontend.
+- 304 tests Python, 11 subtests y 41 tests frontend.
 - Typecheck, lint, build y gates del harness.
 
 Smoke humano pendiente: revisar `/region?api=1` en modo live y low-bandwidth.
@@ -21,6 +21,8 @@ El segundo pase visual sustituye barras sin escala por líneas de anomalía con 
 La serie live queda ampliada a 24 agregados mensuales nacionales por defecto y configurable entre 12 y 24. Todos los meses y países se resuelven en un único lote GEE; ADM1 permanece limitado al periodo actual. Los payloads de tendencia no aparecen como periodos operativos ni alimentan la comparación estacional. Sin baseline de fuente, el shell publica la media de valores mensuales disponibles con etiqueta explícita.
 
 Smoke GEE real: PASS 19/19 en aproximadamente 16 s, con horizonte mensual válido, baseline en todos los puntos no-gap, suma nacional explicada y contribuciones propias para 121/121 ADM1 concluyentes.
+
+La corrección de carga desacopla la respuesta HTTP de la consulta remota: la API entrega inmediatamente el último materializado completo, lanza como máximo un refresh GEE en segundo plano y persiste atómicamente sólo lotes utilizables. Tendencias y ADM1 degradan de forma independiente para que un fallo opcional no borre el score nacional. La PWA vuelve a consultar mientras el origen sea `cache` y cambia a `live` sin recargar. Medición local observada tras el arranque: snapshot 21 ms, alertas 6 ms y forecasts 4 ms, frente al bloqueo previo de aproximadamente 52 s.
 
 `Why this region is at risk` deja de mostrar pesos fijos: cada segmento representa puntos efectivos del composite y detalla score normalizado, peso, fuente y calidad. El contrato ADM1 incluye el mismo desglose; si falta, la PWA muestra un estado pendiente y nunca hereda la explicación nacional.
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from mwangaza.data.lst import LstCollectionConfig, LstQueryResult
@@ -15,6 +16,7 @@ from mwangaza.services.live_gee_dashboard import (
     comparable_period_windows,
     dashboard_live_adm1_region_ids,
     dashboard_live_region_ids,
+    load_live_gee_dashboard_payloads,
     monthly_period_windows,
     recent_period_windows,
     resolve_live_gee_period,
@@ -119,7 +121,43 @@ class FakeTrendBatchLiveGeeAdapter(FakeLiveGeeAdapter):
         }
 
 
+class FakeFailingMultiRegionTrendAdapter(FakeTrendBatchLiveGeeAdapter):
+    def query_time_series_values(
+        self,
+        regions: tuple[object, ...],
+        windows: tuple[tuple[str, str], ...],
+    ) -> dict[tuple[str, str, str], dict[str, float]]:
+        if len(regions) > 1:
+            raise RuntimeError("batch too large")
+        return super().query_time_series_values(regions, windows)
+
+
 class LiveGeeDashboardTests(unittest.TestCase):
+    def test_optional_multi_region_trend_failure_keeps_current_payload_and_retries_selected_region(self) -> None:
+        adapter = FakeFailingMultiRegionTrendAdapter()
+        with (
+            patch("mwangaza.services.live_gee_dashboard.check_gee_auth", return_value=SimpleNamespace(status="ok", message="ok")),
+            patch("mwangaza.services.live_gee_dashboard.RealGeeRegionalAdapter", return_value=adapter),
+            patch("mwangaza.services.live_gee_dashboard.dashboard_live_region_ids", return_value=("som", "ken")),
+            patch("mwangaza.services.live_gee_dashboard.dashboard_live_adm1_region_ids", return_value=()),
+        ):
+            payloads = load_live_gee_dashboard_payloads(ee_module=object())
+
+        current_risks = [
+            payload for payload in payloads
+            if payload.get("payload_type") == "risk_snapshot"
+            and payload.get("period_end") == "2026-06-25T00:00:00Z"
+        ]
+        trend_regions = {
+            str(payload.get("region_id"))
+            for payload in payloads
+            if isinstance(payload.get("metadata"), dict)
+            and payload["metadata"].get("trend_series") is True
+        }
+        self.assertEqual({str(payload["region_id"]) for payload in current_risks}, {"som", "ken"})
+        self.assertEqual(trend_regions, {"som"})
+        self.assertEqual(adapter.calls, 1)
+
     def test_builds_real_gee_dashboard_payloads_from_adapter_results(self) -> None:
         payloads = build_live_gee_payloads(
             "som",

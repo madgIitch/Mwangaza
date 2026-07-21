@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from http import HTTPStatus
 from urllib.parse import parse_qs
@@ -18,7 +19,7 @@ from mwangaza.gee.auth import check_gee_auth
 from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, readiness_status, reset_run_id, resolve_run_id
 from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
 from mwangaza.regions import list_regions
-from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+from mwangaza.services.dashboard_shell import load_dashboard_shell_data, load_materialized_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
 DEMO_REFERENCE_DATE = "2026-07-15"
@@ -26,6 +27,8 @@ DEMO_SNAPSHOT_ID = "mwangaza-offline-demo-v1"
 MAX_LIMIT = 100
 LIVE_DASHBOARD_CACHE_SECONDS = 120
 _DASHBOARD_CACHE: tuple[float, Any] | None = None
+_DASHBOARD_REFRESH_LOCK = threading.Lock()
+_DASHBOARD_REFRESHING = False
 
 
 async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
@@ -298,7 +301,10 @@ def _load_api_dashboard_data() -> Any:
     if mode in {"live", "auto"}:
         return _cached_live_dashboard_data()
     if mode == "cache":
-        return _cached_live_dashboard_data()
+        data = load_materialized_dashboard_shell_data()
+        if data is None:
+            raise RuntimeError("materialized cache unavailable")
+        return data
     data = load_dashboard_shell_data("demo")
     _log("dashboard load complete", selected_mode="demo", data_mode=data.data_status.mode)
     return data
@@ -323,6 +329,21 @@ def _cached_live_dashboard_data() -> Any:
             _log("dashboard cache hit", age_s=round(age_seconds, 2), data_mode=data.data_status.mode)
             return data
         _log("dashboard cache expired", age_s=round(age_seconds, 2))
+        _start_dashboard_refresh()
+        _log("dashboard stale response served", data_mode=data.data_status.mode)
+        return data
+    materialized = load_materialized_dashboard_shell_data()
+    if materialized is not None:
+        _DASHBOARD_CACHE = (now, materialized)
+        METRICS.record_cache(True)
+        _start_dashboard_refresh()
+        _log("dashboard materialized response served", data_mode=materialized.data_status.mode)
+        return materialized
+    return _load_live_dashboard_now()
+
+
+def _load_live_dashboard_now() -> Any:
+    global _DASHBOARD_CACHE
     METRICS.record_cache(False)
     started = time.monotonic()
     _log("dashboard live load start")
@@ -332,6 +353,28 @@ def _cached_live_dashboard_data() -> Any:
     _DASHBOARD_CACHE = (time.monotonic(), data)
     _log("dashboard live load complete", elapsed_ms=_elapsed_ms(started), data_mode=data.data_status.mode, source=data.data_status.source)
     return data
+
+
+def _start_dashboard_refresh() -> None:
+    global _DASHBOARD_REFRESHING
+    with _DASHBOARD_REFRESH_LOCK:
+        if _DASHBOARD_REFRESHING:
+            _log("dashboard refresh reused")
+            return
+        _DASHBOARD_REFRESHING = True
+    threading.Thread(target=_refresh_dashboard_in_background, name="mwangaza-dashboard-refresh", daemon=True).start()
+    _log("dashboard background refresh started")
+
+
+def _refresh_dashboard_in_background() -> None:
+    global _DASHBOARD_REFRESHING
+    try:
+        _load_live_dashboard_now()
+    except Exception as exc:
+        _log("dashboard background refresh failed", error_type=type(exc).__name__)
+    finally:
+        with _DASHBOARD_REFRESH_LOCK:
+            _DASHBOARD_REFRESHING = False
 
 
 def _pagination(query: dict[str, list[str]]) -> tuple[int, int]:

@@ -15,9 +15,11 @@ api_app = importlib.import_module("mwangaza.api.app")
 class PublicApiTests(unittest.TestCase):
     def setUp(self) -> None:
         api_app._DASHBOARD_CACHE = None
+        api_app._DASHBOARD_REFRESHING = False
 
     def tearDown(self) -> None:
         api_app._DASHBOARD_CACHE = None
+        api_app._DASHBOARD_REFRESHING = False
 
     def test_v1_regions_is_paginated_and_versioned(self) -> None:
         status, headers, payload = _request("/api/v1/regions", b"limit=2&offset=1")
@@ -101,6 +103,7 @@ class PublicApiTests(unittest.TestCase):
         demo = load_dashboard_shell_data("demo")
         with (
             patch.dict(os.environ, {"MWANGAZA_MODE": "production"}, clear=True),
+            patch("mwangaza.api.app.load_materialized_dashboard_shell_data", return_value=None),
             patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo),
         ):
             status, _headers, payload = _request("/api/v1/snapshots/latest")
@@ -114,6 +117,7 @@ class PublicApiTests(unittest.TestCase):
         demo = load_dashboard_shell_data("demo")
         with (
             patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "live"}),
+            patch("mwangaza.api.app.load_materialized_dashboard_shell_data", return_value=None),
             patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo) as loader,
         ):
             status, _headers, payload = _request("/api/v1/snapshots/latest")
@@ -128,12 +132,51 @@ class PublicApiTests(unittest.TestCase):
         demo = load_dashboard_shell_data("demo")
         with (
             patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "live"}),
+            patch("mwangaza.api.app.load_materialized_dashboard_shell_data", return_value=None),
             patch("mwangaza.api.app.load_dashboard_shell_data", return_value=demo) as loader,
         ):
             _request("/api/v1/snapshots/latest")
             _request("/api/v1/alerts")
 
         self.assertEqual(loader.call_count, 1)
+
+    def test_live_api_serves_materialized_data_and_refreshes_without_blocking(self) -> None:
+        from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+
+        cached = load_dashboard_shell_data("cache")
+        with (
+            patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "live"}),
+            patch("mwangaza.api.app.load_materialized_dashboard_shell_data", return_value=cached),
+            patch("mwangaza.api.app._start_dashboard_refresh") as refresh,
+            patch("mwangaza.api.app.load_dashboard_shell_data") as live_loader,
+        ):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
+            alerts_status, _headers, _alerts = _request("/api/v1/alerts")
+            forecasts_status, _headers, _forecasts = _request("/api/v1/forecasts")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["data_mode"], "cache")
+        self.assertEqual(alerts_status, 200)
+        self.assertEqual(forecasts_status, 200)
+        refresh.assert_called_once_with()
+        live_loader.assert_not_called()
+
+    def test_explicit_cache_mode_never_starts_live_refresh(self) -> None:
+        from mwangaza.services.dashboard_shell import load_dashboard_shell_data
+
+        cached = load_dashboard_shell_data("cache")
+        with (
+            patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "cache"}),
+            patch("mwangaza.api.app.load_materialized_dashboard_shell_data", return_value=cached),
+            patch("mwangaza.api.app._start_dashboard_refresh") as refresh,
+            patch("mwangaza.api.app.load_dashboard_shell_data") as live_loader,
+        ):
+            status, _headers, payload = _request("/api/v1/snapshots/latest")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["data_mode"], "cache")
+        refresh.assert_not_called()
+        live_loader.assert_not_called()
 
     def test_errors_are_structured_and_sanitized(self) -> None:
         status, _headers, payload = _request("/api/v1/regions", b"limit=not-an-int")

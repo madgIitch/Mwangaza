@@ -316,16 +316,57 @@ def load_live_gee_dashboard_payloads(
     current_start = _default_period_start(end)
     payloads = build_live_gee_payloads_for_regions(region_ids, current_start, end, adapter=adapter)
     for historical_start, historical_end in comparable_period_windows(end, years=2):
-        payloads.extend(build_live_gee_payloads_for_regions(region_ids, historical_start, historical_end, adapter=adapter))
-    payloads.extend(build_live_gee_trend_payloads_for_regions(
-        region_ids,
-        end,
-        adapter=adapter,
-        month_count=_live_trend_months(),
-    ))
-    payloads.extend(
-        build_live_gee_payloads_for_adm1_regions(adm1_region_ids, _default_period_start(end), end, adapter=adapter)
-    )
+        try:
+            payloads.extend(build_live_gee_payloads_for_regions(region_ids, historical_start, historical_end, adapter=adapter))
+        except Exception as exc:
+            emit(
+                "Historical GEE batch query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                period_end=historical_end,
+                error_type=type(exc).__name__,
+            )
+    try:
+        payloads.extend(build_live_gee_trend_payloads_for_regions(
+            region_ids,
+            end,
+            adapter=adapter,
+            month_count=_live_trend_months(),
+        ))
+    except Exception as exc:
+        emit(
+            "Regional trend GEE batch query failed; retrying selected region",
+            level="WARNING",
+            component="live_gee_dashboard",
+            region_count=len(region_ids),
+            error_type=type(exc).__name__,
+        )
+        try:
+            payloads.extend(build_live_gee_trend_payloads_for_regions(
+                (target_region,),
+                end,
+                adapter=adapter,
+                month_count=_live_trend_months(),
+            ))
+        except Exception as selected_exc:
+            emit(
+                "Selected-region trend GEE query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                region_id=target_region,
+                error_type=type(selected_exc).__name__,
+            )
+    try:
+        payloads.extend(
+            build_live_gee_payloads_for_adm1_regions(adm1_region_ids, _default_period_start(end), end, adapter=adapter)
+        )
+    except Exception as exc:
+        emit(
+            "ADM1 GEE module failed without discarding national payloads",
+            level="WARNING",
+            component="live_gee_dashboard",
+            error_type=type(exc).__name__,
+        )
     return payloads
 
 
@@ -439,7 +480,16 @@ def build_live_gee_payloads_for_regions(
 
     payloads: list[dict[str, Any]] = []
     for region_id in region_ids:
-        payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
+        try:
+            payloads.extend(build_live_gee_payloads(region_id, period_start, period_end, adapter=adapter))
+        except Exception as exc:
+            emit(
+                "Regional GEE query failed",
+                level="WARNING",
+                component="live_gee_dashboard",
+                region_id=region_id,
+                error_type=type(exc).__name__,
+            )
     return payloads
 
 

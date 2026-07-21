@@ -25,3 +25,4 @@
 - [x] T22 Mejorar tendencias, contribuciones, badges, ranking e histórico sin inventar contratos de datos.
 - [x] T23 Materializar y visualizar 12-24 meses de tendencias live con baseline y batch GEE acotados.
 - [x] T24 Sustituir pesos placeholder por contribuciones efectivas nacionales y ADM1 trazables.
+- [x] T25 Evitar bloqueos y snapshots incompletos con stale-while-revalidate, último lote válido, aislamiento de módulos GEE y promoción automática cache-live.

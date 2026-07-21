@@ -131,7 +131,9 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
     source: sourceFromSnapshot(snapshot),
     selectedRegionId: snapshot.snapshot.region_id,
     lastUpdated: snapshot.snapshot.period || demoDashboard.lastUpdated,
-    message: "Loaded snapshot from /api/v1/snapshots/latest",
+    message: dataMode === "cache"
+      ? "Refreshing live data in background; showing the last materialized snapshot"
+      : "Loaded snapshot from /api/v1/snapshots/latest",
     regions,
     metrics,
     alerts: [],
@@ -185,7 +187,7 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
   apiLog("details normalized", { alerts: alerts.length, forecastAvailable: forecasts.available, profiles: profiles.length });
   return {
     ...base,
-    message: "Loaded from /api/v1/**",
+    message: base.dataMode === "cache" ? base.message : "Loaded from /api/v1/**",
     alerts,
     recommendations: profiles[0]?.recommendations ?? base.recommendations,
     profiles,

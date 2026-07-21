@@ -558,6 +558,8 @@ La cobertura live por defecto incluye las 121 unidades ADM1 de los ocho países 
 
 El panel `Why this region is at risk` funciona como contabilidad verificable del score, no como una visualización fija de pesos. Cada segmento representa puntos efectivos (`score normalizado × peso efectivo`) y muestra fuente y calidad. Las unidades ADM1 publican su propio desglose de forma aditiva; si falta, la interfaz declara el payload pendiente y nunca reutiliza el desglose nacional.
 
+La lectura live de la API adopta stale-while-revalidate: sirve inmediatamente el último lote materializado, ejecuta un único refresh GEE en segundo plano y persiste atómicamente solo resultados con riesgo seleccionado utilizable. Las rutas auxiliares no esperan a GEE y la PWA consulta de nuevo mientras el modo sea `cache`. Un corte parcial más reciente permanece disponible en el selector, pero no desplaza como vista inicial al último corte válido de la región preferida.
+
 La página regional adopta un atlas operacional centrado en el mapa. Mapa, selector ADM1 y ranking comparten una sola selección, y el detalle se concentra en un inspector lateral con score, severidad, indicadores, calidad, periodo, procedencia y acción contextual. El ranking queda plegado por defecto y con scroll interno para que su volumen no determine la composición de la página.
 
 La selección trabaja exclusivamente con el payload ya cargado: el navegador no inicia consultas GEE adicionales. Las tendencias e históricos que siguen siendo nacionales se etiquetan con su alcance cuando hay un ADM1 activo. En low-bandwidth se mantiene la selección y evidencia equivalente mediante tablas, sin cargar el SVG administrativo.

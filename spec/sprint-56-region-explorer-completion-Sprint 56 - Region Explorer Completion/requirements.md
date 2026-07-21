@@ -29,6 +29,7 @@ R17. El ranking ADM1 es plegable, conserva semántica de tabla y no determina la
 R18. Las tendencias muestran la diferencia contra baseline con eje cero, escala, fechas y tooltip accesible; las contribuciones se presentan como una única barra apilada de pesos sin semántica de severidad; ranking e histórico usan badges, top tres y deltas agrupados por año.
 R19. Live GEE materializa 24 agregados mensuales nacionales por defecto, configurables entre 12 y 24, en una consulta batch; el trend usa baseline explícito o la media de la serie etiquetada y conserva gaps reales. La UI abrevia fechas y no inicia consultas GEE.
 R20. El composite publica por indicador score normalizado, peso efectivo, contribución ponderada, participación, calidad y fuente. El panel explica la suma en puntos y, con ADM1 activo, usa exclusivamente el desglose de esa unidad o muestra pendiente.
+R21. En modo live, la API aplica stale-while-revalidate: sirve inmediatamente el último snapshot materializado utilizable, limita el refresh GEE a un único proceso en segundo plano, persiste atómicamente el último lote válido y no bloquea `/alerts` ni `/forecasts`. La PWA reintenta mientras recibe `cache` y promociona a `live` sin recarga; un fallo opcional de tendencias o ADM1 no invalida el payload nacional.
 
 ## Restricciones
 

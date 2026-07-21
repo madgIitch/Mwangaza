@@ -240,6 +240,21 @@ def load_dashboard_shell_data(
     return _demo_dashboard_shell_data("demo")
 
 
+def load_materialized_dashboard_shell_data(
+    *,
+    cache_dir: Path | None = None,
+    data_dir: Path | None = None,
+    alert_db_path: Path | None = None,
+) -> DashboardShellData | None:
+    """Load local observed payloads without attempting Earth Engine."""
+
+    resolved_cache_dir, resolved_data_dir = _resolve_local_paths(cache_dir, data_dir)
+    return _load_materialized_dashboard_data(
+        resolved_cache_dir,
+        alert_db_path or resolved_data_dir / "alerts.sqlite",
+    )
+
+
 def fallback_dashboard_shell_data() -> DashboardShellData:
     data = _demo_dashboard_shell_data("demo")
     return DashboardShellData(
@@ -288,7 +303,7 @@ def _load_live_dashboard_data() -> DashboardShellData | None:
         )
         return None
     _debug_dashboard(f"live GEE returned payload_count={len(payloads)}")
-    return _dashboard_data_from_payloads(
+    data = _dashboard_data_from_payloads(
         payloads,
         Path(),
         mode="live",
@@ -297,6 +312,44 @@ def _load_live_dashboard_data() -> DashboardShellData | None:
         message_observed="Using live Google Earth Engine data",
         message_simulated="Using live Google Earth Engine data",
     )
+    if data is not None and _has_usable_selected_risk(data) and _is_real_gee_payload_batch(payloads):
+        _materialize_last_good_live_payloads(payloads)
+    return data
+
+
+def _has_usable_selected_risk(data: DashboardShellData) -> bool:
+    selected = next(
+        (region for region in data.risk_map.regions if region.region_id == data.selected_region_id),
+        None,
+    )
+    return selected is not None and selected.score is not None and selected.quality_flag == "ok"
+
+
+def _is_real_gee_payload_batch(payloads: tuple[dict[str, Any], ...]) -> bool:
+    return any(
+        isinstance(payload.get("metadata"), dict)
+        and payload["metadata"].get("smoke_source") == "real_gee"
+        for payload in payloads
+    )
+
+
+def _materialize_last_good_live_payloads(payloads: tuple[dict[str, Any], ...]) -> None:
+    cache_dir, _data_dir = _resolve_local_paths(None, None)
+    path = cache_dir / "live-dashboard-last-good.json"
+    tmp_path = path.with_suffix(".json.tmp")
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        tmp_path.write_text(
+            json.dumps({"payload": payloads}, sort_keys=True, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        os.replace(tmp_path, path)
+        _debug_dashboard(f"materialized last-known-good live payloads count={len(payloads)}")
+    except OSError as exc:
+        _debug_dashboard(
+            "could not materialize last-known-good live payloads "
+            f"reason={type(exc).__name__}: {_sanitize_debug_message(str(exc))}"
+        )
 
 
 def _dashboard_data_from_payloads(
@@ -311,7 +364,8 @@ def _dashboard_data_from_payloads(
 ) -> DashboardShellData | None:
     active_alerts = _read_active_alerts(alert_db_path)
     temporal_periods = _temporal_periods_from_payloads(cached_payloads, active_alerts, mode=mode)
-    period_payloads = _payloads_for_period(cached_payloads, temporal_periods[0].period_key) if temporal_periods else cached_payloads
+    primary_period = _primary_temporal_period(temporal_periods)
+    period_payloads = _payloads_for_period(cached_payloads, primary_period.period_key) if primary_period else cached_payloads
     selected_region_id = _selected_region_id(period_payloads)
     risk = _latest_risk_snapshot(period_payloads, region_id=selected_region_id)
     risks = _risk_snapshots(period_payloads)
@@ -366,6 +420,17 @@ def _dashboard_data_from_payloads(
         trends=trends,
         historical_comparison=historical_comparison,
     )
+
+
+def _primary_temporal_period(periods: tuple[TemporalPeriod, ...]) -> TemporalPeriod | None:
+    if not periods:
+        return None
+    preferred = (os.environ.get("MWANGAZA_DASHBOARD_REGION_ID") or "som").lower()
+    for period in periods:
+        region = next((item for item in period.risk_map.regions if item.region_id == preferred), None)
+        if region is not None and region.score is not None and region.quality_flag == "ok":
+            return period
+    return periods[0]
 
 
 def _temporal_periods_from_payloads(
