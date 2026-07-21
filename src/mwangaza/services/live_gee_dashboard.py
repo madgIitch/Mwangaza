@@ -23,10 +23,10 @@ from mwangaza.regions import ADM1_LEVEL, COUNTRY_LEVEL, PILOT_LEVEL, get_region,
 from mwangaza.risk import compute_composite_drought_score
 
 DEFAULT_SCALE_METERS = 5500
+DEFAULT_ADM1_SCALE_METERS = 1000
 DEFAULT_MAX_PIXELS = 1_000_000_000
 DEFAULT_LOOKBACK_DAYS = 15
 DEFAULT_TREND_POINTS = 4
-DEFAULT_KENYA_ADM1_PILOTS = frozenset({"Turkana", "Marsabit", "Isiolo"})
 
 
 class LiveGeeDashboardError(RuntimeError):
@@ -145,6 +145,14 @@ class RealGeeRegionalAdapter:
         period_start: str,
         period_end: str,
     ) -> dict[str, dict[str, float | None]]:
+        is_adm1_batch = bool(regions) and all(
+            getattr(region, "level", None) == ADM1_LEVEL for region in regions
+        )
+        reduction_scale = (
+            min(self.scale_meters, DEFAULT_ADM1_SCALE_METERS)
+            if is_adm1_batch
+            else self.scale_meters
+        )
         ndvi_config = NdviCollectionConfig()
         rainfall_config = RainfallCollectionConfig(max_missing_days=3)
         lst_config = LstCollectionConfig()
@@ -158,7 +166,13 @@ class RealGeeRegionalAdapter:
         )
 
         def mask_quality(image: Any) -> Any:
-            mask = image.select(ndvi_config.qa_band).eq(ndvi_config.valid_qa_values[0])
+            valid_qa_values = (
+                tuple(dict.fromkeys((*ndvi_config.valid_qa_values, 1)))
+                if is_adm1_batch
+                else ndvi_config.valid_qa_values
+            )
+            qa = image.select(ndvi_config.qa_band)
+            mask = qa.remap(list(valid_qa_values), [1] * len(valid_qa_values), 0).eq(1)
             return image.updateMask(mask).select(ndvi_config.ndvi_band)
 
         ndvi = ndvi_collection.map(mask_quality).mean().multiply(ndvi_config.scale_factor).rename("ndvi")
@@ -184,7 +198,7 @@ class RealGeeRegionalAdapter:
             .reduceRegions(
                 collection=features,
                 reducer=self.ee.Reducer.mean(),
-                scale=self.scale_meters,
+                scale=reduction_scale,
                 tileScale=2,
                 maxPixelsPerRegion=self.max_pixels,
             )
@@ -251,13 +265,12 @@ def dashboard_live_adm1_region_ids() -> tuple[str, ...]:
     configured = os.environ.get("MWANGAZA_GEE_ADM1_COUNTRIES", "").strip()
     configured_iso3 = {item.strip().upper() for item in configured.split(",") if item.strip()}
     regions = list_regions(level=ADM1_LEVEL, include_administrative=True)
-    if configured_iso3:
-        return tuple(region.id for region in regions if region.iso3 in configured_iso3)
-    return tuple(
-        region.id
-        for region in regions
-        if region.iso3 == "SOM" or (region.iso3 == "KEN" and region.name in DEFAULT_KENYA_ADM1_PILOTS)
-    )
+    if not configured_iso3:
+        try:
+            configured_iso3 = set(load_settings().enabled_countries)
+        except ConfigurationError:
+            configured_iso3 = {region.iso3 for region in regions}
+    return tuple(region.id for region in regions if region.iso3 in configured_iso3)
 
 
 def resolve_live_gee_period(
@@ -362,6 +375,8 @@ def build_live_gee_payloads_for_adm1_regions(
     *,
     adapter: RealGeeRegionalAdapter,
 ) -> list[dict[str, Any]]:
+    if not region_ids:
+        return []
     if hasattr(adapter, "query_adm1_values"):
         regions = tuple(get_region(region_id) for region_id in region_ids)
         values_by_region: dict[str, dict[str, float | None]] | None = None
@@ -429,6 +444,7 @@ def _build_region_payloads_from_values(
                 "source_mode": "live",
                 "aggregation_mode": "reduceRegions",
                 "coverage_fraction": 1.0 if values.get(indicator) is not None else 0.0,
+                "summary_qa_values": [0, 1] if region.level == ADM1_LEVEL and indicator == "ndvi" else None,
             },
         )
         for indicator, (unit, source) in configs.items()

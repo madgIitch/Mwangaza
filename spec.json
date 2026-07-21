@@ -3825,7 +3825,7 @@
         "Existe un smoke versionado contra GEE real que comprueba al menos una región habilitada y verifica que el payload live alimenta todos los módulos del panel sin datos demo.",
         "Cuenta y notificaciones permanecen como placeholders explícitos no interactivos hasta que sus contratos sean aprobados.",
         "El perfil regional publica `administrative_units` aditivo con `region_id`, `boundary_id`, `boundary_iso`, nombre, periodo, score, nivel, calidad, source_mode y métricas GEE por unidad.",
-        "El loader live procesa ADM1 sólo para el periodo actual y limita la cobertura subnacional por configuración; no multiplica tendencias ni históricos por distrito.",
+        "El loader live procesa ADM1 sólo para el periodo actual y cubre por defecto todas las unidades de todos los países IGAD habilitados; la configuración permite restringir cobertura sin multiplicar tendencias ni históricos por distrito.",
         "El mapa enlaza observaciones y fronteras por `boundary_iso`; sólo colorea unidades con score y calidad concluyentes y mantiene en gris cualquier unidad ausente, fallida o `no_data`."
       ],
       "scope": [

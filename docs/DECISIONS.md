@@ -549,3 +549,7 @@ Decisiones registradas:
 - **tests:** Matriz bloqueante demo/live y smoke real GEE definida.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-07-21 · Cobertura ADM1 completa en GEE
+
+La cobertura live por defecto incluye las 121 unidades ADM1 de los ocho países IGAD habilitados y se resuelve en un único lote para el periodo actual. Para ADM1, MOD13Q1 admite `SummaryQA` 0 y 1; el valor 1 está documentado por el proveedor como marginal pero útil y queda declarado en metadatos. No se aceptan valores 2-3 ni se propagan scores nacionales a unidades sin observación.

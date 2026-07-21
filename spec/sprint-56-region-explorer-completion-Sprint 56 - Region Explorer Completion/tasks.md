@@ -18,3 +18,4 @@
 - [x] T15 Loader live ADM1 acotado al periodo actual y agregado en una sola consulta `reduceRegions`.
 - [x] T16 Join exacto por `boundary_iso`, tooltip y ranking.
 - [x] T17 Tests, smoke GEE y gates de la ampliación.
+- [x] T18 Extender la consulta batch y el contrato ADM1 a todas las áreas de todos los países IGAD habilitados.

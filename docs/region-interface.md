@@ -87,6 +87,8 @@ The React implementation renders validated ADM1 boundaries from local assets and
 
 The overlay join is exact on geoBoundaries `shapeISO` → API `boundary_iso`. Name matching is intentionally not used. Tooltips show the unit's own score, NDVI and rainfall values; any missing, non-conclusive or mismatched unit remains neutral gray.
 
+Live coverage includes every ADM1 boundary of every enabled IGAD country by default. The backend computes the current period in a shared GEE batch, while country trends and historical comparisons remain aggregated to avoid multiplying remote work by district.
+
 ### Region Summary
 
 Shows:
@@ -160,13 +162,13 @@ Actions are decision support, not official orders. The detailed future version s
 
 Current implementation uses existing recommendation strings from the selected profile or active alert.
 
-### About The Pilot Analysis
+### About Administrative Coverage
 
 Explains:
 
-- Enhanced detail exists only for configured pilots.
+- Live detail covers every first-level administrative area in enabled IGAD countries.
 - The purpose is anticipatory local action.
-- The rest of IGAD remains national-level in version 1.0 unless data coverage is explicitly available.
+- Units remain explicitly unassessed whenever the source data is not conclusive.
 
 ### Footer
 
@@ -188,7 +190,7 @@ Must state that Mwangaza is a decision-support prototype and estimates should be
 ## Future Sprint Notes
 
 - Criterio obligatorio para `sprint-56-region-explorer-completion`: el mapa completo debe funcionar contra la API iniciada con `MWANGAZA_MODE=demo`, sin red, mostrando metadatos demo y conservando tabla/placeholder accesible cuando falte geometría.
-- Full district-level Somalia map needs public API payloads with subnational geometries and metric rows. Related prior work: Sprint 25. Completion is now tracked by `sprint-56-region-explorer-completion`.
+- Full ADM1 maps for all eight IGAD countries are implemented through the Sprint 56 public API contract and locally versioned boundary assets.
 - Northern Kenya multi-district scenario is already planned in Sprint 46.
 - Alerts center deep-link filters from `View all alerts` are tracked by `sprint-56-region-explorer-completion`.
 - Real composite-score contribution payloads and month-over-month indicator deltas are tracked by `sprint-56-region-explorer-completion`.

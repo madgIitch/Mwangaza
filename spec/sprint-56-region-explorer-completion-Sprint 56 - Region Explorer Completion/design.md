@@ -31,7 +31,7 @@
 
 - Incorporar las fronteras ADM1 versionadas al catálogo geográfico como regiones consultables por GEE, conservando `shapeID` y `shapeISO` de geoBoundaries.
 - Añadir `AdministrativeUnit` a `RegionProfile` y serializarlo como `administrative_units` sin romper consumidores v1.
-- Consultar ADM1 sólo en la ventana actual. La cobertura por defecto es Somalia completa y Turkana, Marsabit e Isiolo; se amplía mediante configuración.
+- Consultar ADM1 sólo en la ventana actual. La cobertura por defecto incluye todas las unidades ADM1 de todos los países IGAD habilitados; `MWANGAZA_GEE_ADM1_COUNTRIES` puede restringir explícitamente el lote.
 - Resolver el color del mapa por `boundary_iso`. No se permite propagar el score nacional ni usar coincidencia aproximada de nombre.
 
 ## Decisiones de la entrevista

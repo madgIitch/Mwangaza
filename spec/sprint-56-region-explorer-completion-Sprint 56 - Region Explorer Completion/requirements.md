@@ -22,7 +22,7 @@ R10. Las interacciones de país, subregión, periodo y vista actualizan datos ya
 R11. Existe un smoke versionado contra GEE real que comprueba al menos una región habilitada y verifica que el payload live alimenta todos los módulos del panel sin datos demo.
 R12. Cuenta y notificaciones permanecen como placeholders explícitos no interactivos hasta que sus contratos sean aprobados.
 R13. El perfil regional publica `administrative_units` aditivo con identificadores geoBoundaries, periodo, score, nivel, calidad, procedencia y métricas GEE por unidad.
-R14. El procesamiento ADM1 live se limita al periodo actual y a cobertura configurable; tendencias e históricos permanecen agregados para controlar coste y latencia.
+R14. El procesamiento ADM1 live se limita al periodo actual, cubre por defecto todas las unidades de todos los países IGAD habilitados y admite restricción explícita por configuración; tendencias e históricos permanecen agregados para controlar coste y latencia.
 R15. El mapa enlaza por `boundary_iso` y sólo colorea unidades con score propio y calidad concluyente; ausencias y fallos permanecen grises.
 
 ## Restricciones

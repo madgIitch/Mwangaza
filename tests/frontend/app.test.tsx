@@ -87,7 +87,7 @@ describe("React PWA dashboard", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 
     fireEvent.change(screen.getByRole("combobox", { name: "Subregion / District" }), { target: { value: "somalia-pilot" } });
-    expect(screen.getByRole("button", { name: "Pilot subnational view" })).toHaveAttribute("data-active", "true");
+    expect(screen.getByRole("button", { name: "Subnational view" })).toHaveAttribute("data-active", "true");
     expect(screen.getAllByText("Somalia Pilot Area").length).toBeGreaterThan(0);
   });
 
@@ -235,6 +235,18 @@ describe("React PWA dashboard", () => {
     expect(screen.getByText(/report-KEN-010-demo/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Notification language"), { target: { value: "sw" } });
     expect(screen.getByText(/Kagua upatikanaji wa maji katika Marsabit/)).toBeInTheDocument();
+  });
+
+  it("does not mix the Northern Kenya demo scenario into live ADM1 coverage", () => {
+    window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    render(<App initialData={{ ...demoDashboard, dataMode: "live", isDemo: false }} skipApiLoad />);
+
+    fireEvent.change(screen.getByLabelText("Country", { selector: "select" }), { target: { value: "ken" } });
+
+    expect(screen.queryByRole("heading", { name: "Northern Kenya subnational scenario" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Simulated notification")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "About administrative coverage" })).toBeInTheDocument();
   });
 
   it("renders a low-bandwidth table shell", () => {

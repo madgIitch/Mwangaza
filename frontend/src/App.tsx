@@ -1244,7 +1244,7 @@ function RegionExplorer({
           <label>
             <span>Subregion / District</span>
             <select disabled={!rankedPilotRows.length} value={selectedPilotId} onChange={(event) => { setSelectedPilotId(event.target.value); setRegionView(event.target.value ? "pilot" : "national"); }}>
-              <option value="">{rankedPilotRows.length ? "All pilot areas" : "Subnational unavailable"}</option>
+              <option value="">{rankedPilotRows.length ? "All administrative areas" : "Subnational unavailable"}</option>
               {rankedPilotRows.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
             </select>
           </label>
@@ -1257,12 +1257,12 @@ function RegionExplorer({
           </label>
           <div className="segmented" aria-label="View">
             <button type="button" data-active={regionView === "national"} onClick={() => { setRegionView("national"); setSelectedPilotId(""); }}>National view</button>
-            <button type="button" data-active={regionView === "pilot"} disabled={!rankedPilotRows.length} onClick={() => setRegionView("pilot")}>Pilot subnational view</button>
+            <button type="button" data-active={regionView === "pilot"} disabled={!rankedPilotRows.length} onClick={() => setRegionView("pilot")}>Subnational view</button>
           </div>
         </div>
       </div>
 
-      {selectedRegion.id === "ken" ? <NorthernKenyaScenario /> : null}
+      {selectedRegion.id === "ken" && data.dataMode === "demo" ? <NorthernKenyaScenario /> : null}
 
       <div className="region-main-grid">
         <RegionRiskSurface profile={effectiveProfile} selectedRegion={selectedRegion} />
@@ -1273,7 +1273,7 @@ function RegionExplorer({
           </div>
           <dl className="summary-list">
             <div><dt>Region</dt><dd>{selectedPilot?.name ?? selectedRegion.name}</dd></div>
-            <div><dt>Level</dt><dd>{selectedProfile.pilotUnits.length ? "Country with pilot coverage" : "Country"}</dd></div>
+            <div><dt>Level</dt><dd>{effectiveProfile.administrativeUnits?.length ? "Country with ADM1 coverage" : selectedProfile.pilotUnits.length ? "Country with pilot coverage" : "Country"}</dd></div>
             <div><dt>Potentially exposed population</dt><dd>{exposure?.value ?? "No data"} {exposure?.unit ?? ""}</dd></div>
             <div><dt>Last updated</dt><dd>{selectedRegion.period}</dd></div>
             <div><dt>Data quality</dt><dd>{qualityLabel(selectedRegion.quality)}</dd></div>
@@ -1309,7 +1309,7 @@ function RegionExplorer({
         <section>
           <div className="section-heading">
             <h2>Subnational ranking</h2>
-            <span className="muted">Pilot districts</span>
+            <span className="muted">ADM1 coverage</span>
           </div>
           {rankedPilotRows.length ? (
             <table>
@@ -1353,8 +1353,8 @@ function RegionExplorer({
           </ul>
         </section>
         <section id="about" className="pilot-note">
-          <h2>About the pilot analysis</h2>
-          <p>Enhanced subnational analysis is limited to configured pilot areas. Other IGAD coverage remains national unless a validated pilot payload is available.</p>
+          <h2>About administrative coverage</h2>
+          <p>Live analysis covers every first-level administrative area in the enabled IGAD countries. Units without conclusive source data remain explicitly unassessed.</p>
           <span className="future-link">Methodology page pending</span>
         </section>
       </div>

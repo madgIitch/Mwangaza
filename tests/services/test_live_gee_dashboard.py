@@ -144,17 +144,17 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertIn("northern-kenya-pilot", region_ids)
         self.assertNotIn("eth", region_ids)
 
-    def test_default_adm1_scope_is_somalia_and_northern_kenya_pilots(self) -> None:
+    def test_default_adm1_scope_covers_all_enabled_igad_countries(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
             region_ids = dashboard_live_adm1_region_ids()
 
-        self.assertEqual(len(region_ids), 21)
+        self.assertEqual(len(region_ids), 121)
         self.assertIn("adm1-so-hi", region_ids)
         self.assertIn("adm1-ke-43", region_ids)
-        self.assertIn("adm1-ke-25", region_ids)
-        self.assertIn("adm1-ke-09", region_ids)
+        self.assertIn("adm1-et-aa", region_ids)
+        self.assertIn("adm1-dj-ar", region_ids)
 
-    def test_adm1_scope_can_be_disabled_or_expanded_by_country(self) -> None:
+    def test_adm1_scope_can_be_disabled_or_restricted_by_country(self) -> None:
         with patch.dict("os.environ", {"MWANGAZA_GEE_ADM1_ENABLED": "false"}, clear=True):
             self.assertEqual(dashboard_live_adm1_region_ids(), ())
         with patch.dict("os.environ", {"MWANGAZA_GEE_ADM1_COUNTRIES": "ETH"}, clear=True):
@@ -162,6 +162,13 @@ class LiveGeeDashboardTests(unittest.TestCase):
 
         self.assertEqual(len(region_ids), 11)
         self.assertTrue(all(region_id.startswith("adm1-et-") for region_id in region_ids))
+
+    def test_adm1_scope_follows_enabled_countries_when_not_explicitly_restricted(self) -> None:
+        with patch.dict("os.environ", {"MWANGAZA_ENABLED_COUNTRIES": "SOM,DJI"}, clear=True):
+            region_ids = dashboard_live_adm1_region_ids()
+
+        self.assertEqual(len(region_ids), 24)
+        self.assertTrue(all(region_id.startswith(("adm1-so-", "adm1-dj-")) for region_id in region_ids))
 
     def test_adm1_payload_keeps_exact_boundary_provenance(self) -> None:
         payloads = build_live_gee_payloads(
@@ -204,6 +211,21 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertEqual({risk["region_id"] for risk in risks}, {"adm1-so-hi", "adm1-so-bn"})
         self.assertTrue(all(risk["metadata"]["aggregation_mode"] == "reduceRegions" for risk in risks))
         self.assertEqual(len(payloads), 10)
+        ndvi_rows = [payload for payload in payloads if payload.get("indicator") == "ndvi"]
+        self.assertTrue(all(row["metadata"]["summary_qa_values"] == [0, 1] for row in ndvi_rows))
+
+    def test_empty_adm1_scope_does_not_query_the_adapter(self) -> None:
+        adapter = FakeBatchLiveGeeAdapter()
+        with patch.object(adapter, "query_adm1_values") as query:
+            payloads = build_live_gee_payloads_for_adm1_regions(
+                (),
+                "2026-07-01T00:00:00Z",
+                "2026-07-15T00:00:00Z",
+                adapter=adapter,  # type: ignore[arg-type]
+            )
+
+        self.assertEqual(payloads, [])
+        query.assert_not_called()
 
     def test_country_and_pilot_payloads_share_one_batch_result_set(self) -> None:
         payloads = build_live_gee_payloads_for_regions(
