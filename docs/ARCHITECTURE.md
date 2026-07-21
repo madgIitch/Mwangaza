@@ -1370,3 +1370,33 @@ Objetivo no negociable:
 - The live loader computes the current-period indicator snapshot and composite risk per configured ADM1 unit, while country trends and historical comparisons remain aggregated.
 - `RegionProfile.administrative_units` is the boundary between processing and presentation. The public API serializes it additively and the React atlas joins it to local geometry by exact `boundary_iso`.
 - ADM1 query failures are isolated per unit. Missing units are not synthesized and remain visually unassessed.
+
+<!-- harness:sprint-57-overview-completion -->
+## sprint-57-overview-completion · Sprint 57 - Overview Completion
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `src/mwangaza/services/dashboard_shell.py`
+  - `src/mwangaza/reports/**`
+  - `src/mwangaza/exports/**`
+  - `tests/reports/**`
+  - `tests/exports/**`
+  - `docs/overview-interface.md`
+  - `docs/contracts.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-57-overview-completion-*/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Snapshot procesado con IDs y descargas contextuales aditivas.
+- **external_contracts:** Rutas de detalle y endpoints de descarga concretos.
+- **edge_cases:** Zoom, selección, orden y comparación deterministas.
+- **ui_states:** Cockpit completo, accesible y equivalente en low-bandwidth.

@@ -1,15 +1,18 @@
 # Sesión actual
 
-Feature: **sprint-56-region-explorer-completion - Sprint 56 - Region Explorer Completion** - estado: `review_pending`.
+Feature: **sprint-57-overview-completion - Sprint 57 - Overview Completion** - estado: `review_pending`.
 
 ## Siguiente acción
 
-- Revisar `/region?api=1`: confirmar que el último snapshot válido aparece de inmediato, se promociona automáticamente a live y conserva 24 puntos mensuales, workspace mapa-inspector, contribuciones nacionales/ADM1 y low-bandwidth. Cerrar sólo con aprobación visual.
+- Revisar `/overview?api=1`: confirmar visualmente el atlas IGAD, colores por riesgo/calidad, tooltip, zoom, selección y disposición con datos live/cache. Cerrar sólo con aprobación visual.
 
 ## Último resultado
 
-- 304 tests Python, 11 subtests y 41 frontend.
-- Typecheck, lint, build y gates: PASS.
-- Smoke GEE real: PASS (19/19), incluida serie mensual 12-24, baseline completo, suma nacional explicada y contribuciones propias para 121/121 ADM1 concluyentes; ejecución observada ~16 s.
-- La API sirve el último snapshot materializado completo sin esperar a GEE: medición local de 21 ms para snapshot, 6 ms para alertas y 4 ms para forecasts. Un único refresh se ejecuta en segundo plano y la PWA promociona `cache` a `live` sin recarga.
-- Propuesta C ampliada: inspector territorial, ranking plegable, selección compartida, tendencias interpretables y contribuciones reales (`score × peso`) con fuente/calidad. Smoke visual humano pendiente.
+- 306 tests Python, 11 subtests y 45 tests frontend: PASS.
+- Typecheck, lint, build, diff-check y gates del harness: PASS.
+- El mapa usa límites reales geoBoundaries, normaliza anillos y consolida ADM1 como `uiGeometry` por país; los países ausentes quedan sin evaluar.
+- El atlas se carga en un chunk diferido de 72.88 kB gzip, por lo que low-bandwidth no descarga geometría ni renderiza SVG.
+- Home, zoom 1x-4x, capas Risk/Data quality, tooltip/foco y selección comparten datos ya cargados; ninguna interacción consulta GEE.
+- La zona inferior se reorganiza como evidencia 2/3 + rail de decisión 1/3: tres tendencias comparables en una fila, recomendaciones compactas y descargas sin paneles estirados ni espacio muerto.
+- Overview mantiene una comparación permanente de los ocho países IGAD; Somalia es sólo el foco inicial. Países ausentes siguen visibles como no evaluados y no activan un drill-down sin payload.
+- Revisión visual automatizada pendiente: no había navegador conectado en la sesión.

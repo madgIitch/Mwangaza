@@ -23,6 +23,16 @@ const severityRank: Record<Severity, number> = {
   normal: 1,
   unknown: 0
 };
+const IGAD_COUNTRIES: Array<{ id: string; name: string }> = [
+  { id: "dji", name: "Djibouti" },
+  { id: "eri", name: "Eritrea" },
+  { id: "eth", name: "Ethiopia" },
+  { id: "ken", name: "Kenya" },
+  { id: "sdn", name: "Sudan" },
+  { id: "som", name: "Somalia" },
+  { id: "ssd", name: "South Sudan" },
+  { id: "uga", name: "Uganda" }
+];
 const LIVE_REFRESH_POLL_MS = 3000;
 const LIVE_REFRESH_MAX_ATTEMPTS = 30;
 
@@ -129,6 +139,8 @@ export function App({
   );
   const route = window.location.pathname;
   const isOverviewRoute = route === "/" || route === "/overview";
+  const isAlertsRoute = route === "/alerts" || route.startsWith("/alerts/");
+  const requestedAlertId = route.startsWith("/alerts/") ? decodeURIComponent(route.slice("/alerts/".length)) : undefined;
 
   if (route === "/landing") return <LandingPage />;
 
@@ -145,20 +157,19 @@ export function App({
         <nav>
           <a data-active={isOverviewRoute ? "true" : "false"} href="/overview">{t(language, "overview")}</a>
           <a data-active={route === "/region" ? "true" : "false"} href="/region">{t(language, "regions")}</a>
-          <a data-active={route === "/alerts" ? "true" : "false"} href="/alerts">{t(language, "activeAlerts")}</a>
+          <a data-active={isAlertsRoute ? "true" : "false"} href="/alerts">{t(language, "activeAlerts")}</a>
           <a data-active={route === "/reports" ? "true" : "false"} href="/reports">{t(language, "reports")}</a>
           <a data-active={route === "/about" ? "true" : "false"} href="/about">{t(language, "about")}</a>
           <a data-active={route === "/admin" ? "true" : "false"} href="/admin">Admin</a>
           <a className="technical-link" data-active={route === "/technical" ? "true" : "false"} href="/technical">Technical status</a>
         </nav>
-        <label className="field">
-          <span>Language</span>
-          <select value={language} onChange={(event) => setLanguage(normalizeLanguage(event.target.value))}>
-            <option value="en">English</option>
-            <option value="es">Espanol</option>
-            <option value="sw">Kiswahili</option>
-          </select>
-        </label>
+        <div className="language-control">
+          <span>{t(language, "language")}</span>
+          <div className="language-segments" aria-label={t(language, "language")}>
+            {(["en", "sw", "so"] as const).map((item) => <button data-active={language === item ? "true" : "false"} key={item} onClick={() => setLanguage(item)} type="button">{item.toUpperCase()}</button>)}
+          </div>
+          <button className="legacy-language" data-active={language === "es" ? "true" : "false"} onClick={() => setLanguage("es")} type="button">ES</button>
+        </div>
         <label className="toggle">
           <input checked={lowBandwidth} onChange={(event) => setLowBandwidth(event.target.checked)} type="checkbox" />
           <span>{t(language, "lowBandwidth")}</span>
@@ -176,6 +187,10 @@ export function App({
             <span>{data.lastUpdated}</span>
             <span>{data.message}</span>
           </div>
+          <div className="topbar-placeholders" aria-label="Unavailable account controls">
+            <span title={t(language, "notificationsUnavailable")}>{t(language, "notificationsUnavailable")}</span>
+            <span title={t(language, "accountUnavailable")}>{t(language, "accountUnavailable")}</span>
+          </div>
         </header>
 
         {(offline || apiFallback) && (
@@ -192,8 +207,8 @@ export function App({
           </section>
         )}
 
-        {route === "/alerts" ? (
-          <AlertsCenter data={data} activeAlerts={activeAlerts} />
+        {isAlertsRoute ? (
+          <AlertsCenter data={data} activeAlerts={activeAlerts} requestedAlertId={requestedAlertId} />
         ) : route === "/reports" ? (
           <ReportsCenter data={data} />
         ) : route === "/about/provenance" ? (
@@ -690,7 +705,7 @@ function ProvenanceScreen(): JSX.Element {
   </section>;
 }
 
-function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlerts: Alert[] }): JSX.Element {
+function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: DashboardData; activeAlerts: Alert[]; requestedAlertId?: string }): JSX.Element {
   const [query, setQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
@@ -698,9 +713,9 @@ function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlert
   const [tab, setTab] = useState<"active" | "preventive" | "resolved" | "all">("active");
   const [selectedAlertKey, setSelectedAlertKey] = useState<string | null>(null);
 
-  const alertRows = useMemo(() => data.alerts.map((alert, index) => ({
+  const alertRows = useMemo(() => data.alerts.map((alert) => ({
     alert,
-    id: alertId(alert, index),
+    id: alertId(alert),
     region: data.regions.find((region) => region.id === alert.regionId),
     profile: data.profiles.find((profile) => profile.id === alert.regionId)
   })), [data.alerts, data.profiles, data.regions]);
@@ -714,12 +729,21 @@ function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlert
     const matchesTab = tab === "all" || (tab === "active" && alert.status === "active") || (tab === "preventive" && alert.status === "preventive") || (tab === "resolved" && alert.status === "resolved");
     return matchesQuery && matchesSeverity && matchesRegion && matchesStatus && matchesTab;
   });
-  const selectedRow = filteredRows.find((row) => row.id === selectedAlertKey) ?? filteredRows[0] ?? alertRows[0];
+  const requestedRow = requestedAlertId ? alertRows.find((row) => row.id === requestedAlertId) : undefined;
+  const selectedRow = requestedRow ?? filteredRows.find((row) => row.id === selectedAlertKey) ?? filteredRows[0] ?? alertRows[0];
   const selectedAlert = selectedRow?.alert;
   const selectedProfile = selectedRow?.profile ?? data.profiles.find((profile) => profile.id === data.selectedRegionId) ?? data.profiles[0];
   const selectedRegion = selectedRow?.region ?? data.regions.find((region) => region.id === selectedAlert?.regionId) ?? data.regions[0];
   const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
   const severeCount = activeAlerts.filter((alert) => alert.severity === "critical").length;
+
+  if (requestedAlertId && !requestedRow) {
+    return <section className="alert-detail-page" aria-label="Alert not found"><p className="eyebrow">404</p><h2>Alert not found</h2><p>The requested alert is not present in the loaded snapshot.</p><a className="text-link" href="/alerts">Back to Alerts Center</a></section>;
+  }
+
+  if (requestedAlertId && selectedAlert && selectedProfile && selectedRegion) {
+    return <AlertDetailPage alert={selectedAlert} alertIdValue={requestedAlertId} data={data} profile={selectedProfile} region={selectedRegion} />;
+  }
 
   return (
     <section className="alerts-screen" aria-label="Alerts Center">
@@ -860,6 +884,41 @@ function AlertsCenter({ data, activeAlerts }: { data: DashboardData; activeAlert
         <h2>Resolved & recent</h2>
         <Placeholder title="Resolved alert history pending" detail="The public API does not expose resolved, downgraded or superseded alert history yet." />
       </section>
+    </section>
+  );
+}
+
+function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert: Alert; alertIdValue: string; data: DashboardData; profile: RegionProfile; region: RegionRisk }): JSX.Element {
+  const reportUrl = downloadUrl("/api/v1/reports/executive", region.id, region.period);
+  return (
+    <section className="alert-detail-page" aria-label={`Alert ${alertIdValue}`}>
+      <header>
+        <div><p className="eyebrow">Active alert · {alertIdValue}</p><h2>{alert.region}</h2><p>{alert.title}</p></div>
+        <span className="severity-badge" data-severity={alert.severity}>{severityLabel(alert.severity)}</span>
+      </header>
+      <div className="alert-detail-layout">
+        <section>
+          <h3>Decision context</h3>
+          <p>{alertNarrative(alert, region)}</p>
+          <dl className="alert-meta">
+            <div><dt>Period</dt><dd>{alert.period}</dd></div>
+            <div><dt>Data quality</dt><dd>{qualityLabel(alert.quality)}</dd></div>
+            <div><dt>Source</dt><dd>{data.source}</dd></div>
+          </dl>
+          <h3>Evidence</h3>
+          <table><thead><tr><th>Signal</th><th>Value</th></tr></thead><tbody>{alert.evidence.map(([label, value]) => <tr key={`${label}-${value}`}><td>{label}</td><td>{value}</td></tr>)}</tbody></table>
+        </section>
+        <aside>
+          <h3>Current indicators</h3>
+          <dl className="alert-indicator-list">{profile.metrics.slice(0, 6).map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}{metric.unit}</dd></div>)}</dl>
+          <div className="alert-primary-action"><span>Recommended next step</span><strong>{alert.action}</strong></div>
+        </aside>
+      </div>
+      <nav className="alert-detail-actions" aria-label="Alert actions">
+        <a href={`/region?country=${encodeURIComponent(region.id)}`}>Open region analysis</a>
+        <a href={reportUrl}>Download executive PDF</a>
+        <a href={`/alerts?region=${encodeURIComponent(region.id)}&period=${encodeURIComponent(region.period)}&status=active`}>Back to filtered alerts</a>
+      </nav>
     </section>
   );
 }
@@ -1688,7 +1747,7 @@ interface AdministrativeFeatureCollection {
 
 interface RiskFeature {
   type: "Feature";
-  properties: { region: RegionRisk };
+  properties: { region: RegionRisk; boundaryName: string; interactiveAnchor: boolean };
   geometry: GeoJsonGeometry;
 }
 
@@ -1798,17 +1857,6 @@ function normalizeAdministrativeRings(collection: AdministrativeFeatureCollectio
   };
 }
 
-function buildRiskFeatureCollection(regions: RegionRisk[]): RiskFeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: regions.filter((region) => region.uiGeometry).map((region) => ({
-      type: "Feature",
-      properties: { region },
-      geometry: region.uiGeometry as GeoJsonGeometry
-    }))
-  };
-}
-
 function mapFill(severity: Severity): string {
   const fills: Record<Severity, string> = {
     normal: "#2f9e44",
@@ -1831,8 +1879,24 @@ function mapHoverFill(severity: Severity): string {
   return fills[severity];
 }
 
+function qualityMapFill(quality: string): string {
+  if (quality === "ok" || quality === "normal") return "#247a53";
+  if (quality === "degraded" || quality === "watch") return "#d5a72f";
+  return "#c4c9d1";
+}
+
 function metricByLabel(metrics: Metric[], label: string): Metric | undefined {
   return metrics.find((metric) => metric.label.toLowerCase().includes(label.toLowerCase()));
+}
+
+function comparisonForMetric(metric: Metric, rows: HistoricalRow[]): string | null {
+  const label = metric.label.toLowerCase();
+  const indicator = label.includes("ndvi") ? "ndvi" : label.includes("rainfall") ? "rainfall" : label.includes("lst") || label.includes("temperature") ? "lst" : "";
+  if (!indicator) return null;
+  const row = rows.find((item) => item.indicator.toLowerCase().includes(indicator));
+  if (!row) return null;
+  const year = row.period.match(/\d{4}/)?.[0];
+  return `${formatMeasuredValue(row.difference)}${year ? ` vs ${year}` : ""}`;
 }
 
 function indicatorLabel(indicator: string): string {
@@ -1867,8 +1931,31 @@ function qualityLabel(value: string): string {
   return value;
 }
 
-function alertId(alert: Alert, index: number): string {
-  return `ALT-${alert.regionId.toUpperCase()}-${String(index + 1).padStart(3, "0")}`;
+function localizedSeverity(language: Language, severity: Severity): string {
+  const keys: Record<Severity, "low" | "watch" | "alert" | "severe" | "notAssessed"> = {
+    normal: "low", watch: "watch", warning: "alert", critical: "severe", unknown: "notAssessed"
+  };
+  return t(language, keys[severity]);
+}
+
+function localizedQuality(language: Language, value: string): string {
+  const quality = qualityLabel(value);
+  if (quality === "High") return t(language, "high");
+  if (quality === "Medium") return t(language, "medium");
+  if (quality === "Insufficient") return t(language, "insufficient");
+  return quality;
+}
+
+function alertId(alert: Alert): string {
+  if (alert.id) return alert.id;
+  const stable = `${alert.title}-${alert.period}`.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24).toUpperCase();
+  return `ALT-${alert.regionId.toUpperCase()}-${stable || "ALERT"}`;
+}
+
+function downloadUrl(path: string, regionId: string, period: string, format?: "csv" | "json"): string {
+  const query = new URLSearchParams({ region: regionId, period });
+  if (format) query.set("format", format);
+  return `${path}?${query.toString()}`;
 }
 
 function alertNarrative(alert: Alert, region: RegionRisk): string {
@@ -1878,23 +1965,50 @@ function alertNarrative(alert: Alert, region: RegionRisk): string {
 
 function OverviewRiskMap({
   data,
+  language,
   selectedRegion,
   onSelectRegion
 }: {
   data: DashboardData;
+  language: Language;
   selectedRegion: RegionRisk;
   onSelectRegion: (id: string) => void;
 }): JSX.Element {
-  const geography = useMemo(() => buildRiskFeatureCollection(data.regions), [data.regions]);
-  const hasGeometry = geography.features.length > 0;
+  const [geography, setGeography] = useState<RiskFeatureCollection | null>(null);
+  const [geometryError, setGeometryError] = useState(false);
+  const [layer, setLayer] = useState<"risk" | "quality">("risk");
+  const [hoveredRegionId, setHoveredRegionId] = useState(selectedRegion.id);
+  const [mapZoom, setMapZoom] = useState(1);
+  const tooltipRegion = data.regions.find((region) => region.id === hoveredRegionId) ?? selectedRegion;
+  const tooltipProfile = data.profiles.find((profile) => profile.id === tooltipRegion.id);
+  const setZoom = (zoom: number): void => setMapZoom(Math.max(1, Math.min(4, zoom)));
+  const resetMap = (): void => setMapZoom(1);
+
+  useEffect(() => {
+    let active = true;
+    setGeometryError(false);
+    void import("./maps/overviewBoundaries")
+      .then(({ buildOverviewRiskFeatures }) => {
+        if (active) setGeography(buildOverviewRiskFeatures(data.regions, selectedRegion.period));
+      })
+      .catch(() => {
+        if (active) {
+          setGeography(null);
+          setGeometryError(true);
+        }
+      });
+    return () => { active = false; };
+  }, [data.regions, selectedRegion.period]);
+
+  const hasGeometry = Boolean(geography?.features.length);
 
   return (
     <section className="overview-map-panel">
       <div className="section-heading">
-        <h2>Risk Map - IGAD</h2>
-        <span className="info-dot" title="Current drought risk relative to the historical baseline.">i</span>
+        <div><p className="eyebrow">{t(language, "igadSituation")}</p><h2>{t(language, "riskMap")}</h2></div>
+        <span className="info-dot" title={t(language, "riskMapHelp")}>i</span>
       </div>
-      <div className="overview-map-stage" aria-label="Overview risk map">
+      <div className="overview-map-stage" aria-label={t(language, "overviewRiskMap")}>
         {hasGeometry ? (
           <ComposableMap
             projection="geoMercator"
@@ -1903,50 +2017,71 @@ function OverviewRiskMap({
             height={360}
             className="region-svg-map"
           >
-            <Geographies geography={geography}>
-              {({ geographies }) => geographies.map((geo) => {
-                const region = geo.properties.region as RegionRisk;
-                return (
-                  <Geography
-                    aria-label={`${region.name}: ${region.score ?? "No data"} ${region.level}`}
-                    geography={geo}
-                    key={geo.rsmKey}
-                    onClick={() => onSelectRegion(region.id)}
-                    role="button"
-                    style={{
-                      default: {
-                        fill: mapFill(region.level),
-                        stroke: region.id === selectedRegion.id ? "#172033" : "#ffffff",
-                        strokeWidth: region.id === selectedRegion.id ? 2.8 : 1.3,
-                        outline: "none"
-                      },
-                      hover: { fill: mapHoverFill(region.level), outline: "none" },
-                      pressed: { fill: mapHoverFill(region.level), outline: "none" }
-                    }}
-                    tabIndex={0}
-                  />
-                );
-              })}
-            </Geographies>
+            <g transform={`translate(${380 * (1 - mapZoom)} ${180 * (1 - mapZoom)}) scale(${mapZoom})`}>
+              <Geographies geography={geography as RiskFeatureCollection}>
+                {({ geographies }) => geographies.map((geo) => {
+                  const region = geo.properties.region as RegionRisk;
+                  const regionIsAvailable = data.regions.some((item) => item.id === region.id);
+                  const interactiveAnchor = Boolean(geo.properties.interactiveAnchor) && regionIsAvailable;
+                  const fill = layer === "risk" ? mapFill(region.level) : qualityMapFill(region.quality);
+                  const hoverFill = layer === "risk" ? mapHoverFill(region.level) : fill;
+                  return (
+                    <Geography
+                      aria-hidden={!interactiveAnchor}
+                      aria-label={interactiveAnchor ? `${region.name}: ${region.score ?? t(language, "noData")}, ${localizedSeverity(language, region.level)}, ${t(language, "quality")} ${localizedQuality(language, region.quality)}` : undefined}
+                      data-country={region.id}
+                      geography={geo}
+                      key={geo.rsmKey}
+                      onBlur={() => setHoveredRegionId(selectedRegion.id)}
+                      onClick={() => { if (regionIsAvailable) onSelectRegion(region.id); }}
+                      onFocus={() => setHoveredRegionId(region.id)}
+                      onKeyDown={(event) => { if (regionIsAvailable && (event.key === "Enter" || event.key === " ")) onSelectRegion(region.id); }}
+                      onMouseEnter={() => setHoveredRegionId(region.id)}
+                      onMouseLeave={() => setHoveredRegionId(selectedRegion.id)}
+                      role={interactiveAnchor ? "button" : undefined}
+                      style={{
+                        default: {
+                          fill,
+                          stroke: region.id === selectedRegion.id ? "#163f31" : "#ffffff",
+                          strokeWidth: region.id === selectedRegion.id ? 1.25 : 0.65,
+                          outline: "none"
+                        },
+                        hover: { fill: hoverFill, outline: "none" },
+                        pressed: { fill: hoverFill, outline: "none" }
+                      }}
+                      tabIndex={interactiveAnchor ? 0 : -1}
+                    />
+                  );
+                })}
+              </Geographies>
+            </g>
           </ComposableMap>
         ) : (
-          <Placeholder title="Map geometry pending" detail="The public API has not provided GeoJSON UI geometry for this payload yet." />
+          <Placeholder
+            title={geometryError ? t(language, "atlasUnavailable") : t(language, "atlasLoading")}
+            detail={geometryError ? t(language, "atlasError") : t(language, "atlasPreparing")}
+          />
         )}
-        <div className="map-controls" aria-label="Map controls pending">
-          <button type="button" title="Reset map view pending">Home</button>
-          <button type="button" title="Zoom in pending">+</button>
-          <button type="button" title="Zoom out pending">-</button>
-          <button type="button" title="Layer selector pending">Layers</button>
+        {hasGeometry ? <div className="overview-map-tooltip" aria-live="polite">
+          <span>{layer === "risk" ? t(language, "risk") : t(language, "dataQuality")}</span>
+          <strong>{tooltipRegion.name}</strong>
+          <b>{tooltipRegion.score ?? t(language, "noData")}{tooltipRegion.score === null ? "" : "/100"} · {localizedSeverity(language, tooltipRegion.level)}</b>
+          <small>{localizedQuality(language, tooltipRegion.quality)} {t(language, "quality")} · {tooltipRegion.period}</small>
+          <small>{tooltipProfile?.metrics.slice(0, 3).map((metric) => `${metric.label}: ${metric.value}${metric.unit}`).join(" · ") || t(language, "indicatorsUnavailable")}</small>
+          <em>{data.source}</em>
+        </div> : null}
+        <div className="map-controls" aria-label={t(language, "mapControls")}>
+          <button aria-label={t(language, "home")} onClick={resetMap} type="button" title={t(language, "home")}>⌂</button>
+          <button aria-label={t(language, "zoomIn")} disabled={mapZoom >= 4} onClick={() => setZoom(mapZoom + 0.5)} type="button">+</button>
+          <button aria-label={t(language, "zoomOut")} disabled={mapZoom <= 1} onClick={() => setZoom(mapZoom - 0.5)} type="button">−</button>
+          <label><span>{t(language, "layer")}</span><select aria-label={t(language, "layer")} onChange={(event) => setLayer(event.target.value as "risk" | "quality")} value={layer}><option value="risk">{t(language, "risk")}</option><option value="quality">{t(language, "dataQuality")}</option></select></label>
         </div>
       </div>
-      <div className="map-legend" aria-label="Risk legend">
-        <span data-severity="normal">Green</span>
-        <span data-severity="watch">Yellow</span>
-        <span data-severity="warning">Orange</span>
-        <span data-severity="critical">Red</span>
-        <span data-severity="unknown">Unknown</span>
+      <p className="overview-map-attribution">{t(language, "boundaryAttribution")}</p>
+      <div className="map-legend" aria-label={`${layer} legend`}>
+        {layer === "risk" ? <><span data-severity="normal">{t(language, "low")}</span><span data-severity="watch">{t(language, "watch")}</span><span data-severity="warning">{t(language, "alert")}</span><span data-severity="critical">{t(language, "severe")}</span><span data-severity="unknown">{t(language, "notAssessed")}</span></> : <><span data-quality="ok">{t(language, "high")}</span><span data-quality="degraded">{t(language, "medium")}</span><span data-quality="unknown">{t(language, "insufficient")}</span></>}
       </div>
-      <p className="muted">Risk levels indicate current drought risk relative to the historical baseline.</p>
+      <p className="muted">{layer === "risk" ? t(language, "riskMapHelp") : t(language, "qualityMapHelp")}</p>
     </section>
   );
 }
@@ -1968,15 +2103,29 @@ function OverviewScreen({
 }): JSX.Element {
   const displayMetrics = selectedProfile.metrics.length ? selectedProfile.metrics : data.metrics;
   const topAlerts = activeAlerts.slice(0, 4);
+  const alertsUrl = `/alerts?region=${encodeURIComponent(selectedRegion.id)}&period=${encodeURIComponent(selectedRegion.period)}&status=active`;
+  const reportUrl = downloadUrl("/api/v1/reports/executive", selectedRegion.id, selectedRegion.period);
+  const csvUrl = downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "csv");
+  const jsonUrl = downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "json");
+  const availableRegionIds = new Set(data.regions.map((region) => region.id));
+  const regionalRegions = IGAD_COUNTRIES.map(({ id, name }) => data.regions.find((region) => region.id === id) ?? {
+    id,
+    name,
+    score: null,
+    level: "unknown" as Severity,
+    quality: "unknown",
+    period: selectedRegion.period
+  }).sort((left, right) => severityRank[right.level] - severityRank[left.level] || left.name.localeCompare(right.name));
+  const assessedRegionCount = regionalRegions.filter((region) => region.score !== null && region.level !== "unknown").length;
 
   return (
     <section className="overview-screen" aria-label={t(language, "overview")}>
       <div className="overview-top-grid">
-        <OverviewRiskMap data={data} selectedRegion={selectedRegion} onSelectRegion={onSelectRegion} />
+        <OverviewRiskMap data={data} language={language} selectedRegion={selectedRegion} onSelectRegion={onSelectRegion} />
         <section className="overview-alerts">
           <div className="section-heading">
-            <h2>{t(language, "activeAlerts")}</h2>
-            <a className="text-link" href="/alerts">View all alerts</a>
+            <div><p className="eyebrow">{t(language, "priorityQueue")}</p><h2>{t(language, "activeAlerts")}</h2></div>
+            <a className="text-link" href={alertsUrl}>{t(language, "viewAllAlerts")}</a>
           </div>
           <div className="overview-alert-list">
             {topAlerts.length ? topAlerts.map((alert, index) => (
@@ -1988,20 +2137,48 @@ function OverviewScreen({
                   <p>{alert.title}</p>
                   <small>{alert.period} | quality {alert.quality}</small>
                 </div>
-                <a href="/alerts">View details</a>
+                <a href={`/alerts/${encodeURIComponent(alertId(alert))}`}>{t(language, "viewDetails")}</a>
               </article>
             )) : (
-              <Placeholder title="No active alerts" detail="No active alert payload is available for this snapshot." />
+              <Placeholder title={t(language, "noActiveAlerts")} detail={t(language, "noActiveAlertsDetail")} />
             )}
           </div>
         </section>
       </div>
 
+      <section className="regional-coverage-panel">
+        <div className="section-heading">
+          <div><p className="eyebrow">{t(language, "igadCoverage")}</p><h2>{t(language, "regionalSituation")}</h2></div>
+          <span className="regional-coverage-count"><strong>{assessedRegionCount}</strong> / {regionalRegions.length} {t(language, "assessed")}</span>
+        </div>
+        <div className="regional-country-grid">
+          {regionalRegions.map((region) => {
+            const isAvailable = availableRegionIds.has(region.id);
+            const regionAlertCount = activeAlerts.filter((alert) => alert.regionId === region.id).length;
+            return (
+              <button
+                aria-label={`${t(language, "inspect")} ${region.name}`}
+                data-selected={region.id === selectedRegion.id ? "true" : "false"}
+                disabled={!isAvailable}
+                key={region.id}
+                onClick={() => onSelectRegion(region.id)}
+                type="button"
+              >
+                <span className="regional-country-name"><strong>{region.name}</strong><small>{regionAlertCount} {t(language, regionAlertCount === 1 ? "activeAlert" : "activeAlertsCount")}</small></span>
+                <span className="regional-country-score">{region.score === null ? "—" : region.score.toLocaleString("en-GB", { maximumFractionDigits: 1 })}<small>{region.score === null ? t(language, "noData") : "/100"}</small></span>
+                <span className="severity-badge" data-severity={region.level}>{localizedSeverity(language, region.level)}</span>
+                <small className="regional-country-quality">{localizedQuality(language, region.quality)}</small>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="selected-region-panel">
         <div className="section-heading selected-heading">
-          <h2>Selected region: <strong>{selectedRegion.name}</strong></h2>
+          <div><p className="eyebrow">{t(language, "focusedAnalysis")}</p><h2>{t(language, "selectedRegion")}: <strong>{selectedRegion.name}</strong></h2></div>
           <label>
-            <span>Change region</span>
+            <span>{t(language, "changeRegion")}</span>
             <select value={selectedRegion.id} onChange={(event) => onSelectRegion(event.target.value)} aria-label={t(language, "selectedRegion")}>
               {data.regions.map((region) => (
                 <option key={region.id} value={region.id}>{region.name}</option>
@@ -2015,39 +2192,42 @@ function OverviewScreen({
               <span>{metric.label}</span>
               <strong>{metric.value}<small>{metric.unit}</small></strong>
               <p>{metric.detail}</p>
-              <small>No comparison yet</small>
+              <small className="metric-delta">{comparisonForMetric(metric, selectedProfile.historicalRows) ?? t(language, "noComparison")}</small>
             </article>
           ))}
         </div>
       </section>
 
       <div className="overview-bottom-grid">
-        <TrendPanel title={`Trends (${selectedRegion.name})`} trends={selectedProfile.trends} />
-        <section className="overview-actions">
-          <h2>Early Action Recommendations</h2>
-          <ul className="action-list">
-            {(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <a className="text-link" href="/alerts">See guidance for severe drought</a>
-        </section>
-        <section className="overview-share">
-          <a className="report-cta" href="/reports">
-            <strong>Generate Executive PDF Report</strong>
-            <span>{data.reportFilename}</span>
-          </a>
-          <div className="export-box">
-            <h2>Export data</h2>
-            <a href="/reports">CSV <span>{data.exportFilenames.csv}</span></a>
-            <a href="/reports">JSON <span>{data.exportFilenames.json}</span></a>
-          </div>
-        </section>
+        <TrendPanel language={language} title={`${t(language, "trends")} (${selectedRegion.name})`} trends={selectedProfile.trends} />
+        <aside className="overview-decision-rail" aria-label={t(language, "overviewActions")}>
+          <section className="overview-actions">
+            <p className="eyebrow">{t(language, "decisionSupport")}</p>
+            <h2>{t(language, "earlyActions")}</h2>
+            <ul className="action-list">
+              {(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <a className="text-link" href={alertsUrl}>{t(language, "guidance")}</a>
+          </section>
+          <section className="overview-share">
+            <a className="report-cta" download href={reportUrl}>
+              <span className="report-cta-copy"><strong>{t(language, "report")}</strong><small>{data.reportFilename}</small></span>
+              <span aria-hidden="true" className="report-cta-arrow">↓</span>
+            </a>
+            <div className="export-box">
+              <h2>{t(language, "exportData")}</h2>
+              <a download href={csvUrl}><strong>CSV</strong><span>{data.exportFilenames.csv}</span></a>
+              <a download href={jsonUrl}><strong>JSON</strong><span>{data.exportFilenames.json}</span></a>
+            </div>
+          </section>
+        </aside>
       </div>
 
       <footer className="overview-footer">
-        <p>Mwangaza is a decision-support prototype. Estimates are based on satellite observations and historical data and should be used alongside local knowledge.</p>
-        <p>Built for the IGAD Hackathon 2026 using regional and open climate data.</p>
+        <p>{t(language, "footerDecision")}</p>
+        <p>{t(language, "footerBuilt")}</p>
       </footer>
     </section>
   );
@@ -2103,7 +2283,7 @@ function TrendChart({ trend }: { trend: TrendSeries }): JSX.Element {
   );
 }
 
-function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSeries[]; title?: string }): JSX.Element {
+function TrendPanel({ trends, title = "Indicator Trends", language = "en" }: { trends: TrendSeries[]; title?: string; language?: Language }): JSX.Element {
   return (
     <section>
       <h2>{title}</h2>
@@ -2115,7 +2295,7 @@ function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSerie
             <TrendChart trend={trend} />
           </article>
         )) : (
-          <Placeholder title="Trend payload pending" detail="No trend series are available for the selected region yet." />
+          <Placeholder title={t(language, "trendPending")} detail={t(language, "trendPendingDetail")} />
         )}
       </div>
     </section>
@@ -2181,24 +2361,34 @@ function LowBandwidthView({
   }
 
   return (
-    <section className="lite-view">
-      <h2>{t(language, "lowBandwidth")}</h2>
+    <section className="lite-view" aria-label="Low bandwidth Overview">
+      <div className="section-heading"><div><p className="eyebrow">{t(language, "overview")}</p><h2>{t(language, "lowBandwidth")}</h2></div><label><span>{t(language, "changeRegion")}</span><select aria-label={t(language, "selectedRegion")} onChange={(event) => onSelectRegion(event.target.value)} value={selectedRegion.id}>{data.regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label></div>
+      <p><strong>{selectedRegion.name}</strong> · {formatScoreValue(selectedRegion.score)} · {localizedSeverity(language, selectedRegion.level)} · {localizedQuality(language, selectedRegion.quality)} {t(language, "quality")} · {selectedRegion.period}</p>
+      <h2>{t(language, "regionalSituation")}</h2>
       <table>
-        <thead><tr><th>Indicator</th><th>Value</th><th>Detail</th></tr></thead>
+        <thead><tr><th>{t(language, "regions")}</th><th>{t(language, "value")}</th><th>{t(language, "risk")}</th><th>{t(language, "dataQuality")}</th></tr></thead>
+        <tbody>{data.regions.map((region) => <tr key={region.id}><th scope="row"><button className="ranking-select" onClick={() => onSelectRegion(region.id)} type="button">{region.name}</button></th><td>{formatScoreValue(region.score)}</td><td>{localizedSeverity(language, region.level)}</td><td>{localizedQuality(language, region.quality)}</td></tr>)}</tbody>
+      </table>
+      <table>
+        <thead><tr><th>{t(language, "indicator")}</th><th>{t(language, "value")}</th><th>{t(language, "comparison")}</th><th>{t(language, "detail")}</th></tr></thead>
         <tbody>
-          {data.metrics.map((metric) => (
-            <tr key={metric.label}><td>{metric.label}</td><td>{metric.value} {metric.unit}</td><td>{metric.detail}</td></tr>
+          {(selectedProfile.metrics.length ? selectedProfile.metrics : data.metrics).map((metric) => (
+            <tr key={metric.label}><td>{metric.label}</td><td>{metric.value} {metric.unit}</td><td>{comparisonForMetric(metric, selectedProfile.historicalRows) ?? t(language, "noComparison")}</td><td>{metric.detail}</td></tr>
           ))}
         </tbody>
       </table>
       <h2>{t(language, "activeAlerts")}</h2>
       <ul>
-        {activeAlerts.map((alert) => (
-          <li key={`${alert.regionId}-${alert.title}`}>{alert.region}: {alert.title} - {alert.action}</li>
+        {activeAlerts.filter((alert) => alert.regionId === selectedRegion.id).map((alert) => (
+          <li key={`${alert.regionId}-${alert.title}`}><a href={`/alerts/${encodeURIComponent(alertId(alert))}`}>{alert.region}: {alert.title}</a> — {alert.action}</li>
         ))}
       </ul>
-      <p>{data.reportFilename}</p>
-      <p>/api/v1/snapshots/latest</p>
+      <h2>{t(language, "indicatorTrends")}</h2>
+      {selectedProfile.trends.length ? selectedProfile.trends.map((trend) => <table key={trend.indicator}><caption>{trend.label} · {trend.source}</caption><thead><tr><th>{t(language, "period")}</th><th>{t(language, "value")}</th><th>{t(language, "baseline")}</th></tr></thead><tbody>{trend.points.map((point) => <tr key={point.label}><td>{formatTrendPeriod(point.label)}</td><td>{point.value ?? t(language, "gap")}</td><td>{point.baseline ?? t(language, "gap")}</td></tr>)}</tbody></table>) : <p>{t(language, "trendPending")}</p>}
+      <h2>{t(language, "earlyActions")}</h2>
+      <ul>{(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => <li key={item}>{item}</li>)}</ul>
+      <nav className="lite-downloads" aria-label={t(language, "snapshotDownloads")}><a download href={downloadUrl("/api/v1/reports/executive", selectedRegion.id, selectedRegion.period)}>{t(language, "report")}</a><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "csv")}>CSV</a><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "json")}>JSON</a></nav>
+      <p className="muted">{t(language, "snapshotSource")}: <code>/api/v1/snapshots/latest</code></p>
     </section>
   );
 }

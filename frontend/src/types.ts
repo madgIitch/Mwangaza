@@ -1,6 +1,6 @@
 export type Severity = "normal" | "watch" | "warning" | "critical" | "unknown";
 export type DataMode = "live" | "cache" | "demo" | "offline";
-export type Language = "en" | "es" | "sw";
+export type Language = "en" | "es" | "sw" | "so";
 
 export interface Metric {
   label: string;
@@ -26,6 +26,7 @@ export interface GeoJsonGeometry {
 }
 
 export interface Alert {
+  id: string;
   regionId: string;
   region: string;
   severity: Severity;
@@ -207,6 +208,7 @@ export interface PublicSnapshotResponse {
 export interface PublicAlertsResponse {
   schema_version: "mwangaza.api.v1";
   items: Array<{
+    id?: string;
     region_id: string;
     region: string;
     severity: string;
@@ -214,6 +216,8 @@ export interface PublicAlertsResponse {
     title: string;
     period: string;
     quality_flag: string;
+    score?: number | null;
+    evidence?: Array<{ label: string; value: string }>;
     recommended_action: string;
   }>;
 }

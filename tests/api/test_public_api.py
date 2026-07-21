@@ -73,6 +73,44 @@ class PublicApiTests(unittest.TestCase):
         self.assertFalse(forecasts["available"])
         self.assertEqual(forecasts["items"], [])
 
+    def test_alerts_publish_stable_ids_and_detail_route(self) -> None:
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            status, _headers, alerts = _request("/api/v1/alerts")
+            alert_id = alerts["items"][0]["id"]
+            detail_status, _headers, detail = _request(f"/api/v1/alerts/{alert_id}")
+            missing_status, _headers, missing = _request("/api/v1/alerts/ALT-MISSING")
+
+        self.assertEqual(status, 200)
+        self.assertTrue(alert_id.startswith("ALT-"))
+        self.assertEqual(detail_status, 200)
+        self.assertEqual(detail["alert"]["id"], alert_id)
+        self.assertTrue(detail["alert"]["evidence"])
+        self.assertEqual(missing_status, 404)
+        self.assertEqual(missing["error"]["code"], "not_found")
+
+    def test_report_and_snapshot_downloads_are_real_and_context_bound(self) -> None:
+        period = "2026-07-01 to 2026-07-15"
+        encoded = b"region=som&period=2026-07-01+to+2026-07-15"
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            pdf_status, pdf_headers, pdf = _raw_request("/api/v1/reports/executive", encoded)
+            csv_status, csv_headers, csv_body = _raw_request("/api/v1/exports/snapshot", encoded + b"&format=csv")
+            json_status, json_headers, json_body = _raw_request("/api/v1/exports/snapshot", encoded + b"&format=json")
+            invalid_status, _headers, invalid = _request("/api/v1/exports/snapshot", b"region=som&period=wrong&format=csv")
+
+        self.assertEqual(pdf_status, 200)
+        self.assertEqual(pdf_headers["content-type"], "application/pdf")
+        self.assertIn("attachment; filename=", pdf_headers["content-disposition"])
+        self.assertTrue(pdf.startswith(b"%PDF-HTML"))
+        self.assertEqual(csv_status, 200)
+        self.assertTrue(csv_headers["content-type"].startswith("text/csv"))
+        self.assertIn(b"row_type,region_id", csv_body)
+        self.assertNotIn(b"ui_geometry", csv_body)
+        self.assertEqual(json_status, 200)
+        self.assertEqual(json_headers["content-type"], "application/json")
+        self.assertEqual(json.loads(json_body)["period"], period)
+        self.assertEqual(invalid_status, 400)
+        self.assertEqual(invalid["error"]["code"], "invalid_request")
+
     def test_v1_endpoints_do_not_call_live_gee_loader(self) -> None:
         with (
             patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}),
@@ -193,12 +231,20 @@ class PublicApiTests(unittest.TestCase):
 
         self.assertEqual(openapi_status, 200)
         self.assertIn("/api/v1/regions", openapi["paths"])
+        self.assertIn("/api/v1/alerts/{alert_id}", openapi["paths"])
+        self.assertIn("/api/v1/reports/executive", openapi["paths"])
+        self.assertIn("/api/v1/exports/snapshot", openapi["paths"])
         self.assertIn("x-example", openapi["paths"]["/api/v1/regions"]["get"])
         self.assertEqual(health_status, 200)
         self.assertIn("gee", health)
 
 
 def _request(path: str, query_string: bytes = b"") -> tuple[int, dict[str, str], dict[str, object]]:
+    status, headers, body = _raw_request(path, query_string)
+    return status, headers, json.loads(body)
+
+
+def _raw_request(path: str, query_string: bytes = b"") -> tuple[int, dict[str, str], bytes]:
     messages: list[dict[str, object]] = []
 
     async def receive() -> dict[str, object]:
@@ -214,7 +260,7 @@ def _request(path: str, query_string: bytes = b"") -> tuple[int, dict[str, str],
         key.decode("ascii"): value.decode("ascii")
         for key, value in start.get("headers", [])  # type: ignore[union-attr]
     }
-    return int(start["status"]), headers, json.loads(body["body"])  # type: ignore[arg-type]
+    return int(start["status"]), headers, body["body"]  # type: ignore[return-value]
 
 
 if __name__ == "__main__":

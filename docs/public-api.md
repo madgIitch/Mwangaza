@@ -6,7 +6,10 @@ Sprint 33 adds read-only v1 endpoints:
 - `/api/v1/regions`;
 - `/api/v1/snapshots/latest`;
 - `/api/v1/alerts`;
+- `/api/v1/alerts/{alert_id}`;
 - `/api/v1/forecasts`;
+- `/api/v1/reports/executive?region=<id>&period=<visible-period>`;
+- `/api/v1/exports/snapshot?region=<id>&period=<visible-period>&format=csv|json`;
 - `/openapi.json`.
 
 All `/api/v1/**` responses include `schema_version="mwangaza.api.v1"`.
@@ -30,3 +33,10 @@ Errors use:
 ```
 
 The generated OpenAPI JSON contains examples for the v1 endpoints.
+
+Alert IDs are stable for a given observed alert payload and support direct,
+sanitized detail routes. Report and export endpoints only accept the currently
+materialized region/period context. They never initiate a browser-side or
+download-time Earth Engine query. Downloads set a deterministic safe filename,
+the correct MIME type and `Content-Disposition: attachment`; CSV/JSON omit UI
+geometry by default and preserve missing values as null/empty contract values.

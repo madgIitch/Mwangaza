@@ -10,9 +10,10 @@ Bright operational cockpit: map-first, alert-aware, dense enough for repeated sc
 
 1. Global shell: persistent brand, navigation, data source, last update, freshness, notification and account placeholders.
 2. Situation layer: IGAD risk map and prioritized active alerts.
-3. Selected-region layer: selected country/pilot, key indicators, exposure and data quality.
-4. Evolution layer: NDVI and rainfall trends against baseline when payloads exist.
-5. Action layer: early action recommendations, executive PDF report CTA, CSV/JSON export and responsible-use footer.
+3. Regional comparison layer: all eight IGAD countries, including explicit unassessed states.
+4. Selected-region layer: selected country/pilot drill-down, key indicators, exposure and data quality.
+5. Evolution layer: NDVI and rainfall trends against baseline when payloads exist.
+6. Action layer: early action recommendations, executive PDF report CTA, CSV/JSON export and responsible-use footer.
 
 ## Interaction Thesis
 
@@ -33,7 +34,7 @@ Bright operational cockpit: map-first, alert-aware, dense enough for repeated sc
   - Notifications.
   - User avatar/account.
 
-Current implementation exposes source/update/freshness in the topbar. Notification and account controls are placeholders for a future sprint.
+The implementation exposes source/update/freshness in the topbar. Notification and account states are explicitly labelled unavailable and are non-interactive until an approved identity/notification contract exists.
 
 ### Sidebar
 
@@ -51,7 +52,7 @@ No sidebar label should use `#...` anchors or trigger autoscroll inside Overview
 
 Target language buttons: `EN`, `SW`, `SO`.
 
-Current implementation supports English and Kiswahili plus the existing Spanish locale from earlier sprint work. Somali locale is pending and tracked for a future sprint.
+The operational selector exposes English, Kiswahili and Somali. Spanish remains available as a compatibility locale. Technical values, units and source identifiers are not translated.
 
 ### Low-Bandwidth Mode
 
@@ -76,7 +77,7 @@ Severity colors:
 
 The map must never render a no-data region as green. If geometry is unavailable, it must show an explicit placeholder rather than invented shapes.
 
-Current implementation uses `react-simple-maps` and the same `ui_geometry` contract used by `/region`. Home, zoom and layer controls are visual placeholders until map viewport/layer state is implemented.
+The map uses `react-simple-maps` with a lazily loaded, validated geoBoundaries ADM1 presentation atlas. ADM1 polygons are consolidated into one processed `uiGeometry` per IGAD country before rendering; API risk and quality are joined by stable country ID. This avoids analytic/GEE geometry in the browser, keeps unassessed countries gray and prevents boundary data from entering the low-bandwidth bundle. Home restores the IGAD frame, zoom is bounded to 1x-4x, and the layer selector switches between risk and data quality without another API or GEE request.
 
 ### Active Alerts
 
@@ -91,9 +92,11 @@ Each alert should show:
 - Period/date.
 - `View details` route.
 
-Current implementation uses active alerts from the dashboard/API payload. Dedicated alert detail pages and filtered alert center are pending.
+Active alerts use stable backend IDs. Detail links route to `/alerts/<alert_id>` and the global link preserves visible region, period and active status. Existing alerts expose evidence and action context; missing IDs render an accessible sanitized 404 state.
 
 ### Selected Region
+
+Overview never reduces the situation view to the selected country. A persistent regional comparison lists all eight configured IGAD countries with score, severity, quality and active-alert count. Countries missing from the loaded snapshot remain visible as unassessed and cannot change the drill-down. Selecting an assessed country from the map, comparison band or selector updates the focused analysis below.
 
 Shows:
 
@@ -121,7 +124,7 @@ Monthly comparisons should only appear when comparable snapshots exist. Current 
 
 Shows trends for the selected region. Target state compares current values against historical baseline using line charts.
 
-Current implementation reuses available `RegionProfile.trends` as compact bar-style trend previews. Missing trend payloads must remain explicit placeholders.
+Available 12-24 point `RegionProfile.trends` render as anomaly lines around a zero baseline with dates, scale, focusable points, tooltips and explicit gaps. Low-bandwidth mode provides equivalent tables. Missing trend payloads remain explicit placeholders.
 
 ### Early Action Recommendations
 
@@ -133,13 +136,13 @@ Current implementation reuses selected-profile recommendations from the loaded p
 
 Target state: generate a PDF for the selected snapshot, including region, period, alert level, map, indicators, trends, quality, recommendations, sources, methodology and limitations.
 
-Current implementation shows the selected report filename as a CTA placeholder.
+The CTA downloads a real PDF response for the visible materialized region/period context. The API sets a deterministic filename, PDF MIME type and attachment disposition without running Earth Engine.
 
 ### Export Data
 
 Target state: download CSV and JSON for the current view without secrets, tokens, local paths or unnecessary high-resolution geometries.
 
-Current implementation shows the export filenames from the loaded payload.
+CSV and JSON actions download the visible materialized region/period context from real endpoints. Geometry is omitted by default and missing values remain explicit.
 
 ### Footer
 
@@ -150,15 +153,12 @@ Must state that Mwangaza is a decision-support prototype and should be used with
 - `/overview` route renders the main operational cockpit.
 - `/` remains a compatibility route for the same screen.
 - Sidebar uses page routes, not hash anchors.
-- Risk map uses `ui_geometry` when present and explicit placeholder when missing.
+- Risk map uses processed UI-only boundary geometry and an explicit fallback when the validated atlas cannot load.
 - Active alerts, selected-region indicators, trends, recommendations and report/export references use existing `DashboardData`.
 - Legacy hash URLs are cleaned on mount to prevent autoscroll.
 
-## Future Sprint Notes
+## Remaining Boundaries
 
-- Notification bell, user avatar and account menu are tracked by `sprint-57-overview-completion`.
-- Real map home/zoom/layer controls and hover tooltips are tracked by `sprint-57-overview-completion`.
-- Somali locale (`SO`) and segmented language buttons are tracked by `sprint-57-overview-completion`.
-- Alert detail pages, filtered alert center links and alert priority tie-breakers beyond severity are tracked by `sprint-57-overview-completion`.
-- Report generation and actual CSV/JSON download actions are tracked by `sprint-57-overview-completion`.
-- Monthly indicator comparisons and baseline line-chart payloads are tracked by `sprint-57-overview-completion`.
+- Notifications and accounts remain intentionally unavailable until their own approved contracts exist.
+- Recommendations remain decision support; actor and time-horizon fields require a future structured action contract.
+- Reports Center workflow changes remain outside this sprint; Overview only links its own context-bound downloads.

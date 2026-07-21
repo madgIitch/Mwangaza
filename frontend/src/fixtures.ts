@@ -38,6 +38,7 @@ export const demoDashboard: DashboardData = {
   ],
   alerts: [
     {
+      id: "ALT-SOM-DEMO-202607",
       regionId: "som",
       region: "Somalia",
       severity: "critical",
@@ -49,6 +50,7 @@ export const demoDashboard: DashboardData = {
       evidence: [["Model Version", "demo-risk-v1"], ["Source", "Demo fixture"]]
     },
     {
+      id: "ALT-KEN-DEMO-202607",
       regionId: "ken",
       region: "Northern Kenya",
       severity: "warning",
@@ -60,6 +62,7 @@ export const demoDashboard: DashboardData = {
       evidence: [["Model Version", "demo-risk-v1"], ["Source", "Demo fixture"]]
     },
     {
+      id: "ALT-ETH-DEMO-202607",
       regionId: "eth",
       region: "Ethiopia",
       severity: "watch",

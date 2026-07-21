@@ -39,6 +39,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-07-21 · Atlas IGAD del Overview
+
+Overview separa geometría y observación: carga de forma diferida los límites ADM1 locales versionados, los normaliza y consolida como una única geometría de presentación por país; después une score, severidad y calidad del snapshot por ID estable. El navegador no consulta GEE para navegar, hacer zoom, cambiar de capa o seleccionar un país. Los países ausentes o inválidos permanecen grises y el modo low-bandwidth no descarga el atlas SVG/GeoJSON.
+
 ## 2026-07-21 · ADM1 color keyed by stable boundary identity
 
 Region Explorer uses geoBoundaries `shapeISO` as the presentation join key and exposes it as `boundary_iso` in the API. Names are labels only and national risk is never propagated to subdivisions. ADM1 GEE processing is bounded to the current period and configurable coverage; failures are isolated so an unavailable unit remains unassessed without collapsing the country payload.
@@ -567,3 +571,16 @@ La selección trabaja exclusivamente con el payload ya cargado: el navegador no 
 La codificación visual separa magnitudes de estados: la severidad conserva los colores del mapa y badges, mientras las contribuciones efectivas del composite usan una barra apilada azul-gris. Las tendencias se representan como anomalía `value - baseline` alrededor de cero, con escala y fechas. Los deltas históricos indican dirección sin atribuir por color que subir o bajar sea siempre favorable. Solo se muestra una acción principal: primero el alert regional activo de mayor severidad y, si no existe, la primera recomendación; el horizonte temporal queda pendiente de un contrato estructurado.
 
 Las tendencias live se materializan como 24 agregados mensuales nacionales por defecto, configurables entre 12 y 24. Ventanas y países se resuelven en un único grafo/request GEE y no se replican por ADM1. Son payloads exclusivos de serie: no contaminan el selector de periodos ni la comparación estacional. Si la fuente no aporta baseline, el shell usa la media de valores mensuales disponibles y lo declara explícitamente; nunca la denomina climatología oficial.
+
+<!-- harness:sprint-57-overview-completion -->
+## 2026-07-21 · sprint-57-overview-completion aprobado
+
+Contexto: se aprobó el spec `sprint-57-overview-completion` (Sprint 57 - Overview Completion).
+
+Decisiones registradas:
+
+- **auth_secrets:** Archivos desde snapshots; sin input ni secretos GEE.
+- **rollback_compat:** Rutas previas preservadas y Reports Center fuera de alcance.
+- **tests:** Matriz API/PWA, demo/live y ausencia de consultas GEE definida.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

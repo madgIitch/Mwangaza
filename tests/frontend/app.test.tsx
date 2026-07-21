@@ -68,6 +68,82 @@ describe("React PWA dashboard", () => {
     expect(screen.getByLabelText("Overview risk map")).toBeInTheDocument();
   });
 
+  it("keeps all IGAD countries visible and uses country selection only as drill-down", () => {
+    window.history.pushState({}, "", "/overview");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Regional situation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Inspect Sudan" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Inspect Djibouti" })).toBeDisabled();
+    const kenya = screen.getByRole("button", { name: "Inspect Northern Kenya" });
+    fireEvent.click(kenya);
+    expect(screen.getByRole("heading", { name: /Selected region: Northern Kenya/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Trends (Northern Kenya)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Inspect Somalia" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Inspect Ethiopia" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Inspect Uganda" })).toBeInTheDocument();
+  });
+
+  it("operates Overview map zoom, home and data-quality layers from loaded data", async () => {
+    window.history.pushState({}, "", "/overview");
+    const { container } = render(<App initialData={demoDashboard} skipApiLoad />);
+
+    const zoomIn = screen.getByRole("button", { name: "Zoom in" });
+    const zoomOut = screen.getByRole("button", { name: "Zoom out" });
+    expect(zoomOut).toBeDisabled();
+    fireEvent.click(zoomIn);
+    expect(zoomOut).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Home" }));
+    expect(zoomOut).toBeDisabled();
+
+    const somalia = await screen.findByRole("button", { name: /Somalia: 82, Severe, quality High/i });
+    const somaliaGeometry = container.querySelector('[data-country="som"]');
+    expect(somaliaGeometry).toBeInTheDocument();
+    expect(somaliaGeometry?.getAttribute("d")?.length).toBeGreaterThan(100);
+    expect(somalia).toHaveStyle({ fill: "#d92d20" });
+    fireEvent.change(screen.getByRole("combobox", { name: "Layer" }), { target: { value: "quality" } });
+    expect(somalia).toHaveStyle({ fill: "#247a53" });
+    fireEvent.focus(somalia);
+    expect(screen.getByText(/NDVI anomaly: -0.18z/)).toBeInTheDocument();
+    expect(screen.getAllByText("Demo fixture").length).toBeGreaterThan(0);
+  });
+
+  it("links Overview alerts and downloads to stable context-aware routes", () => {
+    window.history.pushState({}, "", "/overview");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getAllByRole("link", { name: "View details" })[0]).toHaveAttribute("href", "/alerts/ALT-SOM-DEMO-202607");
+    expect(screen.getByRole("link", { name: "View all alerts" })).toHaveAttribute("href", "/alerts?region=som&period=2026-07-01%20to%202026-07-15&status=active");
+    expect(screen.getByRole("link", { name: /Generate Executive PDF Report/ })).toHaveAttribute("href", "/api/v1/reports/executive?region=som&period=2026-07-01+to+2026-07-15");
+    expect(screen.getByRole("link", { name: /CSV/ })).toHaveAttribute("href", "/api/v1/exports/snapshot?region=som&period=2026-07-01+to+2026-07-15&format=csv");
+    expect(screen.getByRole("link", { name: /JSON/ })).toHaveAttribute("href", "/api/v1/exports/snapshot?region=som&period=2026-07-01+to+2026-07-15&format=json");
+  });
+
+  it("renders stable alert detail routes and a sanitized missing state", () => {
+    window.history.pushState({}, "", "/alerts/ALT-SOM-DEMO-202607");
+    const { unmount } = render(<App initialData={demoDashboard} skipApiLoad />);
+    expect(screen.getByLabelText("Alert ALT-SOM-DEMO-202607")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Decision context" })).toBeInTheDocument();
+    expect(screen.getByText("Activate urgent coordination review.")).toBeInTheDocument();
+    unmount();
+
+    window.history.pushState({}, "", "/alerts/ALT-MISSING");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+    expect(screen.getByRole("heading", { name: "Alert not found" })).toBeInTheDocument();
+    expect(screen.getByText("404")).toBeInTheDocument();
+  });
+
+  it("offers Somali as an operational locale while preserving Spanish", () => {
+    window.history.pushState({}, "", "/overview");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    fireEvent.click(screen.getByRole("button", { name: "SO" }));
+    expect(screen.getByRole("link", { name: "Dulmar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Khariidadda khatarta - IGAD" })).toBeInTheDocument();
+    expect(screen.getByText("Ogeysiisyo lama heli karo")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ES" })).toBeInTheDocument();
+  });
+
   it("keeps the explicit demo route isolated from the live API", () => {
     window.history.pushState({}, "", "/overview?demo=1&api=1");
     const fetchMock = vi.fn();

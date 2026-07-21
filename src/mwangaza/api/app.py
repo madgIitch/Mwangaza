@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import threading
 import time
+from dataclasses import dataclass
 from http import HTTPStatus
 from urllib.parse import parse_qs
 from typing import Any
@@ -14,11 +16,12 @@ from mwangaza.admin import (
     admin_repository_from_env,
 )
 from mwangaza.config import public_config_status
-from mwangaza.exports import build_visible_export
+from mwangaza.exports import build_visible_export, export_visible_csv, export_visible_json, safe_export_filename
 from mwangaza.gee.auth import check_gee_auth
 from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, readiness_status, reset_run_id, resolve_run_id
 from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
 from mwangaza.regions import list_regions
+from mwangaza.reports import build_executive_report_context, render_executive_report_pdf, safe_report_filename
 from mwangaza.services.dashboard_shell import load_dashboard_shell_data, load_materialized_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
@@ -29,6 +32,13 @@ LIVE_DASHBOARD_CACHE_SECONDS = 120
 _DASHBOARD_CACHE: tuple[float, Any] | None = None
 _DASHBOARD_REFRESH_LOCK = threading.Lock()
 _DASHBOARD_REFRESHING = False
+
+
+@dataclass(frozen=True)
+class RawResponse:
+    body: bytes
+    content_type: str
+    filename: str
 
 
 async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
@@ -89,15 +99,18 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
             body = await _read_body(receive)
             validate_body_contract(path, body, _header(scope.get("headers", []), "content-type"))
             payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body)
-            if _is_demo_mode():
+            if _is_demo_mode() and isinstance(payload, dict):
                 payload.update(_demo_metadata())
-            await _send_json(send, payload, status, cache_seconds=cache_seconds)
+            if isinstance(payload, RawResponse):
+                await _send_bytes(send, payload, status)
+            else:
+                await _send_json(send, payload, status, cache_seconds=cache_seconds)
             _log(
                 "request end",
                 path=path,
                 status=status,
                 elapsed_ms=_elapsed_ms(request_started),
-                summary=_payload_summary(path, payload),
+                summary=_payload_summary(path, payload) if isinstance(payload, dict) else f"download={payload.filename}",
             )
         except SecurityRequestError:
             raise
@@ -129,7 +142,7 @@ def _route_v1(
     query_string: bytes,
     headers: list[tuple[bytes, bytes]],
     body: bytes,
-) -> tuple[dict[str, Any], HTTPStatus, int | None]:
+) -> tuple[dict[str, Any] | RawResponse, HTTPStatus, int | None]:
     query = parse_qs(query_string.decode("utf-8", errors="ignore"))
     if path == "/api/v1/regions":
         limit, offset = _pagination(query)
@@ -174,22 +187,53 @@ def _route_v1(
     if path == "/api/v1/alerts":
         limit, offset = _pagination(query)
         data = _load_api_dashboard_data()
-        alerts = [
-            {
-                "region_id": alert.region_id,
-                "region": alert.region,
-                "severity": alert.severity,
-                "status": alert.status,
-                "title": alert.title,
-                "period": alert.period,
-                "quality_flag": alert.quality_flag,
-                "recommended_action": alert.recommended_action or alert.action,
-            }
-            for alert in data.alerts
-        ]
+        alerts = [_alert_payload(alert) for alert in data.alerts]
         _log("alerts export", data_mode=data.data_status.mode, total=len(alerts), limit=limit, offset=offset)
         METRICS.observe_workload(active_alerts=len(alerts))
         return _listed(alerts, limit, offset), HTTPStatus.OK, 60
+    if path.startswith("/api/v1/alerts/"):
+        alert_id = path.removeprefix("/api/v1/alerts/")
+        data = _load_api_dashboard_data()
+        match = next((alert for alert in data.alerts if _stable_alert_id(alert) == alert_id), None)
+        if match is None:
+            return _error("not_found", "Alert does not exist"), HTTPStatus.NOT_FOUND, 30
+        return {
+            "schema_version": API_SCHEMA_VERSION,
+            "alert": _alert_payload(match),
+        }, HTTPStatus.OK, 60
+    if path == "/api/v1/reports/executive":
+        data = _load_api_dashboard_data()
+        region_id, requested_period = _download_context(query, data)
+        context = build_executive_report_context(
+            data,
+            region_id=region_id,
+            dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL"),
+        )
+        _require_matching_period(requested_period, context.period_label)
+        return RawResponse(
+            body=render_executive_report_pdf(context),
+            content_type="application/pdf",
+            filename=safe_report_filename(context),
+        ), HTTPStatus.OK, 60
+    if path == "/api/v1/exports/snapshot":
+        data = _load_api_dashboard_data()
+        region_id, requested_period = _download_context(query, data)
+        export = build_visible_export(data, region_id=region_id, max_rows=MAX_LIMIT, include_geometry=False)
+        _require_matching_period(requested_period, export.period)
+        export_format = _single_query(query, "format", "json").lower()
+        if export_format == "csv":
+            body = export_visible_csv(export).encode("utf-8")
+            content_type = "text/csv; charset=utf-8"
+        elif export_format == "json":
+            body = export_visible_json(export).encode("utf-8")
+            content_type = "application/json"
+        else:
+            raise ValueError("format must be csv or json")
+        return RawResponse(
+            body=body,
+            content_type=content_type,
+            filename=safe_export_filename(export, export_format),
+        ), HTTPStatus.OK, 60
     if path == "/api/v1/forecasts":
         limit, offset = _pagination(query)
         return _listed([], limit, offset) | {"available": False, "message": "Forecasts are not available yet"}, HTTPStatus.OK, 60
@@ -251,6 +295,61 @@ def _admin_payload(repo: Any, *, version: Any | None = None) -> dict[str, Any]:
             "message": "Configuration changes do not refresh indicators, cache, forecasts or alerts.",
         },
     }
+
+
+def _stable_alert_id(alert: Any) -> str:
+    region_id = str(getattr(alert, "region_id", "") or "region").lower()
+    identity = "|".join(
+        (
+            region_id,
+            str(getattr(alert, "title", "")),
+            str(getattr(alert, "period", "")),
+            str(getattr(alert, "status", "")),
+        )
+    )
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:10]
+    return f"ALT-{region_id.upper()}-{digest.upper()}"
+
+
+def _alert_payload(alert: Any) -> dict[str, Any]:
+    return {
+        "id": _stable_alert_id(alert),
+        "region_id": alert.region_id,
+        "region": alert.region,
+        "severity": alert.severity,
+        "status": alert.status,
+        "title": alert.title,
+        "period": alert.period,
+        "period_start": alert.period_start,
+        "period_end": alert.period_end,
+        "quality_flag": alert.quality_flag,
+        "score": alert.score,
+        "evidence": [{"label": label, "value": value} for label, value in alert.evidence],
+        "recommended_action": alert.recommended_action or alert.action,
+    }
+
+
+def _download_context(query: dict[str, list[str]], data: Any) -> tuple[str, str]:
+    region_id = _single_query(query, "region", str(getattr(data, "selected_region_id", ""))).lower()
+    available = {str(profile.region_id).lower() for profile in getattr(data, "region_profiles", ())}
+    if region_id not in available:
+        raise ValueError("region is not available in the loaded snapshot")
+    return region_id, _single_query(query, "period", "")
+
+
+def _single_query(query: dict[str, list[str]], name: str, default: str) -> str:
+    values = query.get(name)
+    if not values:
+        return default
+    value = str(values[0]).strip()
+    if not value or len(value) > 160:
+        raise ValueError(f"{name} is invalid")
+    return value
+
+
+def _require_matching_period(requested: str, actual: str) -> None:
+    if requested and requested != actual:
+        raise ValueError("period is not available for the selected region")
 
 
 def _json_body(body: bytes) -> dict[str, Any]:
@@ -415,7 +514,10 @@ def _openapi() -> dict[str, Any]:
         "/api/v1/regions": {"limit": 10, "offset": 0},
         "/api/v1/snapshots/latest": {"schema_version": API_SCHEMA_VERSION},
         "/api/v1/alerts": {"limit": 10, "offset": 0},
+        "/api/v1/alerts/{alert_id}": {"alert_id": "ALT-SOM-EXAMPLE"},
         "/api/v1/forecasts": {"available": False},
+        "/api/v1/reports/executive": {"region": "som", "period": "2026-07-01 to 2026-07-15"},
+        "/api/v1/exports/snapshot": {"region": "som", "period": "2026-07-01 to 2026-07-15", "format": "csv"},
         "/api/v1/admin/status": {"admin": {"configured": False}},
         "/api/v1/admin/config": {"active_version": None},
         "/api/v1/admin/config/activate": {"version_id": "cfg-example"},
@@ -455,6 +557,20 @@ async def _send_json(
         }
     )
     await send({"type": "http.response.body", "body": body})
+
+
+async def _send_bytes(send: Any, payload: RawResponse, status: HTTPStatus) -> None:
+    filename = payload.filename.encode("ascii", errors="ignore").decode("ascii")
+    headers = [
+        (b"content-type", payload.content_type.encode("ascii")),
+        (b"content-disposition", f'attachment; filename="{filename}"'.encode("ascii")),
+        (b"content-length", str(len(payload.body)).encode("ascii")),
+        (b"x-content-type-options", b"nosniff"),
+        (b"x-run-id", current_run_id().encode("ascii")),
+    ]
+    headers.extend((name.encode("ascii"), value.encode("ascii")) for name, value in SECURITY_HEADERS.items() if name.lower() != "x-content-type-options")
+    await send({"type": "http.response.start", "status": int(status), "headers": headers})
+    await send({"type": "http.response.body", "body": payload.body})
 
 
 def _elapsed_ms(started: float) -> int:

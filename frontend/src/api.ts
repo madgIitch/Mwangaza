@@ -197,6 +197,7 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
 
 function normalizeAlerts(alerts: PublicAlertsResponse): Alert[] {
   return alerts.items.map((item) => ({
+    id: item.id ?? fallbackAlertId(item.region_id, item.title, item.period),
     regionId: item.region_id,
     region: item.region,
     severity: normalizeSeverity(item.severity),
@@ -205,8 +206,15 @@ function normalizeAlerts(alerts: PublicAlertsResponse): Alert[] {
     action: item.recommended_action,
     quality: item.quality_flag,
     status: item.status,
-    evidence: [["API", "/api/v1/alerts"]]
+    evidence: item.evidence?.length
+      ? item.evidence.map((entry) => [entry.label, entry.value] as [string, string])
+      : [["API", "/api/v1/alerts"]]
   }));
+}
+
+function fallbackAlertId(regionId: string, title: string, period: string): string {
+  const stable = `${title}-${period}`.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24).toUpperCase();
+  return `ALT-${regionId.toUpperCase()}-${stable || "ALERT"}`;
 }
 
 function alertsForecastDiagnostics(forecasts: PublicForecastsResponse): DashboardData["forecastDiagnostics"] {
