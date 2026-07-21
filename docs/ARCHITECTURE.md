@@ -1383,6 +1383,8 @@ Objetivo no negociable:
   - `src/mwangaza/api/**`
   - `tests/api/**`
   - `src/mwangaza/services/dashboard_shell.py`
+  - `src/mwangaza/services/live_gee_dashboard.py`
+  - `tests/services/test_live_gee_dashboard.py`
   - `src/mwangaza/reports/**`
   - `src/mwangaza/exports/**`
   - `tests/reports/**`

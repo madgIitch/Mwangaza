@@ -96,7 +96,7 @@ Active alerts use stable backend IDs. Detail links route to `/alerts/<alert_id>`
 
 ### Selected Region
 
-Overview never reduces the situation view to the selected country. A persistent regional comparison lists all eight configured IGAD countries with score, severity, quality and active-alert count. Countries missing from the loaded snapshot remain visible as unassessed and cannot change the drill-down. Selecting an assessed country from the map, comparison band or selector updates the focused analysis below.
+Overview never reduces the situation view to the selected country. A persistent regional comparison lists all eight configured IGAD countries with score, severity, quality, active-alert count, NDVI, rainfall, LST and the number of trend points actually loaded for that profile. Countries missing from the loaded snapshot remain visible as unassessed and cannot change the drill-down. Selecting an assessed country from the map, comparison band or selector updates the focused analysis below. The trend count is intentionally honest: it exposes partial materialization instead of implying equal temporal coverage.
 
 Shows:
 

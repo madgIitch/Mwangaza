@@ -572,6 +572,8 @@ La codificación visual separa magnitudes de estados: la severidad conserva los 
 
 Las tendencias live se materializan como 24 agregados mensuales nacionales por defecto, configurables entre 12 y 24. Ventanas y países se resuelven en un único grafo/request GEE y no se replican por ADM1. Son payloads exclusivos de serie: no contaminan el selector de periodos ni la comparación estacional. Si la fuente no aporta baseline, el shell usa la media de valores mensuales disponibles y lo declara explícitamente; nunca la denomina climatología oficial.
 
+El fallback del grafo regional conserva la misma cobertura funcional: si el lote conjunto falla, se reintenta cada país habilitado de forma independiente. Un fallo nacional se registra y se aísla sin limitar las series restantes a Somalia o a la región inicialmente seleccionada.
+
 <!-- harness:sprint-57-overview-completion -->
 ## 2026-07-21 · sprint-57-overview-completion aprobado
 

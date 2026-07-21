@@ -84,7 +84,9 @@ const labels: Record<Language, Record<string, string>> = {
     inspect: "Inspect",
     activeAlert: "active alert",
     activeAlertsCount: "active alerts",
-    focusedAnalysis: "Focused analysis"
+    focusedAnalysis: "Focused analysis",
+    currentIndicators: "current indicators",
+    trendPoints: "trend points"
   },
   es: {
     overview: "Resumen",
@@ -169,7 +171,9 @@ const labels: Record<Language, Record<string, string>> = {
     inspect: "Analizar",
     activeAlert: "alerta activa",
     activeAlertsCount: "alertas activas",
-    focusedAnalysis: "Análisis focalizado"
+    focusedAnalysis: "Análisis focalizado",
+    currentIndicators: "indicadores actuales",
+    trendPoints: "puntos temporales"
   },
   sw: {
     overview: "Muhtasari",
@@ -254,7 +258,9 @@ const labels: Record<Language, Record<string, string>> = {
     inspect: "Chunguza",
     activeAlert: "tahadhari hai",
     activeAlertsCount: "tahadhari hai",
-    focusedAnalysis: "Uchambuzi wa eneo"
+    focusedAnalysis: "Uchambuzi wa eneo",
+    currentIndicators: "viashiria vya sasa",
+    trendPoints: "nukta za mwenendo"
   },
   so: {
     overview: "Dulmar",
@@ -339,7 +345,9 @@ const labels: Record<Language, Record<string, string>> = {
     inspect: "Falanqee",
     activeAlert: "digniin firfircoon",
     activeAlertsCount: "digniino firfircoon",
-    focusedAnalysis: "Falanqaynta la doortay"
+    focusedAnalysis: "Falanqaynta la doortay",
+    currentIndicators: "tilmaamayaasha hadda",
+    trendPoints: "dhibcaha isbeddelka"
   }
 };
 

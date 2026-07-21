@@ -8,7 +8,9 @@ El mapa deja de usar rectángulos de catálogo: carga de forma diferida los acti
 
 El pase de composición posterior elimina las columnas estiradas de recomendaciones y exportación. Las tres tendencias se comparan horizontalmente dentro de la superficie principal; acciones, PDF y CSV/JSON forman un rail compacto alineado arriba. Los deltas se redondean para lectura operativa y el responsive cambia el rail a dos bloques en tablet y una columna en móvil.
 
-Overview ya no se presenta como un panel de Somalia: incorpora una banda regional persistente con los ocho países IGAD, sus scores, niveles, calidad y alertas activas. El país seleccionado funciona únicamente como drill-down para métricas, tendencias y descargas. Las áreas ausentes permanecen visibles en gris/no evaluadas y no se pueden seleccionar hasta disponer de payload.
+Overview ya no se presenta como un panel de Somalia: incorpora una banda regional persistente con los ocho países IGAD, sus scores, niveles, calidad, alertas activas, NDVI, lluvia, LST y cobertura temporal efectiva. El país seleccionado funciona únicamente como drill-down para métricas, tendencias y descargas. Las áreas ausentes permanecen visibles en gris/no evaluadas y no se pueden seleccionar hasta disponer de payload.
+
+Las tendencias live conservan 12–24 puntos para cualquier país seleccionable: el lote regional sigue siendo la ruta rápida y, si GEE lo rechaza, el servidor reintenta cada país de forma aislada. El cambio no altera snapshots ya materializados; deben regenerarse mediante el refresco live para que la UI abandone los tres comparables heredados.
 
 Alertas y descargas publican contratos reales: IDs estables y detalle accesible/404, enlaces filtrados, PDF ejecutivo y CSV/JSON ligados a región y periodo con MIME, `Content-Disposition` y nombres seguros. Las tendencias usan fechas, escala, baseline cero, tooltips y gaps; low-bandwidth conserva la información como tablas. EN/SW/SO forman el selector operativo y ES continúa disponible por compatibilidad.
 

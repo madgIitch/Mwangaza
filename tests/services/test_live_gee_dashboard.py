@@ -133,7 +133,7 @@ class FakeFailingMultiRegionTrendAdapter(FakeTrendBatchLiveGeeAdapter):
 
 
 class LiveGeeDashboardTests(unittest.TestCase):
-    def test_optional_multi_region_trend_failure_keeps_current_payload_and_retries_selected_region(self) -> None:
+    def test_optional_multi_region_trend_failure_retries_every_region_independently(self) -> None:
         adapter = FakeFailingMultiRegionTrendAdapter()
         with (
             patch("mwangaza.services.live_gee_dashboard.check_gee_auth", return_value=SimpleNamespace(status="ok", message="ok")),
@@ -155,8 +155,16 @@ class LiveGeeDashboardTests(unittest.TestCase):
             and payload["metadata"].get("trend_series") is True
         }
         self.assertEqual({str(payload["region_id"]) for payload in current_risks}, {"som", "ken"})
-        self.assertEqual(trend_regions, {"som"})
-        self.assertEqual(adapter.calls, 1)
+        self.assertEqual(trend_regions, {"som", "ken"})
+        self.assertEqual(adapter.calls, 2)
+        for region_id in trend_regions:
+            regional_trends = [
+                payload for payload in payloads
+                if payload.get("region_id") == region_id
+                and isinstance(payload.get("metadata"), dict)
+                and payload["metadata"].get("trend_series") is True
+            ]
+            self.assertEqual(len(regional_trends), 24 * 3)
 
     def test_builds_real_gee_dashboard_payloads_from_adapter_results(self) -> None:
         payloads = build_live_gee_payloads(

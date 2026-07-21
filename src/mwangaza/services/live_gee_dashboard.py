@@ -335,27 +335,28 @@ def load_live_gee_dashboard_payloads(
         ))
     except Exception as exc:
         emit(
-            "Regional trend GEE batch query failed; retrying selected region",
+            "Regional trend GEE batch query failed; retrying each region independently",
             level="WARNING",
             component="live_gee_dashboard",
             region_count=len(region_ids),
             error_type=type(exc).__name__,
         )
-        try:
-            payloads.extend(build_live_gee_trend_payloads_for_regions(
-                (target_region,),
-                end,
-                adapter=adapter,
-                month_count=_live_trend_months(),
-            ))
-        except Exception as selected_exc:
-            emit(
-                "Selected-region trend GEE query failed",
-                level="WARNING",
-                component="live_gee_dashboard",
-                region_id=target_region,
-                error_type=type(selected_exc).__name__,
-            )
+        for retry_region_id in region_ids:
+            try:
+                payloads.extend(build_live_gee_trend_payloads_for_regions(
+                    (retry_region_id,),
+                    end,
+                    adapter=adapter,
+                    month_count=_live_trend_months(),
+                ))
+            except Exception as region_exc:
+                emit(
+                    "Single-region trend GEE query failed",
+                    level="WARNING",
+                    component="live_gee_dashboard",
+                    region_id=retry_region_id,
+                    error_type=type(region_exc).__name__,
+                )
     try:
         payloads.extend(
             build_live_gee_payloads_for_adm1_regions(adm1_region_ids, _default_period_start(end), end, adapter=adapter)

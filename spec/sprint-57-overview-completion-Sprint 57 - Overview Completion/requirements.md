@@ -18,7 +18,7 @@ R6. Una alerta existente muestra detalle, evidencia, calidad, periodo y acción;
 R7. El PDF ejecutivo se descarga desde un endpoint real usando sólo el snapshot procesado de región/periodo, con MIME, `Content-Disposition` y nombre determinista; un fallo no descarga un archivo vacío.
 R8. CSV y JSON se descargan desde un endpoint real para la región/periodo visibles, conservan nulls, omiten geometría por defecto, aplican límite y usan nombres/cabeceras seguras.
 R9. Las tarjetas sólo muestran delta cuando existe comparación estacional válida; sin ella muestran `No comparison yet` y nunca comparan ventanas incompatibles.
-R10. Las tendencias de la región seleccionada muestran 12–24 puntos disponibles contra baseline, con fechas, escala, tooltip, gaps explícitos y fallback accesible en low-bandwidth.
+R10. Las tendencias de cualquier región IGAD seleccionada muestran 12–24 puntos disponibles contra baseline, con fechas, escala, tooltip, gaps explícitos y fallback accesible en low-bandwidth. Si el lote regional GEE falla, la carga reintenta cada país de forma aislada sin reducir la cobertura a la región inicial.
 R11. El locale Somali (`so`) cubre todo texto visible de Overview y navegación; EN/SW/SO se presentan como selector segmentado y ES permanece disponible por compatibilidad sin traducir valores técnicos ni fuentes.
 R12. Cuenta y notificaciones permanecen etiquetadas como no disponibles y no son interactivas hasta contar con contrato aprobado.
 R13. Demo funciona sin red/GEE y conserva `is_demo`, `reference_date` y `snapshot_id`; live/cache no mezclan fixtures y mantienen fuente/frescura visibles.
@@ -30,4 +30,3 @@ R15. Tests API/frontend verifican controles, rutas, descargas, idiomas y degrada
 - **error_states:** Degradación independiente y sin datos inventados.
 - **auth_secrets:** Archivos desde snapshots; sin input ni secretos GEE.
 - **rollback_compat:** Rutas previas preservadas y Reports Center fuera de alcance.
-

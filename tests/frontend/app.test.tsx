@@ -82,6 +82,9 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("button", { name: "Inspect Somalia" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Inspect Ethiopia" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Inspect Uganda" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Northern Kenya current indicators")).toHaveTextContent("NDVI-0.18z");
+    expect(screen.getByLabelText("Ethiopia current indicators")).toHaveTextContent("Rain-42%");
+    expect(kenya).toHaveTextContent("3 trend points");
   });
 
   it("operates Overview map zoom, home and data-quality layers from loaded data", async () => {

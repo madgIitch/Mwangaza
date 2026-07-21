@@ -2155,6 +2155,13 @@ function OverviewScreen({
           {regionalRegions.map((region) => {
             const isAvailable = availableRegionIds.has(region.id);
             const regionAlertCount = activeAlerts.filter((alert) => alert.regionId === region.id).length;
+            const profile = data.profiles.find((candidate) => candidate.id === region.id);
+            const regionalIndicators = [
+              { label: "NDVI", metric: metricByLabel(profile?.metrics ?? [], "NDVI") },
+              { label: "Rain", metric: metricByLabel(profile?.metrics ?? [], "Rainfall") },
+              { label: "LST", metric: metricByLabel(profile?.metrics ?? [], "LST") }
+            ];
+            const trendPointCount = profile?.trends.reduce((maximum, trend) => Math.max(maximum, trend.points.length), 0) ?? 0;
             return (
               <button
                 aria-label={`${t(language, "inspect")} ${region.name}`}
@@ -2168,6 +2175,12 @@ function OverviewScreen({
                 <span className="regional-country-score">{region.score === null ? "—" : region.score.toLocaleString("en-GB", { maximumFractionDigits: 1 })}<small>{region.score === null ? t(language, "noData") : "/100"}</small></span>
                 <span className="severity-badge" data-severity={region.level}>{localizedSeverity(language, region.level)}</span>
                 <small className="regional-country-quality">{localizedQuality(language, region.quality)}</small>
+                <span className="regional-country-indicators" aria-label={`${region.name} ${t(language, "currentIndicators")}`}>
+                  {regionalIndicators.map(({ label, metric }) => (
+                    <span key={label}><small>{label}</small><strong>{metric ? `${metric.value}${metric.unit}` : "—"}</strong></span>
+                  ))}
+                </span>
+                <small className="regional-country-history">{trendPointCount} {t(language, "trendPoints")}</small>
               </button>
             );
           })}

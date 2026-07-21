@@ -11,7 +11,7 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T7) El PDF ejecutivo se descarga desde un endpoint real usando sólo el snapshot procesado de región/periodo, con MIME, `Content-Disposition` y nombre determinista; un fallo no descarga un archivo vacío. ↔ R7
 - [x] (T8) CSV y JSON se descargan desde un endpoint real para la región/periodo visibles, conservan nulls, omiten geometría por defecto, aplican límite y usan nombres/cabeceras seguras. ↔ R8
 - [x] (T9) Las tarjetas sólo muestran delta cuando existe comparación estacional válida; sin ella muestran `No comparison yet` y nunca comparan ventanas incompatibles. ↔ R9
-- [x] (T10) Las tendencias de la región seleccionada muestran 12–24 puntos disponibles contra baseline, con fechas, escala, tooltip, gaps explícitos y fallback accesible en low-bandwidth. ↔ R10
+- [x] (T10) Las tendencias de cualquier región IGAD seleccionada muestran 12–24 puntos disponibles contra baseline; si el lote GEE falla, se reintenta país por país sin reducir la cobertura a Somalia. ↔ R10
 - [x] (T11) El locale Somali (`so`) cubre todo texto visible de Overview y navegación; EN/SW/SO se presentan como selector segmentado y ES permanece disponible por compatibilidad sin traducir valores técnicos ni fuentes. ↔ R11
 - [x] (T12) Cuenta y notificaciones permanecen etiquetadas como no disponibles y no son interactivas hasta contar con contrato aprobado. ↔ R12
 - [x] (T13) Demo funciona sin red/GEE y conserva `is_demo`, `reference_date` y `snapshot_id`; live/cache no mezclan fixtures y mantienen fuente/frescura visibles. ↔ R13

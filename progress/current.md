@@ -2,6 +2,8 @@
 
 Feature: **sprint-57-overview-completion - Sprint 57 - Overview Completion** - estado: `review_pending`.
 
+Cobertura regional visible: Overview expone para los ocho países score, nivel, calidad, alertas, NDVI, lluvia, LST y el número real de puntos temporales cargados. El fallback GEE ya reintenta los 12–24 meses país por país cuando falla el lote regional, en lugar de limitar la cobertura a Somalia. El API local aún sirve el snapshot materializado anterior y requiere reinicio/refresco live para reemplazar los conteos 3/4 por las nuevas series.
+
 ## Siguiente acción
 
 - Revisar `/overview?api=1`: confirmar visualmente el atlas IGAD, colores por riesgo/calidad, tooltip, zoom, selección y disposición con datos live/cache. Cerrar sólo con aprobación visual.

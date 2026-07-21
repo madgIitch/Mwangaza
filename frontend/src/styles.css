@@ -514,7 +514,7 @@ td {
 .regional-country-grid > button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "name score" "severity quality";
+  grid-template-areas: "name score" "severity quality" "indicators indicators" "history history";
   gap: 10px 12px;
   min-width: 0;
   border: 0;
@@ -541,6 +541,18 @@ td {
 .regional-country-score small { color: #667085; font-size: 9px; font-weight: 600; }
 .regional-country-grid .severity-badge { grid-area: severity; justify-self: start; }
 .regional-country-quality { grid-area: quality; align-self: center; text-align: right; }
+.regional-country-indicators {
+  display: grid;
+  grid-area: indicators;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #e4e9e5;
+  padding-top: 9px;
+}
+.regional-country-indicators > span { display: grid; min-width: 0; gap: 2px; }
+.regional-country-indicators > span + span { border-left: 1px solid #e4e9e5; padding-left: 9px; }
+.regional-country-indicators small { color: #77837b; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.regional-country-indicators strong { overflow: hidden; font-size: 12px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.regional-country-history { grid-area: history; color: #667085; font-size: 9px; }
 
 .selected-region-panel {
   display: grid;

@@ -7,6 +7,8 @@
 - `src/mwangaza/api/**`
 - `tests/api/**`
 - `src/mwangaza/services/dashboard_shell.py`
+- `src/mwangaza/services/live_gee_dashboard.py`
+- `tests/services/test_live_gee_dashboard.py`
 - `src/mwangaza/reports/**`
 - `src/mwangaza/exports/**`
 - `tests/reports/**`
@@ -35,4 +37,3 @@
 - **ui_states:** El cockpit se organiza en mapa y alertas prioritarias, contexto de región seleccionada, métricas/tendencias y una única zona de acción. El mapa incluye Home, zoom, selector de capa y tooltip accesible con score, indicadores, calidad, fuente y periodo. El selector de idioma conserva ES por compatibilidad y añade Somali; la superficie segmentada prioriza EN/SW/SO. Low-bandwidth sustituye mapa y gráficos por tablas equivalentes.
 - **rollback_compat:** `/` conserva equivalencia con `/overview`; las rutas actuales y campos API se preservan. Los nuevos IDs, endpoints y locale `so` son aditivos. El Sprint 57 sólo conecta acciones del cockpit; la gestión, cola, preview y distribución completas del Reports Center permanecen en Sprint 59.
 - **tests:** Bloquean pruebas frontend y API para controles de mapa, tooltip, selección, low-bandwidth, detalle/deep-links de alertas, locale Somali, delta comparable/ausente, PDF/CSV/JSON reales y errores saneados. Se verifica que ninguna interacción invoca GEE, que no se colorea `no_data` como bajo y que demo funciona offline.
-
