@@ -1,16 +1,16 @@
 # Sesión actual
 
-Feature: **sprint-57-overview-completion - Sprint 57 - Overview Completion** - estado: `review_pending`.
+Feature: **sprint-57-overview-completion - Sprint 57 - Overview Completion** - estado: `done`.
 
 Cobertura regional visible: Overview expone para los ocho países score, nivel, calidad, alertas, NDVI, lluvia, LST y el número real de puntos temporales cargados. El fallback GEE ya reintenta los 12–24 meses país por país cuando falla el lote regional, en lugar de limitar la cobertura a Somalia. El API local aún sirve el snapshot materializado anterior y requiere reinicio/refresco live para reemplazar los conteos 3/4 por las nuevas series.
 
 ## Siguiente acción
 
-- Revisar `/overview?api=1`: confirmar visualmente el atlas IGAD, colores por riesgo/calidad, tooltip, zoom, selección y disposición con datos live/cache. Cerrar sólo con aprobación visual.
+- Sprint 57 cerrado. El siguiente trabajo planificado es preparar y aprobar el spec de Sprint 58 - Alerts Center Completion.
 
 ## Último resultado
 
-- 306 tests Python, 11 subtests y 45 tests frontend: PASS.
+- 306 tests Python, 11 subtests y 46 tests frontend: PASS.
 - Typecheck, lint, build, diff-check y gates del harness: PASS.
 - El mapa usa límites reales geoBoundaries, normaliza anillos y consolida ADM1 como `uiGeometry` por país; los países ausentes quedan sin evaluar.
 - El atlas se carga en un chunk diferido de 72.88 kB gzip, por lo que low-bandwidth no descarga geometría ni renderiza SVG.
