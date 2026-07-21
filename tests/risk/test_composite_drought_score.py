@@ -46,6 +46,10 @@ class CompositeDroughtScoreTests(unittest.TestCase):
         self.assertGreaterEqual(risk.composite_score or 0, 0)
         self.assertLessEqual(risk.composite_score or 0, 100)
         self.assertEqual(set(risk.metadata["contributions"]), {"ndvi", "rainfall_mm", "lst_c"})
+        weighted_total = sum(
+            item["weighted_contribution"] for item in risk.metadata["contributions"].values()
+        )
+        self.assertAlmostEqual(weighted_total, risk.composite_score or 0, places=2)
         self.assertEqual(risk.metadata["model_version"], "composite-risk-v1")
 
     def test_missing_optional_renormalizes_weights(self) -> None:

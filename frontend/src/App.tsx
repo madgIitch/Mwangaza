@@ -5,7 +5,7 @@ import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { LandingPage } from "./pages/LandingPage";
-import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
+import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -197,7 +197,15 @@ export function App({
         ) : route === "/technical" ? (
           <TechnicalPanel lowBandwidth={lowBandwidth} />
         ) : lowBandwidth ? (
-          <LowBandwidthView data={data} language={language} activeAlerts={activeAlerts} />
+          <LowBandwidthView
+            activeAlerts={activeAlerts}
+            data={data}
+            language={language}
+            onSelectRegion={setSelectedRegionId}
+            route={route}
+            selectedProfile={selectedProfile}
+            selectedRegion={selectedRegion}
+          />
         ) : route === "/region" ? (
           <RegionExplorer
             data={data}
@@ -1191,11 +1199,12 @@ function RegionExplorer({
   const [selectedPilotId, setSelectedPilotId] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [regionView, setRegionView] = useState<"national" | "pilot">("national");
+  const [rankingOpen, setRankingOpen] = useState(false);
   const periodPayload = data.periods?.find((period) => period.key === selectedPeriod);
   const periodProfile = periodPayload?.profiles.find((profile) => profile.id === selectedRegion.id);
   const effectiveProfile = periodProfile ?? selectedProfile;
   const selectedAlerts = activeAlerts.filter((alert) => alert.regionId === selectedRegion.id);
-  const primaryAlert = selectedAlerts[0] ?? activeAlerts[0];
+  const primaryAlert = [...selectedAlerts].sort((left, right) => severityPriority(right.severity) - severityPriority(left.severity))[0];
   const displayMetrics = effectiveProfile.metrics.length ? effectiveProfile.metrics : data.metrics;
   const ndvi = metricByLabel(displayMetrics, "NDVI");
   const rainfall = metricByLabel(displayMetrics, "Rainfall");
@@ -1217,10 +1226,24 @@ function RegionExplorer({
   );
   const availablePeriods = data.periods ?? [];
   const selectedPilot = rankedPilotRows.find((unit) => unit.id === selectedPilotId);
+  const selectedAdministrativeUnit = effectiveProfile.administrativeUnits?.find(
+    (unit) => unit.regionId === selectedPilotId
+  );
+  const activeContributions = selectedPilotId
+    ? (selectedAdministrativeUnit?.contributions ?? [])
+    : (effectiveProfile.contributions ?? []);
+  const contributionScope = selectedAdministrativeUnit?.name ?? selectedPilot?.name ?? countryDisplayName(selectedRegion);
+  const contributionCompositeScore = selectedAdministrativeUnit?.score ?? selectedPilot?.score ?? selectedRegion.score;
+  const rankingUnitLabel = administrativeRows.length ? "ADM1 areas" : "subnational areas";
+  const selectSubregion = (unitId: string): void => {
+    setSelectedPilotId(unitId);
+    setRegionView(unitId ? "pilot" : "national");
+  };
   useEffect(() => {
     setSelectedPilotId("");
     setSelectedPeriod("");
     setRegionView("national");
+    setRankingOpen(false);
   }, [selectedRegion.id]);
   const alertsHref = `/alerts?${new URLSearchParams({ region: selectedRegion.id, period: selectedRegion.period, status: "active" })}`;
 
@@ -1243,7 +1266,7 @@ function RegionExplorer({
           </label>
           <label>
             <span>Subregion / District</span>
-            <select disabled={!rankedPilotRows.length} value={selectedPilotId} onChange={(event) => { setSelectedPilotId(event.target.value); setRegionView(event.target.value ? "pilot" : "national"); }}>
+            <select disabled={!rankedPilotRows.length} value={selectedPilotId} onChange={(event) => selectSubregion(event.target.value)}>
               <option value="">{rankedPilotRows.length ? "All administrative areas" : "Subnational unavailable"}</option>
               {rankedPilotRows.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
             </select>
@@ -1256,36 +1279,91 @@ function RegionExplorer({
             </select>
           </label>
           <div className="segmented" aria-label="View">
-            <button type="button" data-active={regionView === "national"} onClick={() => { setRegionView("national"); setSelectedPilotId(""); }}>National view</button>
-            <button type="button" data-active={regionView === "pilot"} disabled={!rankedPilotRows.length} onClick={() => setRegionView("pilot")}>Subnational view</button>
+            <button type="button" data-active={regionView === "national"} onClick={() => selectSubregion("")}>National view</button>
+            <button type="button" data-active={regionView === "pilot"} disabled={!rankedPilotRows.length} onClick={() => selectSubregion(selectedPilotId || rankedPilotRows[0]?.id || "")}>Subnational view</button>
           </div>
         </div>
       </div>
 
       {selectedRegion.id === "ken" && data.dataMode === "demo" ? <NorthernKenyaScenario /> : null}
 
-      <div className="region-main-grid">
-        <RegionRiskSurface profile={effectiveProfile} selectedRegion={selectedRegion} />
-        <section className="region-summary">
-          <div className="section-heading">
-            <h2>Region Summary</h2>
-            <span className="info-dot" title="Operational summary for the selected region.">i</span>
+      <div className="region-main-grid region-atlas-workspace">
+        <RegionRiskSurface
+          onSelectUnit={selectSubregion}
+          profile={effectiveProfile}
+          selectedRegion={selectedRegion}
+          selectedUnitId={selectedPilotId}
+        />
+        <aside className="territory-inspector" key={selectedPilotId || selectedRegion.id} aria-live="polite">
+          <header>
+            <div>
+              <p className="eyebrow">{selectedAdministrativeUnit ? "Selected ADM1" : selectedPilot ? "Selected pilot area" : "Country overview"}</p>
+              <h2>{selectedAdministrativeUnit?.name ?? selectedPilot?.name ?? countryDisplayName(selectedRegion)}</h2>
+              <p>{selectedAdministrativeUnit?.boundaryIso ?? (selectedPilot ? selectedPilot.adminLevel : "National observation")}</p>
+            </div>
+            <span className="severity-badge" data-severity={selectedAdministrativeUnit?.level ?? selectedPilot?.level ?? selectedRegion.level}>
+              {severityLabel(selectedAdministrativeUnit?.level ?? selectedPilot?.level ?? selectedRegion.level)}
+            </span>
+          </header>
+          <div className="inspector-score">
+            <span>Composite score</span>
+            <strong>{formatScoreValue(selectedAdministrativeUnit?.score ?? selectedPilot?.score ?? selectedRegion.score)}</strong>
+            <small>/100</small>
           </div>
-          <dl className="summary-list">
-            <div><dt>Region</dt><dd>{selectedPilot?.name ?? selectedRegion.name}</dd></div>
-            <div><dt>Level</dt><dd>{effectiveProfile.administrativeUnits?.length ? "Country with ADM1 coverage" : selectedProfile.pilotUnits.length ? "Country with pilot coverage" : "Country"}</dd></div>
-            <div><dt>Potentially exposed population</dt><dd>{exposure?.value ?? "No data"} {exposure?.unit ?? ""}</dd></div>
-            <div><dt>Last updated</dt><dd>{selectedRegion.period}</dd></div>
-            <div><dt>Data quality</dt><dd>{qualityLabel(selectedRegion.quality)}</dd></div>
-            <div><dt>Current alert level</dt><dd><span className="severity-badge" data-severity={selectedPilot?.level ?? selectedRegion.level}>{severityLabel(selectedPilot?.level ?? selectedRegion.level)}</span></dd></div>
-          </dl>
-          <div className="featured-alert" data-severity={primaryAlert?.severity ?? selectedRegion.level}>
-            <strong>{primaryAlert?.title ?? `${severityLabel(selectedRegion.level)} drought status`}</strong>
-            <p>{primaryAlert?.action ?? "No active regional alert is available for this period."}</p>
+          {selectedAdministrativeUnit ? (
+            <>
+              <dl className="inspector-metrics">
+                <div><dt>NDVI</dt><dd>{formatMapMetric(selectedAdministrativeUnit.ndvi)}</dd></div>
+                <div><dt>Rainfall</dt><dd>{formatMapMetric(selectedAdministrativeUnit.rainfallMm, " mm")}</dd></div>
+                <div><dt>LST</dt><dd>{formatMapMetric(selectedAdministrativeUnit.lstC, " °C")}</dd></div>
+              </dl>
+              <dl className="inspector-provenance">
+                <div><dt>Data quality</dt><dd><span className="signal-badge" data-quality={selectedAdministrativeUnit.quality}>{qualityLabel(selectedAdministrativeUnit.quality)}</span></dd></div>
+                <div><dt>Period</dt><dd>{formatPeriodLabel(selectedAdministrativeUnit.periodEnd)}</dd></div>
+                <div><dt>Source</dt><dd>{selectedAdministrativeUnit.sourceMode.toUpperCase()}</dd></div>
+              </dl>
+            </>
+          ) : (
+            <dl className="inspector-provenance">
+              <div><dt>Coverage</dt><dd>{effectiveProfile.administrativeUnits?.length ? `${effectiveProfile.administrativeUnits.length} ADM1 areas` : "National only"}</dd></div>
+              <div><dt>Potentially exposed population</dt><dd>{exposure?.value ?? "No data"} {exposure?.unit ?? ""}</dd></div>
+              <div><dt>Data quality</dt><dd><span className="signal-badge" data-quality={selectedRegion.quality}>{qualityLabel(selectedRegion.quality)}</span></dd></div>
+              <div><dt>Period</dt><dd>{selectedRegion.period}</dd></div>
+            </dl>
+          )}
+          <section className="inspector-action">
+            <span>{primaryAlert ? "Highest-priority active alert" : selectedAdministrativeUnit ? "Country guidance for this area" : "Recommended next step"}</span>
+            <strong>{primaryAlert?.action ?? effectiveProfile.recommendations[0] ?? "Review the current evidence before operational action."}</strong>
             <a href={alertsHref}>View all alerts</a>
-          </div>
-        </section>
+          </section>
+          {selectedPilotId ? <button className="inspector-clear" type="button" onClick={() => selectSubregion("")}>Return to national view</button> : null}
+        </aside>
       </div>
+
+      <section className="ranking-drawer" data-open={rankingOpen ? "true" : "false"}>
+        <button className="ranking-toggle" type="button" aria-controls="subnational-ranking-table" aria-expanded={rankingOpen} onClick={() => setRankingOpen((open) => !open)}>
+          <span><strong>Subnational ranking</strong><small>{rankedPilotRows.length} {rankingUnitLabel} · select a row to inspect it on the map</small></span>
+          <span aria-hidden="true">{rankingOpen ? "−" : "+"}</span>
+        </button>
+        {rankingOpen ? (
+          <div className="ranking-scroll" id="subnational-ranking-table">
+            <table>
+              <thead><tr><th>#</th><th>District / Area</th><th>Alert level</th><th>Composite score</th><th>Data quality</th></tr></thead>
+              <tbody>
+                {rankedPilotRows.map((unit, index) => (
+                  <tr key={unit.id} data-selected={unit.id === selectedPilotId ? "true" : "false"} data-top-rank={index < 3 ? "true" : "false"}>
+                    <td><span className="rank-marker" data-top={index < 3 ? "true" : "false"}>{index + 1}</span></td>
+                    <td><button className="ranking-select" type="button" onClick={() => selectSubregion(unit.id)}>{unit.name}</button></td>
+                    <td><span className="signal-badge" data-severity={unit.level}>{severityLabel(unit.level)}</span></td>
+                    <td>{unit.score === null ? "No data" : formatScoreValue(unit.score)}</td>
+                    <td><span className="signal-badge" data-quality={unit.quality}>{qualityLabel(unit.quality)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
 
       <section className="region-indicators" aria-label="Selected indicators">
         {indicatorMetrics.map((metric) => (
@@ -1301,61 +1379,27 @@ function RegionExplorer({
       <div className="region-lower-grid">
         <section>
           <h2>Why this region is at risk <span className="info-dot" title="Contributions reported by the composite-risk payload.">i</span></h2>
-          {effectiveProfile.contributions?.length ? effectiveProfile.contributions.map((item) => (
-            <ContributionRow key={item.indicator} label={indicatorLabel(item.indicator)} value={item.weight ?? 0} max={1} severity={severityForContribution(item.score)} />
-          )) : <Placeholder title="Contribution payload pending" detail="The API has not provided explicit composite-score contributions for this region." />}
+          {activeContributions.length
+            ? <ContributionStack compositeScore={contributionCompositeScore} contributions={activeContributions} scope={contributionScope} />
+            : <Placeholder title="Contribution payload pending" detail={`The API has not provided an attributable composite-score breakdown for ${contributionScope}.`} />}
         </section>
 
-        <section>
-          <div className="section-heading">
-            <h2>Subnational ranking</h2>
-            <span className="muted">ADM1 coverage</span>
-          </div>
-          {rankedPilotRows.length ? (
-            <table>
-              <thead><tr><th>#</th><th>District / Area</th><th>Alert level</th><th>Composite score</th><th>Data quality</th></tr></thead>
-              <tbody>
-                {rankedPilotRows.map((unit, index) => (
-                  <tr key={unit.id}><td>{index + 1}</td><td>{unit.name}</td><td>{severityLabel(unit.level)}</td><td>{unit.score === null ? "No data" : formatScoreValue(unit.score)}</td><td>{qualityLabel(unit.quality)}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <Placeholder title="Subnational payload pending" detail="District ranking needs pilot-unit metric rows in the public API." />
-          )}
-        </section>
-
-        <TrendPanel trends={effectiveProfile.trends} />
+        <TrendPanel title={selectedAdministrativeUnit ? `Country trends · ${countryDisplayName(selectedRegion)}` : "Indicator Trends"} trends={effectiveProfile.trends} />
       </div>
 
       <div className="region-lower-grid region-final-grid">
         <section>
           <h2>Historical comparison</h2>
           {effectiveProfile.historicalRows.length ? (
-            <table>
-              <thead><tr><th>Period</th><th>Indicator</th><th>Current</th><th>Historical</th><th>Difference</th></tr></thead>
-              <tbody>
-                {effectiveProfile.historicalRows.map((row) => (
-                  <tr key={`${row.period}-${row.indicator}`}><td>{formatPeriodLabel(row.period)}</td><td>{row.indicator}</td><td>{formatMeasuredValue(row.current)}</td><td>{formatMeasuredValue(row.historical)}</td><td>{formatMeasuredValue(row.difference)}</td></tr>
-                ))}
-              </tbody>
-            </table>
+            <HistoricalComparison rows={effectiveProfile.historicalRows} />
           ) : (
             <Placeholder title="Historical comparison pending" detail="Comparable historical rows are not available for this live region payload yet." />
           )}
         </section>
-        <section>
-          <h2>Recommended early actions</h2>
-          <ul className="action-list">
-            {(effectiveProfile.recommendations.length ? effectiveProfile.recommendations : data.recommendations).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
         <section id="about" className="pilot-note">
           <h2>About administrative coverage</h2>
           <p>Live analysis covers every first-level administrative area in the enabled IGAD countries. Units without conclusive source data remain explicitly unassessed.</p>
-          <span className="future-link">Methodology page pending</span>
+          <small className="coverage-note">Methodology documentation will be linked when published.</small>
         </section>
       </div>
 
@@ -1407,11 +1451,15 @@ function appLog(message: string, fields: Record<string, unknown> = {}): void {
 }
 
 function RegionRiskSurface({
+  onSelectUnit,
   profile,
-  selectedRegion
+  selectedRegion,
+  selectedUnitId
 }: {
+  onSelectUnit: (unitId: string) => void;
   profile: RegionProfile;
   selectedRegion: RegionRisk;
+  selectedUnitId: string;
 }): JSX.Element {
   const [administrativeMap, setAdministrativeMap] = useState<AdministrativeFeatureCollection | null>(null);
   const [mapState, setMapState] = useState<"loading" | "ready" | "unavailable">("loading");
@@ -1474,26 +1522,36 @@ function RegionRiskSurface({
               {({ geographies }) => geographies.map((geo) => {
                 const feature = geo as unknown as AdministrativeFeature & { rsmKey: string };
                 const unit = measuredUnits.get(feature.properties.shapeISO);
+                const selected = unit?.regionId === selectedUnitId;
                 return (
                   <Geography
                     aria-label={`${feature.properties.shapeName}: ${unit ? `${unit.score ?? "No data"} ${unit.level}` : "not individually assessed"}`}
+                    aria-current={selected ? "true" : undefined}
                     geography={geo}
                     key={geo.rsmKey}
                     onBlur={() => setActiveUnit(null)}
+                    onClick={() => { if (unit) onSelectUnit(unit.regionId); }}
                     onFocus={() => setActiveUnit(feature)}
+                    onKeyDown={(event) => {
+                      if (unit && (event.key === "Enter" || event.key === " ")) {
+                        event.preventDefault();
+                        onSelectUnit(unit.regionId);
+                      }
+                    }}
                     onMouseEnter={() => setActiveUnit(feature)}
                     onMouseLeave={() => setActiveUnit(null)}
                     style={{
                       default: {
                         fill: unit ? mapFill(unit.level) : "#dce5dc",
-                        stroke: "#ffffff",
-                        strokeWidth: 1.15,
+                        stroke: selected ? "#173f31" : "#ffffff",
+                        strokeWidth: selected ? 3 : 1.15,
                         outline: "none"
                       },
-                      hover: { fill: unit ? mapHoverFill(unit.level) : "#bdcdbf", outline: "none" },
+                      hover: { fill: unit ? mapHoverFill(unit.level) : "#bdcdbf", stroke: "#173f31", strokeWidth: 2.2, outline: "none" },
                       pressed: { fill: unit ? mapHoverFill(unit.level) : "#afc2b2", outline: "none" }
                     }}
-                    tabIndex={0}
+                    role={unit ? "button" : undefined}
+                    tabIndex={unit ? 0 : -1}
                   />
                 );
               })}
@@ -1508,7 +1566,7 @@ function RegionRiskSurface({
           <div className="map-tooltip" role="status">
             <span>{activeUnit.properties.shapeISO}</span>
             <strong>{activeUnit.properties.shapeName}</strong>
-            <small>{activeMeasurement ? `${severityLabel(activeMeasurement.level)} · ${formatScoreValue(activeMeasurement.score)}` : "Not individually assessed"}</small>
+            {activeMeasurement ? <div className="map-tooltip-badges"><span className="signal-badge" data-severity={activeMeasurement.level}>{severityLabel(activeMeasurement.level)}</span><span className="signal-badge" data-quality={activeMeasurement.quality}>{qualityLabel(activeMeasurement.quality)}</span><b>{formatScoreValue(activeMeasurement.score)}</b></div> : <small>Not individually assessed</small>}
             {activeMeasurement ? <em>NDVI {formatMapMetric(activeMeasurement.ndvi)} · Rain {formatMapMetric(activeMeasurement.rainfallMm, " mm")}</em> : null}
           </div>
         ) : null}
@@ -1529,27 +1587,74 @@ function RegionRiskSurface({
   );
 }
 
-function ContributionRow({
-  label,
-  value,
-  max,
-  severity
+function ContributionStack({
+  compositeScore,
+  contributions,
+  scope
 }: {
-  label: string;
-  value: number;
-  max: number;
-  severity: Severity;
+  compositeScore: number | null;
+  contributions: NonNullable<RegionProfile["contributions"]>;
+  scope: string;
 }): JSX.Element {
+  const explained = contributions.map((item) => ({
+    ...item,
+    points: Math.max(0, item.weightedContribution ?? ((item.weight ?? 0) * (item.score ?? 0)))
+  }));
+  const total = explained.reduce((sum, item) => sum + item.points, 0);
   return (
-    <div className="contribution-row">
-      <div>
-        <span>{label}</span>
-        <strong>{Math.round((value / max) * 100)}%</strong>
+    <div className="contribution-stack" aria-label={`Composite score contributions for ${scope}`}>
+      <div className="contribution-summary">
+        <span>{scope}</span>
+        <strong>{formatScoreValue(total)} <small>of {formatScoreValue(compositeScore)} points explained</small></strong>
       </div>
-      <div className="contribution-track">
-        <span data-severity={severity} style={{ width: `${Math.min(100, (value / max) * 100)}%` }} />
+      <div className="contribution-stack-bar" role="img" aria-label={explained.map((item) => `${indicatorLabel(item.indicator)} ${formatScoreValue(item.points)} points`).join(", ")}>
+        {explained.map((item, index) => (
+          <span
+            data-contribution={index + 1}
+            key={item.indicator}
+            style={{ width: `${(item.points / (total || 1)) * 100}%` }}
+            title={`${indicatorLabel(item.indicator)}: ${formatScoreValue(item.points)} composite points`}
+          />
+        ))}
       </div>
+      <ul className="contribution-legend">
+        {explained.map((item, index) => (
+          <li key={item.indicator}>
+            <i data-contribution={index + 1} />
+            <span><b>{indicatorLabel(item.indicator)}</b><small>{formatScoreValue(item.score)} signal × {Math.round((item.weight ?? 0) * 100)}% weight · {item.source || "Source unavailable"}</small></span>
+            <span className="contribution-result"><strong>{formatScoreValue(item.points)} pts</strong><span className="signal-badge" data-quality={item.quality}>{qualityLabel(item.quality)}</span></span>
+          </li>
+        ))}
+      </ul>
+      <p className="contribution-formula">Composite contribution = normalized signal score × effective model weight.</p>
     </div>
+  );
+}
+
+function HistoricalComparison({ rows }: { rows: HistoricalRow[] }): JSX.Element {
+  const grouped = rows.reduce<Record<string, HistoricalRow[]>>((groups, row) => {
+    const parsed = new Date(row.period);
+    const year = Number.isNaN(parsed.getTime()) ? row.period.slice(0, 4) || "Other" : String(parsed.getUTCFullYear());
+    (groups[year] ??= []).push(row);
+    return groups;
+  }, {});
+  return (
+    <table className="history-table">
+      <thead><tr><th>Indicator</th><th>Current</th><th>Baseline</th><th>Delta</th></tr></thead>
+      {Object.entries(grouped).sort(([left], [right]) => right.localeCompare(left)).map(([year, yearRows]) => (
+        <tbody key={year} className="history-year-group">
+          <tr className="history-year"><th colSpan={4} scope="rowgroup">{year}</th></tr>
+          {yearRows.map((row) => (
+            <tr key={`${row.period}-${row.indicator}`}>
+              <th scope="row"><strong>{row.indicator}</strong><small>{formatPeriodWithoutYear(row.period)}</small></th>
+              <td>{formatMeasuredValue(row.current)}</td>
+              <td>{formatMeasuredValue(row.historical)}</td>
+              <td><span className="delta-badge" data-direction={deltaDirection(row.difference)}>{formatMeasuredValue(row.difference)}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      ))}
+    </table>
   );
 }
 
@@ -1617,12 +1722,33 @@ function formatPeriodLabel(value: string): string {
     : date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
+function formatPeriodWithoutYear(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
+}
+
+function formatTrendPeriod(value: string): string {
+  const candidate = value.split(" to ").at(-1) ?? value;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(candidate)) return value;
+  const date = new Date(candidate);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" });
+}
+
 function formatMeasuredValue(value: string): string {
   const match = value.match(/^([+-]?\d+(?:\.\d+)?)(.*)$/);
   if (!match) return value;
   const number = Number(match[1]);
   const prefix = match[1].startsWith("+") && number > 0 ? "+" : "";
   return `${prefix}${number.toLocaleString("en-GB", { maximumFractionDigits: 2 })}${match[2]}`;
+}
+
+function deltaDirection(value: string): "positive" | "negative" | "neutral" {
+  const number = Number.parseFloat(value);
+  return number > 0 ? "positive" : number < 0 ? "negative" : "neutral";
 }
 
 function formatScoreValue(value: number | null): string {
@@ -1705,14 +1831,6 @@ function indicatorLabel(indicator: string): string {
   return ({ ndvi: "NDVI anomaly", rainfall_mm: "Rainfall anomaly", lst_c: "Temperature anomaly" } as Record<string, string>)[indicator] ?? indicator;
 }
 
-function severityForContribution(score: number | null): Severity {
-  if (score === null) return "unknown";
-  if (score >= 75) return "critical";
-  if (score >= 50) return "warning";
-  if (score >= 25) return "watch";
-  return "normal";
-}
-
 function severityLabel(severity: Severity): string {
   const labels: Record<Severity, string> = {
     critical: "Severe",
@@ -1722,6 +1840,10 @@ function severityLabel(severity: Severity): string {
     unknown: "Unknown"
   };
   return labels[severity];
+}
+
+function severityPriority(severity: Severity): number {
+  return ({ unknown: 0, normal: 1, watch: 2, warning: 3, critical: 4 } as Record<Severity, number>)[severity];
 }
 
 function qualityLabel(value: string): string {
@@ -1923,6 +2045,56 @@ function OverviewScreen({
   );
 }
 
+function TrendChart({ trend }: { trend: TrendSeries }): JSX.Element {
+  const chartPoints = trend.points.map((point, index) => ({
+    ...point,
+    anomaly: point.value === null || point.baseline === null ? null : point.value - point.baseline,
+    x: 42 + (trend.points.length === 1 ? 139 : (index / (trend.points.length - 1)) * 278)
+  }));
+  const maxAbs = Math.max(0.01, ...chartPoints.map((point) => Math.abs(point.anomaly ?? 0)));
+  const y = (value: number): number => 16 + ((maxAbs - value) / (maxAbs * 2)) * 94;
+  const segments: Array<Array<(typeof chartPoints)[number]>> = [];
+  chartPoints.forEach((point) => {
+    if (point.anomaly === null) return;
+    const previous = chartPoints[chartPoints.indexOf(point) - 1];
+    if (!previous || previous.anomaly === null) segments.push([]);
+    segments[segments.length - 1].push(point);
+  });
+  const scaleLabel = (value: number): string => value.toLocaleString("en-GB", { maximumFractionDigits: Math.abs(value) < 10 ? 2 : 0 });
+  return (
+    <div className="trend-chart-wrap">
+      <span className="trend-baseline-label">Difference from baseline · {trend.baselineLabel ?? "source baseline"}</span>
+      <svg className="trend-chart" viewBox="0 0 340 148" role="img" aria-label={`${trend.label} anomaly chart with zero baseline`}>
+        <line className="trend-grid-line" x1="42" x2="320" y1="16" y2="16" />
+        <line className="trend-zero-line" x1="42" x2="320" y1={y(0)} y2={y(0)} />
+        <line className="trend-grid-line" x1="42" x2="320" y1="110" y2="110" />
+        <text className="trend-axis-label" x="36" y="20" textAnchor="end">+{scaleLabel(maxAbs)}</text>
+        <text className="trend-axis-label" x="36" y={y(0) + 4} textAnchor="end">0</text>
+        <text className="trend-axis-label" x="36" y="114" textAnchor="end">−{scaleLabel(maxAbs)}</text>
+        {segments.map((segment, index) => (
+          <polyline className="trend-line" key={index} points={segment.map((point) => `${point.x},${y(point.anomaly ?? 0)}`).join(" ")} />
+        ))}
+        {chartPoints.map((point) => point.anomaly === null ? null : (
+          <circle
+            aria-label={`${point.label}: ${scaleLabel(point.anomaly)} ${trend.unit} from baseline`}
+            className="trend-point"
+            cx={point.x}
+            cy={y(point.anomaly)}
+            key={point.label}
+            r="4.5"
+            tabIndex={0}
+          >
+            <title>{`${point.label} · value ${point.value} ${trend.unit} · baseline ${point.baseline} ${trend.unit} · difference ${scaleLabel(point.anomaly)} ${trend.unit}`}</title>
+          </circle>
+        ))}
+        {chartPoints.map((point, index) => (trend.points.length <= 4 || index === 0 || index === trend.points.length - 1) ? (
+          <text className="trend-date-label" key={`${point.label}-date`} x={point.x} y="136" textAnchor={index === 0 ? "start" : index === trend.points.length - 1 ? "end" : "middle"}>{formatTrendPeriod(point.label)}</text>
+        ) : null)}
+      </svg>
+    </div>
+  );
+}
+
 function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSeries[]; title?: string }): JSX.Element {
   return (
     <section>
@@ -1932,15 +2104,7 @@ function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSerie
           <article className="trend" key={trend.indicator}>
             <h3>{trend.label}</h3>
             <p>{trend.unit} | {trend.source}</p>
-            <div className="sparkline" aria-label={`${trend.label} sparkline`}>
-              {trend.points.map((point) => (
-                <span
-                  key={point.label}
-                  style={{ height: `${Math.max(12, ((point.value ?? 0) / Math.max(...trend.points.map((p) => p.value ?? 1))) * 80)}px` }}
-                  title={`${point.label}: ${point.value ?? "gap"} baseline ${point.baseline ?? "n/a"}`}
-                />
-              ))}
-            </div>
+            <TrendChart trend={trend} />
           </article>
         )) : (
           <Placeholder title="Trend payload pending" detail="No trend series are available for the selected region yet." />
@@ -1953,12 +2117,61 @@ function TrendPanel({ trends, title = "Indicator Trends" }: { trends: TrendSerie
 function LowBandwidthView({
   data,
   language,
-  activeAlerts
+  activeAlerts,
+  onSelectRegion,
+  route,
+  selectedProfile,
+  selectedRegion
 }: {
   data: DashboardData;
   language: Language;
   activeAlerts: DashboardData["alerts"];
+  onSelectRegion: (regionId: string) => void;
+  route: string;
+  selectedProfile: RegionProfile;
+  selectedRegion: RegionRisk;
 }): JSX.Element {
+  const [selectedUnitId, setSelectedUnitId] = useState("");
+  const administrativeUnits = selectedProfile.administrativeUnits ?? [];
+  const selectedUnit = administrativeUnits.find((unit) => unit.regionId === selectedUnitId);
+  useEffect(() => setSelectedUnitId(""), [selectedRegion.id]);
+
+  if (route === "/region") {
+    return (
+      <section className="lite-view lite-region-view" aria-label="Low bandwidth Region Explorer">
+        <div className="section-heading">
+          <div><p className="eyebrow">Region</p><h2>Region Explorer · Low bandwidth</h2></div>
+          <span>{administrativeUnits.length} ADM1 areas loaded</span>
+        </div>
+        <div className="lite-region-controls">
+          <label><span>Country</span><select value={selectedRegion.id} onChange={(event) => onSelectRegion(event.target.value)}>{data.regions.map((region) => <option key={region.id} value={region.id}>{countryDisplayName(region)}</option>)}</select></label>
+          <label><span>Administrative area</span><select value={selectedUnitId} onChange={(event) => setSelectedUnitId(event.target.value)}><option value="">National view</option>{administrativeUnits.map((unit) => <option key={unit.regionId} value={unit.regionId}>{unit.name}</option>)}</select></label>
+        </div>
+        <section className="lite-selected-area">
+          <h3>{selectedUnit?.name ?? countryDisplayName(selectedRegion)}</h3>
+          <table>
+            <tbody>
+              <tr><th scope="row">Level</th><td>{selectedUnit ? "ADM1" : "Country"}</td></tr>
+              <tr><th scope="row">Composite score</th><td>{formatScoreValue(selectedUnit?.score ?? selectedRegion.score)}</td></tr>
+              <tr><th scope="row">Alert level</th><td>{severityLabel(selectedUnit?.level ?? selectedRegion.level)}</td></tr>
+              <tr><th scope="row">Data quality</th><td>{qualityLabel(selectedUnit?.quality ?? selectedRegion.quality)}</td></tr>
+              {selectedUnit ? <><tr><th scope="row">NDVI</th><td>{formatMapMetric(selectedUnit.ndvi)}</td></tr><tr><th scope="row">Rainfall</th><td>{formatMapMetric(selectedUnit.rainfallMm, " mm")}</td></tr><tr><th scope="row">LST</th><td>{formatMapMetric(selectedUnit.lstC, " °C")}</td></tr></> : null}
+            </tbody>
+          </table>
+        </section>
+        <details>
+          <summary>Subnational ranking ({administrativeUnits.length})</summary>
+          <table>
+            <thead><tr><th>#</th><th>Area</th><th>Level</th><th>Score</th><th>Quality</th></tr></thead>
+            <tbody>{administrativeUnits.map((unit) => <tr key={unit.regionId}><td>{unit.rank}</td><td><button className="ranking-select" type="button" onClick={() => setSelectedUnitId(unit.regionId)}>{unit.name}</button></td><td>{severityLabel(unit.level)}</td><td>{formatScoreValue(unit.score)}</td><td>{qualityLabel(unit.quality)}</td></tr>)}</tbody>
+          </table>
+        </details>
+        <h2>{t(language, "activeAlerts")}</h2>
+        <ul>{activeAlerts.filter((alert) => alert.regionId === selectedRegion.id).map((alert) => <li key={`${alert.regionId}-${alert.title}`}>{alert.title} — {alert.action}</li>)}</ul>
+      </section>
+    );
+  }
+
   return (
     <section className="lite-view">
       <h2>{t(language, "lowBandwidth")}</h2>

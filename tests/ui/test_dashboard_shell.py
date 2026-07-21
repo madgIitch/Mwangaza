@@ -199,6 +199,13 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(unit.risk_level, "warning")
         self.assertEqual(unit.ndvi, 0.18)
         self.assertEqual(unit.rainfall_mm, 3.1)
+        self.assertEqual(len(unit.contributions), 3)
+        self.assertAlmostEqual(
+            sum(item["weighted_contribution"] for item in unit.contributions),
+            unit.score or 0,
+            places=2,
+        )
+        self.assertAlmostEqual(sum(item["share_of_composite"] for item in unit.contributions), 1.0)
 
     def test_temporal_periods_default_to_latest_available_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -317,6 +324,51 @@ class DashboardShellTests(unittest.TestCase):
         self.assertIn("trend-gap", html)
         self.assertIn("quality=no_data", html)
         self.assertIn("Historical baseline when available", html)
+
+    def test_monthly_trends_use_series_mean_without_creating_dashboard_periods(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            monthly = []
+            for period_end, value in (
+                ("2026-05-15T00:00:00Z", 0.1),
+                ("2026-06-15T00:00:00Z", 0.2),
+                ("2026-07-15T00:00:00Z", 0.3),
+            ):
+                signal = _signal_payload(
+                    region_id="som",
+                    indicator="ndvi",
+                    period_end=period_end,
+                    value=value,
+                    baseline=0.0,
+                    quality_flag="ok",
+                )
+                signal["metadata"] = {
+                    "updated_at": period_end,
+                    "trend_series": True,
+                    "aggregation_period": "monthly",
+                }
+                monthly.append(signal)
+            payloads = [
+                *monthly,
+                _risk_snapshot(
+                    region_id="som",
+                    risk_level="watch",
+                    score=44.0,
+                    period_start="2026-07-01T00:00:00Z",
+                    period_end="2026-07-15T00:00:00Z",
+                ).to_dict(),
+            ]
+            (cache_dir / "payloads.json").write_text(json.dumps({"payload": payloads}), encoding="utf-8")
+
+            data = load_dashboard_shell_data(cache_dir=cache_dir, data_dir=Path(tmp))
+
+        ndvi = next(series for series in data.trends if series.indicator == "ndvi")
+        self.assertEqual(len(ndvi.points), 3)
+        self.assertAlmostEqual(ndvi.points[0].baseline_value or 0, 0.2)
+        self.assertAlmostEqual(ndvi.points[0].anomaly_value or 0, -0.1)
+        self.assertIn("Mean of 3 available monthly points", ndvi.baseline_label)
+        self.assertEqual(len(data.temporal_periods), 1)
 
     def test_historical_comparison_uses_same_window_excludes_insufficient_data_and_ranks_dryness(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -739,6 +791,30 @@ def _risk_snapshot(
     period_start: str = "2026-07-01T00:00:00Z",
     period_end: str = "2026-07-08T00:00:00Z",
 ) -> RiskSnapshot:
+    scale = score / 75.2
+    contributions = {
+        "ndvi": {
+            "weight": 0.4,
+            "score": 72.0 * scale,
+            "weighted_contribution": 0.4 * 72.0 * scale,
+            "source": "TEST/ndvi",
+            "quality_flag": "ok",
+        },
+        "rainfall_mm": {
+            "weight": 0.4,
+            "score": 84.0 * scale,
+            "weighted_contribution": 0.4 * 84.0 * scale,
+            "source": "TEST/rainfall",
+            "quality_flag": "ok",
+        },
+        "lst_c": {
+            "weight": 0.2,
+            "score": 64.0 * scale,
+            "weighted_contribution": 0.2 * 64.0 * scale,
+            "source": "TEST/lst",
+            "quality_flag": "ok",
+        },
+    }
     return RiskSnapshot(
         region_id=region_id,
         period_start=period_start,
@@ -749,7 +825,11 @@ def _risk_snapshot(
         source="mwangaza.risk.composite",
         quality_flag="ok",
         is_simulated=is_simulated,
-        metadata={"model_version": "composite-risk-v1", "updated_at": "2026-07-09T00:00:00Z"},
+        metadata={
+            "model_version": "composite-risk-v1",
+            "updated_at": "2026-07-09T00:00:00Z",
+            "contributions": contributions,
+        },
     )
 
 

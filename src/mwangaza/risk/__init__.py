@@ -43,10 +43,12 @@ def compute_composite_drought_score(
     signals = {signal["indicator"]: signal for signal in snapshot.signals}
     for indicator, weight in used_weights.items():
         value_score = _indicator_score(indicator, signals[indicator])
-        score += value_score * weight
+        weighted_contribution = value_score * weight
+        score += weighted_contribution
         contributions[indicator] = {
             "weight": weight,
             "score": value_score,
+            "weighted_contribution": round(weighted_contribution, 3),
             "source": signals[indicator].get("source"),
             "quality_flag": signals[indicator].get("quality_flag"),
         }

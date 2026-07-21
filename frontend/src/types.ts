@@ -48,6 +48,7 @@ export interface TrendSeries {
   label: string;
   unit: string;
   source: string;
+  baselineLabel?: string;
   points: TrendPoint[];
 }
 
@@ -58,6 +59,16 @@ export interface HistoricalRow {
   historical: string;
   difference: string;
   version: string;
+}
+
+export interface RiskContribution {
+  indicator: string;
+  weight: number | null;
+  score: number | null;
+  weightedContribution?: number | null;
+  shareOfComposite?: number | null;
+  source: string;
+  quality: string;
 }
 
 export interface AdministrativeUnit {
@@ -77,6 +88,7 @@ export interface AdministrativeUnit {
   ndvi: number | null;
   rainfallMm: number | null;
   lstC: number | null;
+  contributions?: RiskContribution[];
   rank: number;
 }
 
@@ -89,7 +101,7 @@ export interface RegionProfile {
   pilotUnits: string[];
   pilotRows?: Array<{ id: string; name: string; adminLevel: string; score: number | null; level: Severity; quality: string; rank: number }>;
   administrativeUnits?: AdministrativeUnit[];
-  contributions?: Array<{ indicator: string; weight: number | null; score: number | null; source: string; quality: string }>;
+  contributions?: RiskContribution[];
   trends: TrendSeries[];
   historicalRows: HistoricalRow[];
 }
@@ -174,12 +186,13 @@ export interface PublicSnapshotResponse {
         source_mode: string;
         geometry_source: string;
         metrics: { ndvi: number | null; rainfall_mm: number | null; lst_c: number | null };
+        contributions?: Array<{ indicator: string; weight: number | null; score: number | null; weighted_contribution?: number | null; share_of_composite?: number | null; source: string; quality: string }>;
         rank: number;
       }>;
-      trends: Array<{ indicator: string; label: string; unit: string; source: string; points: Array<{ period: string; value: number | null; baseline: number | null }> }>;
+      trends: Array<{ indicator: string; label: string; unit: string; source: string; baseline_label?: string; points: Array<{ period: string; value: number | null; baseline: number | null }> }>;
       historical_rows: HistoricalRow[];
       recommendations: string[];
-      contributions: Array<{ indicator: string; weight: number | null; score: number | null; source: string; quality: string }>;
+      contributions: Array<{ indicator: string; weight: number | null; score: number | null; weighted_contribution?: number | null; share_of_composite?: number | null; source: string; quality: string }>;
     }>;
     periods?: Array<{
       key: string;

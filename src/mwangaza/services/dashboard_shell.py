@@ -100,6 +100,7 @@ class AdministrativeUnit:
     ndvi: float | None
     rainfall_mm: float | None
     lst_c: float | None
+    contributions: tuple[dict[str, Any], ...] = ()
     rank: int = 0
 
 
@@ -373,11 +374,12 @@ def _temporal_periods_from_payloads(
     *,
     mode: DataMode,
 ) -> tuple[TemporalPeriod, ...]:
+    operational_payloads = tuple(payload for payload in payloads if not _is_trend_payload(payload))
     keys = tuple(
         sorted(
             {
                 key
-                for payload in payloads
+                for payload in operational_payloads
                 if (key := _payload_period_key(payload))
             },
             reverse=True,
@@ -385,7 +387,7 @@ def _temporal_periods_from_payloads(
     )
     periods: list[TemporalPeriod] = []
     for key in keys:
-        period_payloads = _payloads_for_period(payloads, key)
+        period_payloads = _payloads_for_period(operational_payloads, key)
         period = _temporal_period_from_payloads(
             period_payloads,
             active_alerts,
@@ -475,6 +477,11 @@ def _extract_payloads(raw: Any) -> tuple[dict[str, Any], ...]:
 
 def _payload_period_key(payload: dict[str, Any]) -> str:
     return _first_text(payload.get("period_end"), payload.get("newest_updated_at"))
+
+
+def _is_trend_payload(payload: dict[str, Any]) -> bool:
+    metadata = payload.get("metadata", {})
+    return isinstance(metadata, dict) and metadata.get("trend_series") is True
 
 
 def _payloads_for_period(payloads: tuple[dict[str, Any], ...], period_key: str) -> tuple[dict[str, Any], ...]:
@@ -578,17 +585,28 @@ def _risk_contributions(risk: dict[str, Any] | None) -> tuple[dict[str, Any], ..
     raw = metadata.get("contributions", {}) if isinstance(metadata, dict) else {}
     if not isinstance(raw, dict):
         return ()
-    return tuple(
-        {
+    contributions: list[dict[str, Any]] = []
+    for indicator, item in sorted(raw.items()):
+        if not isinstance(item, dict):
+            continue
+        weight = _safe_float(item.get("weight"))
+        signal_score = _safe_float(item.get("score"))
+        weighted = _safe_float(item.get("weighted_contribution"))
+        if weighted is None and weight is not None and signal_score is not None:
+            weighted = weight * signal_score
+        contributions.append({
             "indicator": indicator,
-            "weight": _safe_float(item.get("weight")),
-            "score": _safe_float(item.get("score")),
+            "weight": weight,
+            "score": signal_score,
+            "weighted_contribution": weighted,
             "source": _first_text(item.get("source")),
             "quality": _first_text(item.get("quality_flag")) or "unknown",
-        }
-        for indicator, item in sorted(raw.items())
-        if isinstance(item, dict)
-    )
+        })
+    total = sum(item["weighted_contribution"] or 0.0 for item in contributions)
+    return tuple({
+        **item,
+        "share_of_composite": (item["weighted_contribution"] or 0.0) / total if total > 0 else 0.0,
+    } for item in contributions)
 
 
 def _pilot_units_for_parent(parent_id: str, payloads: tuple[dict[str, Any], ...]) -> tuple[PilotUnit, ...]:
@@ -678,6 +696,7 @@ def _administrative_units_for_parent(
                 ndvi=_signal_value(signals, "ndvi"),
                 rainfall_mm=_signal_value(signals, "rainfall_mm"),
                 lst_c=_signal_value(signals, "lst_c"),
+                contributions=_risk_contributions(risk),
             )
         )
     ranked = sorted(
@@ -979,7 +998,7 @@ def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> 
         ("rainfall_mm", "Rainfall trend", "mm"),
         ("lst_c", "LST trend", "C"),
     ):
-        signals = [
+        candidate_signals = [
             payload
             for payload in payloads
             if payload.get("payload_type") in {"indicator_observation", "anomaly"}
@@ -987,12 +1006,23 @@ def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> 
             and payload.get("indicator") == indicator
             and _payload_period_key(payload)
         ]
+        monthly_signals = [signal for signal in candidate_signals if _is_trend_payload(signal)]
+        signals = monthly_signals or candidate_signals
         by_period = {str(_payload_period_key(signal)): signal for signal in signals}
+        selected_signals = [by_period[key] for key in sorted(by_period)[-24:]]
+        observed_values = [
+            value
+            for signal in selected_signals
+            if (value := _safe_float(signal.get("value"))) is not None
+        ]
+        series_mean = sum(observed_values) / len(observed_values) if len(observed_values) >= 2 else None
+        explicit_baseline_count = sum(_baseline_value(signal) is not None for signal in selected_signals)
         points: list[TrendPoint] = []
-        for period_key in sorted(by_period)[-12:]:
-            signal = by_period[period_key]
+        for signal in selected_signals:
             value = _safe_float(signal.get("value"))
             baseline = _baseline_value(signal)
+            if baseline is None:
+                baseline = series_mean
             anomaly = None if value is None or baseline is None else value - baseline
             points.append(
                 TrendPoint(
@@ -1007,13 +1037,19 @@ def _trends_for_region(payloads: tuple[dict[str, Any], ...], region_id: str) -> 
             )
         if points:
             source = _first_text(*(signal.get("source") for signal in signals)) or "Loaded dashboard payloads"
+            if explicit_baseline_count == len(selected_signals):
+                baseline_label = "Historical baseline when available; unavailable points are explicitly marked."
+            elif explicit_baseline_count:
+                baseline_label = "Source baseline where available; rolling series mean otherwise."
+            else:
+                baseline_label = f"Mean of {len(observed_values)} available monthly points in this series."
             series.append(
                 TrendSeries(
                     indicator=indicator,
                     label=label,
                     unit=unit,
                     source=source,
-                    baseline_label="Historical baseline when available; unavailable points are explicitly marked.",
+                    baseline_label=baseline_label,
                     points=tuple(points),
                 )
             )
@@ -1032,6 +1068,7 @@ def _historical_comparison_for_region(
         and _first_text(payload.get("region_id")).lower() == target
         and payload.get("indicator") in {"ndvi", "rainfall_mm", "lst_c"}
         and _payload_period_key(payload)
+        and not _is_trend_payload(payload)
         and _valid_historical_signal(payload)
     ]
     if not signals:
@@ -1441,7 +1478,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 trends=som_trends,
                 historical_comparison=som_history,
-                contributions=_demo_contributions(),
+                contributions=_demo_contributions(82.0),
             ),
             RegionProfile(
                 "ken",
@@ -1474,7 +1511,7 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ),
                 trends=ken_trends,
                 historical_comparison=ken_history,
-                contributions=_demo_contributions(),
+                contributions=_demo_contributions(64.0),
             ),
             RegionProfile(
                 "eth",
@@ -1491,18 +1528,25 @@ def _demo_dashboard_shell_data(mode: DataMode = "demo") -> DashboardShellData:
                 ("Prepare early action checklist.",),
                 trends=eth_trends,
                 historical_comparison=eth_history,
-                contributions=_demo_contributions(),
+                contributions=_demo_contributions(43.0),
             ),
         ),
     )
 
 
-def _demo_contributions() -> tuple[dict[str, Any], ...]:
-    return (
-        {"indicator": "ndvi", "weight": 0.4, "score": 72.0, "source": "Demo fixture", "quality": "ok"},
-        {"indicator": "rainfall_mm", "weight": 0.4, "score": 84.0, "source": "Demo fixture", "quality": "ok"},
-        {"indicator": "lst_c", "weight": 0.2, "score": 64.0, "source": "Demo fixture", "quality": "ok"},
+def _demo_contributions(composite_score: float) -> tuple[dict[str, Any], ...]:
+    scale = composite_score / 75.2
+    raw = (
+        {"indicator": "ndvi", "weight": 0.4, "score": 72.0 * scale, "source": "Demo fixture", "quality": "ok"},
+        {"indicator": "rainfall_mm", "weight": 0.4, "score": 84.0 * scale, "source": "Demo fixture", "quality": "ok"},
+        {"indicator": "lst_c", "weight": 0.2, "score": 64.0 * scale, "source": "Demo fixture", "quality": "ok"},
     )
+    total = sum(item["weight"] * item["score"] for item in raw)
+    return tuple({
+        **item,
+        "weighted_contribution": item["weight"] * item["score"],
+        "share_of_composite": item["weight"] * item["score"] / total,
+    } for item in raw)
 
 
 def _demo_historical_comparison(region_id: str) -> HistoricalComparison:

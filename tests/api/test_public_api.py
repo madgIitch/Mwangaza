@@ -45,8 +45,18 @@ class PublicApiTests(unittest.TestCase):
         self.assertTrue(profile["pilot_units"])
         self.assertIn("administrative_units", profile)
         self.assertTrue(profile["trends"])
+        self.assertIn("baseline_label", profile["trends"][0])
         self.assertTrue(profile["historical_rows"])
         self.assertTrue(profile["contributions"])
+        self.assertTrue(all("weighted_contribution" in item for item in profile["contributions"]))
+        matching_region = next(
+            item for item in payload["snapshot"]["regional_risk"] if item["id"] == profile["id"]
+        )
+        self.assertAlmostEqual(
+            sum(item["weighted_contribution"] for item in profile["contributions"]),
+            matching_region["score"],
+            places=2,
+        )
         self.assertTrue(payload["snapshot"]["rows"])
 
     def test_alerts_and_forecasts_endpoints_exist(self) -> None:

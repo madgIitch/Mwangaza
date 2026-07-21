@@ -11,9 +11,11 @@ from mwangaza.services.live_gee_dashboard import (
     build_live_gee_payloads_for_adm1_regions,
     build_live_gee_payloads_for_recent_periods,
     build_live_gee_payloads_for_regions,
+    build_live_gee_trend_payloads_for_regions,
     comparable_period_windows,
     dashboard_live_adm1_region_ids,
     dashboard_live_region_ids,
+    monthly_period_windows,
     recent_period_windows,
     resolve_live_gee_period,
 )
@@ -92,6 +94,27 @@ class FakeBatchLiveGeeAdapter(FakeLiveGeeAdapter):
         del period_start, period_end
         return {
             str(getattr(region, "id")): {"ndvi": 0.22, "rainfall_mm": 8.5, "lst_c": 32.4}
+            for region in regions
+        }
+
+
+class FakeTrendBatchLiveGeeAdapter(FakeLiveGeeAdapter):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def query_time_series_values(
+        self,
+        regions: tuple[object, ...],
+        windows: tuple[tuple[str, str], ...],
+    ) -> dict[tuple[str, str, str], dict[str, float]]:
+        self.calls += 1
+        return {
+            (str(getattr(region, "id")), start, end): {
+                "ndvi": 0.2 + index / 100,
+                "rainfall_mm": 10.0 + index,
+                "lst_c": 30.0 + index / 10,
+            }
+            for index, (start, end) in enumerate(windows)
             for region in regions
         }
 
@@ -257,12 +280,13 @@ class LiveGeeDashboardTests(unittest.TestCase):
         self.assertEqual(
             windows,
             (
-                ("2026-07-01T00:00:00Z", "2026-07-15T00:00:00Z"),
-                ("2026-06-16T00:00:00Z", "2026-06-30T00:00:00Z"),
-                ("2026-06-01T00:00:00Z", "2026-06-15T00:00:00Z"),
+                ("2026-06-16T00:00:00Z", "2026-07-15T00:00:00Z"),
+                ("2026-05-16T00:00:00Z", "2026-06-15T00:00:00Z"),
+                ("2026-04-16T00:00:00Z", "2026-05-15T00:00:00Z"),
             ),
         )
-        self.assertEqual(len(recent_period_windows("2026-07-15T00:00:00Z", point_count=99)), 8)
+        self.assertEqual(len(recent_period_windows("2026-07-15T00:00:00Z", point_count=99)), 24)
+        self.assertEqual(monthly_period_windows("2026-07-31T00:00:00Z", month_count=2)[1][1], "2026-06-30T00:00:00Z")
 
     def test_builds_bounded_seasonally_comparable_history_windows(self) -> None:
         self.assertEqual(
@@ -281,9 +305,27 @@ class LiveGeeDashboardTests(unittest.TestCase):
             point_count=2,
         )
 
-        risks = [payload for payload in payloads if payload.get("payload_type") == "risk_snapshot"]
-        self.assertEqual([risk["period_end"] for risk in risks], ["2026-07-15T00:00:00Z", "2026-06-30T00:00:00Z"])
-        self.assertEqual(len(payloads), 10)
+        self.assertEqual(len(payloads), 6)
+        self.assertTrue(all(payload["metadata"]["trend_series"] for payload in payloads))
+        self.assertEqual(
+            sorted({payload["period_end"] for payload in payloads}),
+            ["2026-06-15T00:00:00Z", "2026-07-15T00:00:00Z"],
+        )
+
+    def test_builds_twenty_four_months_in_one_remote_batch(self) -> None:
+        adapter = FakeTrendBatchLiveGeeAdapter()
+
+        payloads = build_live_gee_trend_payloads_for_regions(
+            ("som",),
+            "2026-07-15T00:00:00Z",
+            adapter=adapter,  # type: ignore[arg-type]
+            month_count=24,
+        )
+
+        self.assertEqual(adapter.calls, 1)
+        self.assertEqual(len(payloads), 72)
+        self.assertEqual(len({payload["period_end"] for payload in payloads}), 24)
+        self.assertTrue(all(payload["metadata"]["aggregation_period"] == "monthly" for payload in payloads))
 
 
 if __name__ == "__main__":

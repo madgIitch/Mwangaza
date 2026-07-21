@@ -30,9 +30,14 @@ environment variables and secret managers.
 - `MWANGAZA_GEE_PROJECT`
 - `MWANGAZA_NDVI_COLLECTION`
 - `MWANGAZA_RAINFALL_COLLECTION`
+- `MWANGAZA_LIVE_TREND_MONTHS` (12-24, default `24`; national monthly aggregates only)
+- `MWANGAZA_GEE_ADM1_ENABLED`
+- `MWANGAZA_GEE_ADM1_COUNTRIES`
 
 `MWANGAZA_ENABLED_COUNTRIES` is a comma-separated list of IGAD ISO3 codes:
 `KEN,ETH,SOM,SDN,SSD,UGA,DJI,ERI`.
+
+`MWANGAZA_LIVE_TREND_MONTHS` controls the rolling national trend horizon. The deprecated `MWANGAZA_LIVE_TREND_POINTS` remains a compatibility alias, but values are clamped to 12-24 months. Trend collection is batched and does not extend the historical query to every ADM1 unit.
 
 ## Private Variables
 

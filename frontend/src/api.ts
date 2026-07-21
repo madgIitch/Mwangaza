@@ -10,6 +10,7 @@ import type {
   PublicSnapshotResponse,
   RegionProfile,
   RegionRisk,
+  RiskContribution,
   TechnicalStatusResponse
 } from "./types";
 
@@ -336,6 +337,7 @@ function profilesFromApi(apiProfiles: NonNullable<PublicSnapshotResponse["snapsh
         ndvi: unit.metrics.ndvi,
         rainfallMm: unit.metrics.rainfall_mm,
         lstC: unit.metrics.lst_c,
+        contributions: (unit.contributions ?? []).map(normalizeContribution),
         rank: unit.rank
       })),
       trends: profile.trends.map((trend) => ({
@@ -343,10 +345,11 @@ function profilesFromApi(apiProfiles: NonNullable<PublicSnapshotResponse["snapsh
         label: trend.label,
         unit: trend.unit,
         source: trend.source,
+        baselineLabel: trend.baseline_label,
         points: trend.points.map((point) => ({ label: point.period, value: point.value, baseline: point.baseline }))
       })),
       historicalRows: profile.historical_rows,
-      contributions: profile.contributions
+      contributions: profile.contributions.map(normalizeContribution)
     }));
 }
 
@@ -427,6 +430,26 @@ function normalizeRiskLevel(level: string, colorLevel: string): RegionRisk["leve
     return "critical";
   }
   return "unknown";
+}
+
+function normalizeContribution(contribution: {
+  indicator: string;
+  weight: number | null;
+  score: number | null;
+  weighted_contribution?: number | null;
+  share_of_composite?: number | null;
+  source: string;
+  quality: string;
+}): RiskContribution {
+  return {
+    indicator: contribution.indicator,
+    weight: numericValue(contribution.weight),
+    score: numericValue(contribution.score),
+    weightedContribution: numericValue(contribution.weighted_contribution),
+    shareOfComposite: numericValue(contribution.share_of_composite),
+    source: contribution.source,
+    quality: contribution.quality
+  };
 }
 
 function periodLabel(periodStart: string, periodEnd: string): string {

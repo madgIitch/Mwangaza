@@ -10,14 +10,17 @@ Operational drought cockpit: bright, restrained, map-led, and dense enough for r
 
 1. Global shell: persistent brand, navigation, data status, notifications placeholder and account placeholder.
 2. Region Explorer header: country, subregion, period and view controls.
-3. Risk workspace: map or low-bandwidth table, selected-region summary and highlighted alert.
-4. Evidence layer: indicator cards, score contribution bars, subnational ranking, trends and historical comparison.
-5. Decision layer: recommended early actions, pilot-analysis explanation and responsible-use footer.
+3. Risk workspace: a dominant administrative map paired with a contextual inspector for the active country or ADM1 unit.
+4. Evidence layer: indicator cards, score contribution bars, a collapsible subnational ranking, trends and historical comparison.
+5. Decision layer: the inspector's contextual early action, administrative-coverage explanation and responsible-use footer.
 
 ## Interaction Thesis
 
+- The map, ADM1 selector and ranking share one active selection. Selecting an assessed boundary opens the same unit in the inspector and ranking; returning to the national view clears that selection.
 - Region selection updates every panel from the same already-loaded API/cache payload; it must not trigger direct Google Earth Engine calls from the browser.
-- Low-bandwidth mode replaces heavy map/chart surfaces with compact tables while preserving alerts, indicators and recommendations.
+- The inspector prioritizes the selected score, severity, indicators, provenance and next action. Country-level coverage and period remain visible when an ADM1 is active.
+- The ranking is collapsed by default and scrolls inside its own drawer, so its row count never determines the height of the primary map workspace.
+- Low-bandwidth mode replaces SVG and chart surfaces with selectors, a compact selected-area table and a collapsible ranking while preserving alerts and evidence.
 - Hover/focus states expose context through tooltips and labels, not extra explanatory paragraphs.
 
 ## Required Sections
@@ -102,6 +105,8 @@ Shows:
 
 Exposure must be labelled as potential exposure, not affected population.
 
+The desktop presentation is a dark contextual inspector beside the map rather than a passive summary card. When an ADM1 is selected it shows that unit's own values and provenance; national values are explicitly retained only as country context.
+
 ### Highlighted Alert
 
 Shows the strongest active alert for the selected region or a neutral placeholder when no active alert exists.
@@ -122,13 +127,9 @@ Each card should show current value, unit, source/detail and monthly comparison 
 
 ### Why This Region Is At Risk
 
-Explains the composite score with contribution bars:
+Explains the composite score with attributable points from the risk payload. Every indicator shows its normalized signal score, effective model weight, `weighted contribution = signal score × weight`, source and quality. The points add up to the explained composite score.
 
-- NDVI anomaly: 40%.
-- Rainfall anomaly: 35%.
-- Temperature anomaly: 25%.
-
-When exact contribution payloads are unavailable, derive transparent provisional contributions from available current metrics and label the module as estimated from visible indicators.
+The normalized stacked bar is sized by actual weighted points, not by model weights alone. Its restrained blue-gray palette encodes composition only; risk severity remains exclusive to the map and status badges. Selecting an ADM1 uses that unit's own breakdown. When the exact national or ADM1 payload is absent, the module displays a pending state and never estimates or inherits another geography's contribution.
 
 ### Subnational Ranking
 
@@ -144,11 +145,21 @@ Target state: sortable ranking by district/pilot unit with:
 
 Current placeholder is acceptable when the public API has only national or pilot-area rows. This limitation is already covered by Sprint 25 for pilot drilldown and Sprint 46 for a Northern Kenya end-to-end subnational scenario.
 
+The implemented ranking is a collapsible, internally scrollable drawer below the primary workspace. Clicking a row updates the shared ADM1 selection and the map highlight without refetching data.
+
+Severity and quality use the same badge vocabulary as the map inspector and tooltip. The first three positions receive stronger rank markers, while later row dividers are intentionally quieter.
+
 ### Indicator Trends
 
 Shows current period against historical baseline. Missing points must not be connected as if observed.
 
 Current implementation can reuse available `RegionProfile.trends`; if live API has no trend payload for the selected region, show an explicit `Trend payload pending` placeholder.
+
+Current live trends remain country aggregates. While an ADM1 is selected, the heading names the country scope so the interface never presents national history as unit-level evidence.
+
+Charts plot `value - baseline` around an explicit zero line. They expose the vertical scale, period labels and an accessible tooltip for value, baseline and difference; missing observations break the line.
+
+Live mode materializes up to 24 monthly national points for every enabled country in one backend GEE batch. When no climatological baseline is present in the source payload, the chart uses and labels the mean of the available rolling series; this reference is not presented as an official climatology. Axis labels use compact month/year text while tooltips preserve the complete period.
 
 ### Historical Comparison
 
@@ -156,11 +167,15 @@ Compares current values against comparable historical drought episodes or histor
 
 Current implementation can reuse `RegionProfile.historicalRows`; if absent, show a placeholder.
 
+Rows are grouped by year and show compact signed deltas. Delta styling communicates direction only and does not imply that a positive or negative value is universally beneficial.
+
 ### Recommended Early Actions
 
 Actions are decision support, not official orders. The detailed future version should include actor, priority, time horizon, evidence and target region.
 
 Current implementation uses existing recommendation strings from the selected profile or active alert.
+
+Region Explorer exposes only one primary action: the active regional alert with the highest severity, or the first regional recommendation when no alert exists. Additional recommendations remain outside this surface until the contract supplies explicit priority and time-horizon fields.
 
 ### About Administrative Coverage
 
@@ -179,6 +194,13 @@ Must state that Mwangaza is a decision-support prototype and estimates should be
 - The public API exposes complete region profiles and processed temporal cuts for both explicit demo and live/cache data.
 - Region Explorer consumes explicit composite contributions, deterministic pilot rankings, live trends and seasonally comparable history.
 - Country, pilot view and period controls operate on already-loaded payloads; `View all alerts` preserves region, period and active status.
+- The map, ADM1 selector and ranking now drive one persistent selection and a contextual inspector with unit metrics, quality, period, provenance and early action.
+- The ADM1 ranking is collapsed by default, scrolls independently and highlights the active unit without stretching the rest of the page.
+- Low-bandwidth Region Explorer preserves country/ADM1 selection, selected-area evidence, ranking and filtered alerts without rendering the administrative SVG.
+- Trends now use dated anomaly lines with a zero baseline and point tooltips; effective composite contributions use one neutral stacked bar with score accounting, source and quality.
+- Live trends cover 24 monthly national aggregates by default, keep missing months as gaps and identify their effective baseline.
+- Ranking rows share severity/quality badges with the map, emphasize the top three, and historical comparisons are grouped by year with compact deltas.
+- The unpublished methodology is a quiet note rather than a link-like action; the inspector remains the only primary action surface.
 - `smoke_tests/sprint56_region_explorer_real_gee.py` verifies the complete panel contract against real GEE without demo data.
 
 - Northern Kenya demo selection covers Turkana, Marsabit and Isiolo offline; the active district drives its detail, report reference and simulated notification language.

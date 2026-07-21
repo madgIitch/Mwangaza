@@ -1,4 +1,4 @@
-import type { DashboardData, GeoJsonGeometry } from "./types";
+import type { DashboardData, GeoJsonGeometry, RiskContribution } from "./types";
 
 const uiGeometryByRegion: Record<string, GeoJsonGeometry> = {
   ken: { type: "Polygon", coordinates: [[[34.2, -4.4], [41.3, -4.4], [41.3, 4.8], [34.2, 4.8], [34.2, -4.4]]] },
@@ -91,6 +91,22 @@ export const demoDashboard: DashboardData = {
   }
 };
 
+function demoContributions(compositeScore: number | null): RiskContribution[] {
+  const target = compositeScore ?? 0;
+  const scale = target / 75.2;
+  const raw = [
+    { indicator: "ndvi", weight: 0.4, score: 72 * scale, source: "Demo fixture", quality: "ok" },
+    { indicator: "rainfall_mm", weight: 0.4, score: 84 * scale, source: "Demo fixture", quality: "ok" },
+    { indicator: "lst_c", weight: 0.2, score: 64 * scale, source: "Demo fixture", quality: "ok" }
+  ];
+  const total = raw.reduce((sum, item) => sum + item.weight * item.score, 0);
+  return raw.map((item) => ({
+    ...item,
+    weightedContribution: item.weight * item.score,
+    shareOfComposite: total > 0 ? item.weight * item.score / total : 0
+  }));
+}
+
 demoDashboard.profiles = demoDashboard.regions.map((region) => ({
   id: region.id,
   name: region.name,
@@ -107,11 +123,7 @@ demoDashboard.profiles = demoDashboard.regions.map((region) => ({
     : region.id === "ken"
       ? [{ id: "northern-kenya-pilot", name: "Northern Kenya Pilot Area", adminLevel: "pilot_area", score: 61, level: "warning", quality: "ok", rank: 1 }]
       : [],
-  contributions: [
-    { indicator: "ndvi", weight: 0.4, score: 72, source: "Demo fixture", quality: "ok" },
-    { indicator: "rainfall_mm", weight: 0.4, score: 84, source: "Demo fixture", quality: "ok" },
-    { indicator: "lst_c", weight: 0.2, score: 64, source: "Demo fixture", quality: "ok" }
-  ],
+  contributions: demoContributions(region.score),
   trends: [
     {
       indicator: "ndvi",

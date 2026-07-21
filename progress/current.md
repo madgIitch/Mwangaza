@@ -4,11 +4,11 @@ Feature: **sprint-56-region-explorer-completion - Sprint 56 - Region Explorer Co
 
 ## Siguiente acción
 
-- Repetir smoke humano en `/region?api=1` tras el rechazo visual inicial: verificar encuadre ADM1 real, ausencia de rectángulos sintéticos y composición compacta; después seleccionar país, piloto y periodo y revisar low-bandwidth. Cerrar sólo con aprobación visual.
+- Reiniciar la API live y revisar `/region?api=1`: confirmar 24 puntos mensuales, workspace mapa-inspector, contribuciones efectivas nacionales/ADM1 y low-bandwidth. Cerrar sólo con aprobación visual.
 
 ## Último resultado
 
-- Smoke GEE real: PASS (10/10).
-- 288 tests Python + 11 subtests y 35 frontend.
+- 300 tests Python y 40 frontend.
 - Typecheck, lint, build y gates: PASS.
-- Primera revisión visual: FAIL; mapa y layout rehechos, segunda revisión pendiente.
+- Smoke GEE real: PASS (19/19), incluida serie mensual 12-24, baseline completo, suma nacional explicada y contribuciones propias para 121/121 ADM1 concluyentes; ejecución observada ~16 s.
+- Propuesta C ampliada: inspector territorial, ranking plegable, selección compartida, tendencias interpretables y contribuciones reales (`score × peso`) con fuente/calidad. Smoke visual humano pendiente.

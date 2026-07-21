@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import math
 import os
+from calendar import monthrange
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -26,7 +27,7 @@ DEFAULT_SCALE_METERS = 5500
 DEFAULT_ADM1_SCALE_METERS = 1000
 DEFAULT_MAX_PIXELS = 1_000_000_000
 DEFAULT_LOOKBACK_DAYS = 15
-DEFAULT_TREND_POINTS = 4
+DEFAULT_TREND_MONTHS = 24
 
 
 class LiveGeeDashboardError(RuntimeError):
@@ -218,6 +219,77 @@ class RealGeeRegionalAdapter:
             }
         return result
 
+    def query_time_series_values(
+        self,
+        regions: tuple[Any, ...],
+        windows: tuple[tuple[str, str], ...],
+    ) -> dict[tuple[str, str, str], dict[str, float | None]]:
+        """Resolve every national monthly window in one Earth Engine request."""
+        ndvi_config = NdviCollectionConfig()
+        rainfall_config = RainfallCollectionConfig(max_missing_days=3)
+        lst_config = LstCollectionConfig()
+        features = self.ee.FeatureCollection([
+            self.ee.Feature(self.ee.Geometry(region.geometry), {"region_id": region.id})
+            for region in regions
+        ])
+        reduced_windows = []
+        for period_start, period_end in windows:
+            ndvi_collection = self.ee.ImageCollection(ndvi_config.collection_id).filterDate(
+                period_start, _exclusive_end(period_end)
+            )
+
+            def mask_quality(image: Any) -> Any:
+                qa = image.select(ndvi_config.qa_band)
+                mask = qa.remap(list(ndvi_config.valid_qa_values), [1] * len(ndvi_config.valid_qa_values), 0).eq(1)
+                return image.updateMask(mask).select(ndvi_config.ndvi_band)
+
+            ndvi = ndvi_collection.map(mask_quality).mean().multiply(ndvi_config.scale_factor).rename("ndvi")
+            rainfall = (
+                self.ee.ImageCollection(rainfall_config.collection_id)
+                .filterDate(period_start, _exclusive_end(period_end))
+                .select("precipitation")
+                .sum()
+                .rename("rainfall_mm")
+            )
+            lst = (
+                self.ee.ImageCollection(lst_config.collection_id)
+                .filterDate(period_start, _exclusive_end(period_end))
+                .select("LST_Day_1km")
+                .mean()
+                .multiply(lst_config.scale)
+                .add(lst_config.offset - 273.15)
+                .rename("lst_c")
+            )
+            reduced = ndvi.addBands(rainfall).addBands(lst).reduceRegions(
+                collection=features,
+                reducer=self.ee.Reducer.mean(),
+                scale=self.scale_meters,
+                tileScale=2,
+                maxPixelsPerRegion=self.max_pixels,
+            ).map(lambda feature, start=period_start, end=period_end: feature.set({
+                "period_start": start,
+                "period_end": end,
+            }))
+            reduced_windows.append(reduced)
+        values = self.ee.FeatureCollection(reduced_windows).flatten().getInfo()
+        rows = values.get("features", []) if isinstance(values, dict) else []
+        result: dict[tuple[str, str, str], dict[str, float | None]] = {}
+        for feature in rows:
+            properties = feature.get("properties", {}) if isinstance(feature, dict) else {}
+            if not isinstance(properties, dict):
+                continue
+            region_id = properties.get("region_id")
+            period_start = properties.get("period_start")
+            period_end = properties.get("period_end")
+            if not all(isinstance(value, str) for value in (region_id, period_start, period_end)):
+                continue
+            result[(region_id, period_start, period_end)] = {
+                "ndvi": _optional_finite(properties.get("ndvi")),
+                "rainfall_mm": _optional_finite(properties.get("rainfall_mm")),
+                "lst_c": _optional_finite(properties.get("lst_c")),
+            }
+        return result
+
 
 def load_live_gee_dashboard_payloads(
     *,
@@ -241,13 +313,16 @@ def load_live_gee_dashboard_payloads(
         payloads = build_live_gee_payloads_for_regions(region_ids, start, end, adapter=adapter)
         payloads.extend(build_live_gee_payloads_for_adm1_regions(adm1_region_ids, start, end, adapter=adapter))
         return payloads
-    payloads = build_live_gee_payloads_for_recent_periods(
+    current_start = _default_period_start(end)
+    payloads = build_live_gee_payloads_for_regions(region_ids, current_start, end, adapter=adapter)
+    for historical_start, historical_end in comparable_period_windows(end, years=2):
+        payloads.extend(build_live_gee_payloads_for_regions(region_ids, historical_start, historical_end, adapter=adapter))
+    payloads.extend(build_live_gee_trend_payloads_for_regions(
         region_ids,
         end,
         adapter=adapter,
-        point_count=_live_trend_points(),
-        history_years=2,
-    )
+        month_count=_live_trend_months(),
+    ))
     payloads.extend(
         build_live_gee_payloads_for_adm1_regions(adm1_region_ids, _default_period_start(end), end, adapter=adapter)
     )
@@ -484,15 +559,81 @@ def build_live_gee_payloads_for_recent_periods(
     latest_period_end: str,
     *,
     adapter: RealGeeRegionalAdapter,
-    point_count: int = DEFAULT_TREND_POINTS,
+    point_count: int = DEFAULT_TREND_MONTHS,
     history_years: int = 0,
 ) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
-    for period_start, period_end in recent_period_windows(latest_period_end, point_count=point_count):
-        payloads.extend(build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter))
+    payloads.extend(build_live_gee_trend_payloads_for_regions(
+        region_ids, latest_period_end, adapter=adapter, month_count=point_count
+    ))
     for period_start, period_end in comparable_period_windows(latest_period_end, years=history_years):
         payloads.extend(build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter))
     return payloads
+
+
+def build_live_gee_trend_payloads_for_regions(
+    region_ids: tuple[str, ...],
+    latest_period_end: str,
+    *,
+    adapter: RealGeeRegionalAdapter,
+    month_count: int = DEFAULT_TREND_MONTHS,
+) -> list[dict[str, Any]]:
+    regions = tuple(get_region(region_id) for region_id in region_ids)
+    windows = monthly_period_windows(latest_period_end, month_count=month_count)
+    if hasattr(adapter, "query_time_series_values"):
+        values_by_period = adapter.query_time_series_values(regions, windows)
+        payloads: list[dict[str, Any]] = []
+        for period_start, period_end in windows:
+            for region in regions:
+                values = values_by_period.get((region.id, period_start, period_end))
+                if values is not None:
+                    payloads.extend(_build_trend_payloads_from_values(region, values, period_start, period_end))
+        return payloads
+    payloads = []
+    for period_start, period_end in windows:
+        period_payloads = build_live_gee_payloads_for_regions(region_ids, period_start, period_end, adapter=adapter)
+        for payload in period_payloads:
+            if payload.get("payload_type") != "indicator_observation":
+                continue
+            metadata = payload.setdefault("metadata", {})
+            if isinstance(metadata, dict):
+                metadata.update({"trend_series": True, "aggregation_period": "monthly"})
+            payloads.append(payload)
+    return payloads
+
+
+def _build_trend_payloads_from_values(
+    region: Any,
+    values: dict[str, float | None],
+    period_start: str,
+    period_end: str,
+) -> list[dict[str, Any]]:
+    configs = {
+        "ndvi": ("index", NdviCollectionConfig().collection_id),
+        "rainfall_mm": ("mm", RainfallCollectionConfig().collection_id),
+        "lst_c": ("celsius", LstCollectionConfig().collection_id),
+    }
+    return [
+        _json_safe(IndicatorObservation(
+            region_id=region.id,
+            indicator=indicator,
+            period_start=period_start,
+            period_end=period_end,
+            value=values.get(indicator),
+            unit=unit,
+            source=source,
+            quality_flag="ok" if values.get(indicator) is not None else "no_data",
+            is_simulated=False,
+            metadata={
+                "updated_at": period_end,
+                "source_mode": "live",
+                "aggregation_mode": "reduceRegions",
+                "aggregation_period": "monthly",
+                "trend_series": True,
+            },
+        ).to_dict())
+        for indicator, (unit, source) in configs.items()
+    ]
 
 
 def comparable_period_windows(latest_period_end: str, *, years: int = 2) -> tuple[tuple[str, str], ...]:
@@ -515,14 +656,22 @@ def comparable_period_windows(latest_period_end: str, *, years: int = 2) -> tupl
 def recent_period_windows(
     latest_period_end: str,
     *,
-    point_count: int = DEFAULT_TREND_POINTS,
+    point_count: int = DEFAULT_TREND_MONTHS,
 ) -> tuple[tuple[str, str], ...]:
-    bounded_count = max(1, min(int(point_count), 8))
+    return monthly_period_windows(latest_period_end, month_count=point_count)
+
+
+def monthly_period_windows(
+    latest_period_end: str,
+    *,
+    month_count: int = DEFAULT_TREND_MONTHS,
+) -> tuple[tuple[str, str], ...]:
+    bounded_count = max(1, min(int(month_count), 24))
     end = datetime.fromisoformat(latest_period_end.replace("Z", "+00:00")).astimezone(UTC)
     windows: list[tuple[str, str]] = []
     for index in range(bounded_count):
-        period_end = end - timedelta(days=DEFAULT_LOOKBACK_DAYS * index)
-        period_start = period_end - timedelta(days=DEFAULT_LOOKBACK_DAYS - 1)
+        period_end = _shift_month(end, -index)
+        period_start = _shift_month(end, -(index + 1)) + timedelta(days=1)
         windows.append(
             (
                 period_start.replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -530,6 +679,13 @@ def recent_period_windows(
             )
         )
     return tuple(windows)
+
+
+def _shift_month(value: datetime, offset: int) -> datetime:
+    month_index = value.year * 12 + value.month - 1 + offset
+    year, zero_based_month = divmod(month_index, 12)
+    month = zero_based_month + 1
+    return value.replace(year=year, month=month, day=min(value.day, monthrange(year, month)[1]))
 
 
 def _reduce(image: Any, reducer: Any, geometry: Any, adapter: RealGeeRegionalAdapter) -> dict[str, Any]:
@@ -610,12 +766,15 @@ def _ordered_region_ids(selected_region_id: str, region_ids: tuple[str, ...]) ->
     return tuple(dict.fromkeys(ordered))
 
 
-def _live_trend_points() -> int:
-    raw = os.environ.get("MWANGAZA_LIVE_TREND_POINTS", str(DEFAULT_TREND_POINTS))
+def _live_trend_months() -> int:
+    raw = os.environ.get(
+        "MWANGAZA_LIVE_TREND_MONTHS",
+        os.environ.get("MWANGAZA_LIVE_TREND_POINTS", str(DEFAULT_TREND_MONTHS)),
+    )
     try:
-        return max(1, min(int(raw), 8))
+        return max(12, min(int(raw), 24))
     except ValueError:
-        return DEFAULT_TREND_POINTS
+        return DEFAULT_TREND_MONTHS
 
 
 def _first_number(values: dict[str, Any]) -> float | None:
@@ -649,10 +808,12 @@ __all__ = [
     "build_live_gee_payloads_for_regions",
     "build_live_gee_payloads_for_adm1_regions",
     "build_live_gee_payloads_for_recent_periods",
+    "build_live_gee_trend_payloads_for_regions",
     "comparable_period_windows",
     "dashboard_live_region_ids",
     "dashboard_live_adm1_region_ids",
     "load_live_gee_dashboard_payloads",
+    "monthly_period_windows",
     "recent_period_windows",
     "resolve_live_gee_period",
 ]

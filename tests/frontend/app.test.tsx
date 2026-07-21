@@ -7,6 +7,30 @@ import { App } from "../../frontend/src/App";
 import { demoDashboard } from "../../frontend/src/fixtures";
 
 const somaliaAdm1 = JSON.parse(readFileSync(resolve("frontend/public/maps/SOM-ADM1.geojson"), "utf8"));
+const hiiraanUnit = {
+  regionId: "adm1-so-hi",
+  boundaryId: "83879307B66756469447496",
+  boundaryIso: "SO-HI",
+  name: "Hiiraan",
+  parentId: "som",
+  adminLevel: "adm1",
+  score: 76,
+  level: "critical" as const,
+  quality: "ok",
+  periodStart: "2026-07-01T00:00:00Z",
+  periodEnd: "2026-07-15T00:00:00Z",
+  sourceMode: "live",
+  geometrySource: "geoBoundaries gbOpen wmgeolab/geoBoundaries@9469f09",
+  ndvi: 0.18,
+  rainfallMm: 3.1,
+  lstC: 31.2,
+  contributions: [
+    { indicator: "ndvi", weight: 0.4, score: 80, weightedContribution: 32, shareOfComposite: 32 / 76, source: "GEE ADM1", quality: "ok" },
+    { indicator: "rainfall_mm", weight: 0.4, score: 70, weightedContribution: 28, shareOfComposite: 28 / 76, source: "GEE ADM1", quality: "ok" },
+    { indicator: "lst_c", weight: 0.2, score: 80, weightedContribution: 16, shareOfComposite: 16 / 76, source: "GEE ADM1", quality: "ok" }
+  ],
+  rank: 1
+};
 
 function mockAdministrativeMap(): void {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => somaliaAdm1 }));
@@ -62,7 +86,7 @@ describe("React PWA dashboard", () => {
     render(<App initialData={demoDashboard} skipApiLoad />);
 
     expect(screen.getByRole("heading", { name: "Region Explorer" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Somalia" })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "Somalia" })).toHaveLength(2);
     expect(screen.getByLabelText("Regions map")).toBeInTheDocument();
     expect(screen.getByText(/score shown above is national/i)).toBeInTheDocument();
     expect(document.querySelector(".map-readout")).not.toBeInTheDocument();
@@ -70,15 +94,22 @@ describe("React PWA dashboard", () => {
     await waitFor(() => expect(document.querySelectorAll(".region-svg-map path").length).toBe(18));
     expect([...document.querySelectorAll<SVGPathElement>(".region-svg-map path")].every((path) => path.style.fill !== "#f08c2e")).toBe(true);
     expect(screen.getByText("Why this region is at risk")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Subnational ranking" })).toBeInTheDocument();
-    expect(screen.getByText("Methodology page pending")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Subnational ranking/ })).toBeInTheDocument();
+    expect(screen.queryByText("Methodology page pending")).not.toBeInTheDocument();
+    expect(screen.getByText(/Methodology documentation will be linked/)).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Subregion / District" })).toBeEnabled();
     expect(screen.getByRole("link", { name: "View all alerts" })).toHaveAttribute(
       "href",
       "/alerts?region=som&period=2026-07-01+to+2026-07-15&status=active"
     );
     expect(screen.queryByText(/Placeholder contribution weights/)).not.toBeInTheDocument();
-    expect(screen.getByText("NDVI anomaly", { selector: ".contribution-row span" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Composite score contributions for Somalia")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /NDVI anomaly .* points/ })).toBeInTheDocument();
+    expect(screen.getByText(/Composite contribution = normalized signal score/)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "NDVI trend anomaly chart with zero baseline" })).toBeInTheDocument();
+    expect(document.querySelectorAll(".trend-zero-line")).toHaveLength(2);
+    expect(screen.getByText("2025", { selector: ".history-year th" })).toBeInTheDocument();
+    expect(screen.getByText("-13 mm", { selector: ".delta-badge" })).toBeInTheDocument();
   });
 
   it("switches Region Explorer into an available pilot view", () => {
@@ -89,6 +120,52 @@ describe("React PWA dashboard", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Subregion / District" }), { target: { value: "somalia-pilot" } });
     expect(screen.getByRole("button", { name: "Subnational view" })).toHaveAttribute("data-active", "true");
     expect(screen.getAllByText("Somalia Pilot Area").length).toBeGreaterThan(0);
+    expect(screen.getByText(/has not provided an attributable composite-score breakdown for Somalia Pilot Area/)).toBeInTheDocument();
+  });
+
+  it("shows only the highest-severity regional action", () => {
+    window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    const baseAlert = demoDashboard.alerts[0];
+    const withPriorities = {
+      ...demoDashboard,
+      alerts: [
+        { ...baseAlert, severity: "watch" as const, title: "Monitor conditions", action: "Review next month." },
+        { ...baseAlert, severity: "critical" as const, title: "Immediate response", action: "Mobilize water access now." }
+      ]
+    };
+
+    render(<App initialData={withPriorities} skipApiLoad />);
+
+    expect(screen.getByText("Highest-priority active alert")).toBeInTheDocument();
+    expect(screen.getByText("Mobilize water access now.")).toBeInTheDocument();
+    expect(screen.queryByText("Review next month.")).not.toBeInTheDocument();
+  });
+
+  it("renders compact monthly trend dates and the effective baseline label", () => {
+    window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    const withMonthlyTrend = {
+      ...demoDashboard,
+      profiles: demoDashboard.profiles.map((profile) => profile.id === "som" ? {
+        ...profile,
+        trends: [{
+          ...profile.trends[0],
+          baselineLabel: "Mean of 24 available monthly points in this series.",
+          points: [
+            { label: "2024-06-01T00:00:00Z to 2024-06-30T00:00:00Z", value: 0.12, baseline: 0.2 },
+            { label: "2025-06-01T00:00:00Z to 2025-06-30T00:00:00Z", value: 0.2, baseline: 0.2 },
+            { label: "2026-06-01T00:00:00Z to 2026-06-30T00:00:00Z", value: 0.28, baseline: 0.2 }
+          ]
+        }]
+      } : profile)
+    };
+
+    render(<App initialData={withMonthlyTrend} skipApiLoad />);
+
+    expect(screen.getByText(/Mean of 24 available monthly points/)).toBeInTheDocument();
+    expect(screen.getByText("Jun 24", { selector: ".trend-date-label" })).toBeInTheDocument();
+    expect(screen.getByText("Jun 26", { selector: ".trend-date-label" })).toBeInTheDocument();
   });
 
   it("colors an ADM1 boundary only from an exact API boundary ISO", async () => {
@@ -98,25 +175,7 @@ describe("React PWA dashboard", () => {
       ...demoDashboard,
       profiles: demoDashboard.profiles.map((profile) => profile.id === "som" ? {
         ...profile,
-        administrativeUnits: [{
-          regionId: "adm1-so-hi",
-          boundaryId: "83879307B66756469447496",
-          boundaryIso: "SO-HI",
-          name: "Hiiraan",
-          parentId: "som",
-          adminLevel: "adm1",
-          score: 76,
-          level: "critical" as const,
-          quality: "ok",
-          periodStart: "2026-07-01T00:00:00Z",
-          periodEnd: "2026-07-15T00:00:00Z",
-          sourceMode: "live",
-          geometrySource: "geoBoundaries gbOpen wmgeolab/geoBoundaries@9469f09",
-          ndvi: 0.18,
-          rainfallMm: 3.1,
-          lstC: 31.2,
-          rank: 1
-        }]
+        administrativeUnits: [hiiraanUnit]
       } : profile)
     };
 
@@ -125,6 +184,26 @@ describe("React PWA dashboard", () => {
     const hiiraan = await screen.findByLabelText("Hiiraan: 76 critical");
     expect(hiiraan).toHaveStyle({ fill: "#d92d20" });
     expect(screen.getByRole("option", { name: "Hiiraan" })).toBeInTheDocument();
+    fireEvent.click(hiiraan);
+    expect(screen.getByRole("combobox", { name: "Subregion / District" })).toHaveValue("adm1-so-hi");
+    expect(screen.getByText("Selected ADM1")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hiiraan" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Composite score contributions for Hiiraan")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /^NDVI anomaly 32 points,/ })).toBeInTheDocument();
+    expect(hiiraan).toHaveAttribute("aria-current", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Return to national view" }));
+    fireEvent.keyDown(hiiraan, { key: "Enter" });
+    expect(screen.getByRole("combobox", { name: "Subregion / District" })).toHaveValue("adm1-so-hi");
+
+    const rankingToggle = screen.getByRole("button", { name: /Subnational ranking/ });
+    expect(rankingToggle).toHaveAttribute("aria-expanded", "false");
+    expect(rankingToggle).toHaveAttribute("aria-controls", "subnational-ranking-table");
+    fireEvent.click(rankingToggle);
+    expect(rankingToggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Hiiraan" })).toBeInTheDocument();
+    expect(document.querySelector(".rank-marker[data-top='true']")).toHaveTextContent("1");
+    expect(document.querySelector(".ranking-scroll .signal-badge[data-severity='critical']")).toHaveTextContent("Severe");
+    expect(document.querySelector(".ranking-scroll .signal-badge[data-quality='ok']")).toHaveTextContent("High");
   });
 
   it("uses page routes instead of hash anchors in the sidebar", () => {
@@ -256,6 +335,24 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("columnheader", { name: "Indicator" })).toBeInTheDocument();
     expect(screen.getByText("/api/v1/snapshots/latest")).toBeInTheDocument();
     expect(document.querySelector(".risk-map")).not.toBeInTheDocument();
+  });
+
+  it("keeps ADM1 selection and detail in low-bandwidth Region Explorer", () => {
+    window.history.pushState({}, "", "/region");
+    const withAdm1 = {
+      ...demoDashboard,
+      profiles: demoDashboard.profiles.map((profile) => profile.id === "som"
+        ? { ...profile, administrativeUnits: [hiiraanUnit] }
+        : profile)
+    };
+
+    render(<App initialData={withAdm1} initialLowBandwidth skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Region Explorer · Low bandwidth" })).toBeInTheDocument();
+    expect(document.querySelector(".region-svg-map")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "Administrative area" }), { target: { value: "adm1-so-hi" } });
+    expect(screen.getByRole("heading", { name: "Hiiraan" })).toBeInTheDocument();
+    expect(screen.getAllByRole("cell", { name: "76" })).toHaveLength(2);
   });
 
   it("switches i18n labels", () => {

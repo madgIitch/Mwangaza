@@ -553,3 +553,15 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 ## 2026-07-21 · Cobertura ADM1 completa en GEE
 
 La cobertura live por defecto incluye las 121 unidades ADM1 de los ocho países IGAD habilitados y se resuelve en un único lote para el periodo actual. Para ADM1, MOD13Q1 admite `SummaryQA` 0 y 1; el valor 1 está documentado por el proveedor como marginal pero útil y queda declarado en metadatos. No se aceptan valores 2-3 ni se propagan scores nacionales a unidades sin observación.
+
+## 2026-07-21 · Espacio de trabajo cartográfico en Region Explorer
+
+El panel `Why this region is at risk` funciona como contabilidad verificable del score, no como una visualización fija de pesos. Cada segmento representa puntos efectivos (`score normalizado × peso efectivo`) y muestra fuente y calidad. Las unidades ADM1 publican su propio desglose de forma aditiva; si falta, la interfaz declara el payload pendiente y nunca reutiliza el desglose nacional.
+
+La página regional adopta un atlas operacional centrado en el mapa. Mapa, selector ADM1 y ranking comparten una sola selección, y el detalle se concentra en un inspector lateral con score, severidad, indicadores, calidad, periodo, procedencia y acción contextual. El ranking queda plegado por defecto y con scroll interno para que su volumen no determine la composición de la página.
+
+La selección trabaja exclusivamente con el payload ya cargado: el navegador no inicia consultas GEE adicionales. Las tendencias e históricos que siguen siendo nacionales se etiquetan con su alcance cuando hay un ADM1 activo. En low-bandwidth se mantiene la selección y evidencia equivalente mediante tablas, sin cargar el SVG administrativo.
+
+La codificación visual separa magnitudes de estados: la severidad conserva los colores del mapa y badges, mientras las contribuciones efectivas del composite usan una barra apilada azul-gris. Las tendencias se representan como anomalía `value - baseline` alrededor de cero, con escala y fechas. Los deltas históricos indican dirección sin atribuir por color que subir o bajar sea siempre favorable. Solo se muestra una acción principal: primero el alert regional activo de mayor severidad y, si no existe, la primera recomendación; el horizonte temporal queda pendiente de un contrato estructurado.
+
+Las tendencias live se materializan como 24 agregados mensuales nacionales por defecto, configurables entre 12 y 24. Ventanas y países se resuelven en un único grafo/request GEE y no se replican por ADM1. Son payloads exclusivos de serie: no contaminan el selector de periodos ni la comparación estacional. Si la fuente no aporta baseline, el shell usa la media de valores mensuales disponibles y lo declara explícitamente; nunca la denomina climatología oficial.

@@ -61,7 +61,30 @@ def main() -> int:
         "profile": profile is not None,
         "metrics": profile is not None and bool(profile.metrics),
         "contributions": profile is not None and bool(profile.contributions),
+        "effective_contributions": profile is not None
+        and bool(profile.contributions)
+        and all(
+            item.get("weighted_contribution") is not None
+            and item.get("score") is not None
+            and item.get("weight") is not None
+            for item in profile.contributions
+        )
+        and abs(
+            sum(float(item["weighted_contribution"]) for item in profile.contributions)
+            - next(
+                (float(region.score) for region in dashboard.risk_map.regions if region.region_id == args.region_id and region.score is not None),
+                0.0,
+            )
+        ) < 0.1,
         "trends": profile is not None and bool(profile.trends),
+        "monthly_trend_horizon": profile is not None and all(
+            12 <= len(trend.points) <= 24 for trend in profile.trends
+        ),
+        "trend_baselines": profile is not None and all(
+            point.is_gap or point.baseline_value is not None
+            for trend in profile.trends
+            for point in trend.points
+        ),
         "historical": profile is not None and profile.historical_comparison is not None,
         "recommendations": profile is not None and bool(profile.recommendations),
         "adm1_contract": profile is not None and bool(profile.administrative_units),
@@ -73,6 +96,14 @@ def main() -> int:
         ),
         "adm1_full_scope": set(adm1_risks) == expected_adm1_ids,
         "adm1_all_conclusive": conclusive_adm1_ids == expected_adm1_ids,
+        "adm1_effective_contributions": profile is not None and all(
+            unit.score is None
+            or (
+                bool(unit.contributions)
+                and abs(sum(float(item["weighted_contribution"]) for item in unit.contributions) - unit.score) < 0.1
+            )
+            for unit in profile.administrative_units
+        ),
     }
     print(json.dumps({
         "ok": all(checks.values()),

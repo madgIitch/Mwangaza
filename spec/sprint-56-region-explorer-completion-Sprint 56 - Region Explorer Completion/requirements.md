@@ -24,6 +24,11 @@ R12. Cuenta y notificaciones permanecen como placeholders explícitos no interac
 R13. El perfil regional publica `administrative_units` aditivo con identificadores geoBoundaries, periodo, score, nivel, calidad, procedencia y métricas GEE por unidad.
 R14. El procesamiento ADM1 live se limita al periodo actual, cubre por defecto todas las unidades de todos los países IGAD habilitados y admite restricción explícita por configuración; tendencias e históricos permanecen agregados para controlar coste y latencia.
 R15. El mapa enlaza por `boundary_iso` y sólo colorea unidades con score propio y calidad concluyente; ausencias y fallos permanecen grises.
+R16. Mapa, selector ADM1 y ranking comparten una selección activa; el inspector lateral muestra score, indicadores, calidad, periodo y acción contextual usando datos ya cargados.
+R17. El ranking ADM1 es plegable, conserva semántica de tabla y no determina la altura del workspace principal. Low-bandwidth mantiene selección y detalle equivalentes sin renderizar SVG.
+R18. Las tendencias muestran la diferencia contra baseline con eje cero, escala, fechas y tooltip accesible; las contribuciones se presentan como una única barra apilada de pesos sin semántica de severidad; ranking e histórico usan badges, top tres y deltas agrupados por año.
+R19. Live GEE materializa 24 agregados mensuales nacionales por defecto, configurables entre 12 y 24, en una consulta batch; el trend usa baseline explícito o la media de la serie etiquetada y conserva gaps reales. La UI abrevia fechas y no inicia consultas GEE.
+R20. El composite publica por indicador score normalizado, peso efectivo, contribución ponderada, participación, calidad y fuente. El panel explica la suma en puntos y, con ADM1 activo, usa exclusivamente el desglose de esa unidad o muestra pendiente.
 
 ## Restricciones
 

@@ -19,3 +19,9 @@
 - [x] T16 Join exacto por `boundary_iso`, tooltip y ranking.
 - [x] T17 Tests, smoke GEE y gates de la ampliación.
 - [x] T18 Extender la consulta batch y el contrato ADM1 a todas las áreas de todos los países IGAD habilitados.
+- [x] T19 Sincronizar selección ADM1 entre mapa, selector y ranking.
+- [x] T20 Implementar inspector territorial lateral y ranking plegable responsive.
+- [ ] T21 Preservar low-bandwidth, accesibilidad, tests y validación visual.
+- [x] T22 Mejorar tendencias, contribuciones, badges, ranking e histórico sin inventar contratos de datos.
+- [x] T23 Materializar y visualizar 12-24 meses de tendencias live con baseline y batch GEE acotados.
+- [x] T24 Sustituir pesos placeholder por contribuciones efectivas nacionales y ADM1 trazables.

@@ -513,6 +513,7 @@ def _serialize_region_profiles(source: Any) -> list[dict[str, Any]]:
                             "rainfall_mm": unit.rainfall_mm,
                             "lst_c": unit.lst_c,
                         },
+                        "contributions": list(unit.contributions),
                         "rank": unit.rank,
                     }
                     for unit in profile.administrative_units
@@ -523,6 +524,7 @@ def _serialize_region_profiles(source: Any) -> list[dict[str, Any]]:
                         "label": trend.label,
                         "unit": trend.unit,
                         "source": trend.source,
+                        "baseline_label": trend.baseline_label,
                         "points": [
                             {
                                 "period": f"{point.period_start} to {point.period_end}",

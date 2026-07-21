@@ -3826,7 +3826,12 @@
         "Cuenta y notificaciones permanecen como placeholders explícitos no interactivos hasta que sus contratos sean aprobados.",
         "El perfil regional publica `administrative_units` aditivo con `region_id`, `boundary_id`, `boundary_iso`, nombre, periodo, score, nivel, calidad, source_mode y métricas GEE por unidad.",
         "El loader live procesa ADM1 sólo para el periodo actual y cubre por defecto todas las unidades de todos los países IGAD habilitados; la configuración permite restringir cobertura sin multiplicar tendencias ni históricos por distrito.",
-        "El mapa enlaza observaciones y fronteras por `boundary_iso`; sólo colorea unidades con score y calidad concluyentes y mantiene en gris cualquier unidad ausente, fallida o `no_data`."
+        "El mapa enlaza observaciones y fronteras por `boundary_iso`; sólo colorea unidades con score y calidad concluyentes y mantiene en gris cualquier unidad ausente, fallida o `no_data`.",
+        "Mapa, selector ADM1 y ranking comparten una selección subnacional; la unidad activa abre un inspector lateral con score, indicadores, calidad, periodo y acción contextual sin nuevas consultas GEE.",
+        "El ranking ADM1 es plegable, conserva una tabla accesible y no vuelve a imponer su altura sobre el mapa o el inspector; low-bandwidth mantiene selección y detalle equivalentes sin SVG.",
+        "Las tendencias representan anomalías contra una línea base cero con fechas, escala y tooltip; las contribuciones usan una barra apilada neutral; ranking e histórico refuerzan jerarquía mediante badges, top tres y deltas agrupados por año sin añadir acciones ni metodología inexistentes.",
+        "Live GEE publica por defecto 24 agregados mensuales nacionales por indicador, configurables entre 12 y 24, resueltos en un único lote remoto y con baseline explícito de fuente o media de la serie claramente etiquetada; las fechas se presentan de forma compacta sin solaparse.",
+        "Why this region is at risk muestra aportes efectivos en puntos del composite (`signal_score × effective_weight`), score normalizado, peso, calidad y fuente; al seleccionar ADM1 consume las contribuciones propias de esa unidad y nunca reutiliza las nacionales."
       ],
       "scope": [
         "frontend/**",

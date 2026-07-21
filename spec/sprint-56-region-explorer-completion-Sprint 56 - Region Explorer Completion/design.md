@@ -33,6 +33,12 @@
 - Añadir `AdministrativeUnit` a `RegionProfile` y serializarlo como `administrative_units` sin romper consumidores v1.
 - Consultar ADM1 sólo en la ventana actual. La cobertura por defecto incluye todas las unidades ADM1 de todos los países IGAD habilitados; `MWANGAZA_GEE_ADM1_COUNTRIES` puede restringir explícitamente el lote.
 - Resolver el color del mapa por `boundary_iso`. No se permite propagar el score nacional ni usar coincidencia aproximada de nombre.
+- Convertir el bloque principal en un workspace mapa-inspector. `selectedPilotId` sigue siendo el identificador compartido para selector, mapa y ranking, sin llamadas de red.
+- Mover el detalle de la unidad activa al inspector lateral y convertir el ranking completo en una superficie plegable bajo el mapa. En móvil el inspector fluye debajo del mapa; low-bandwidth conserva controles y tabla.
+- Sustituir sparklines de barras por SVG accesible de anomalía (`value - baseline`) con eje cero, escala y fechas; representar pesos del composite en una barra apilada con paleta neutral, no de severidad.
+- Reforzar la lectura transversal del estado con badges coherentes, destacar el top tres del ranking, agrupar el histórico por año y conservar una sola acción principal. La metodología pendiente no se presenta como enlace o CTA.
+- Materializar 24 ventanas mensuales nacionales en un único grafo/request GEE con `reduceRegions`, sin extender la serie a ADM1. El shell calcula un baseline de media de serie solo cuando la fuente no lo publica y expone su etiqueta en el contrato aditivo.
+- Convertir `contributions` en una explicación del cálculo: `weighted_contribution = signal_score × effective_weight`, participación sobre el score y procedencia/calidad. Extender `administrative_units` de forma aditiva con su propio desglose y no hacer fallback nacional para una unidad seleccionada.
 
 ## Decisiones de la entrevista
 
