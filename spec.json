@@ -3864,7 +3864,7 @@
     {
       "id": "sprint-57-overview-completion",
       "name": "Sprint 57 - Overview Completion",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.0.1",
       "estimated_hours": 7,
