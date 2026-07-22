@@ -1443,3 +1443,36 @@ Objetivo no negociable:
 - **external_contracts:** listado, detalle y export filtrados.
 - **edge_cases:** orden, filtros, selección y paginación deterministas.
 - **ui_states:** workspace table-first con inspector operativo.
+
+<!-- harness:sprint-59-reports-center-completion -->
+## sprint-59-reports-center-completion · Sprint 59 - Reports Center Completion
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `src/mwangaza/reports/**`
+  - `tests/reports/**`
+  - `src/mwangaza/audit/**`
+  - `tests/audit/**`
+  - `src/mwangaza/services/dashboard_shell.py`
+  - `tests/ui/test_dashboard_shell.py`
+  - `docs/reports-interface.md`
+  - `docs/executive-report.md`
+  - `docs/audit-trail.md`
+  - `docs/contracts.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-59-reports-center-completion-*/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** La spec debe definir que la API es propietaria de identidad y tiempos. Cada reporte expone `id`, `generated_at`, `updated_at`, `expires_at` opcional, `status` (`queued`, `generating`, `ready`, `failed`, `expired`), `region_id`, `period_start`, `period_end`, `template_id`, `language`, `author`, `snapshot_id`, formatos disponibles y error saneado opcional. IDs y timestamps son estables, UTC ISO-8601, y el navegador no los inventa. Exportaciones recientes y eventos de auditoría tienen IDs propios y referencian al reporte.
+- **external_contracts:** La spec aprueba endpoints aditivos bajo `/api/v1/reports` para listar reportes, obtener detalle, generar reportes y descargar PDF/CSV/JSON. La generación usa snapshots materializados y nunca consulta GEE desde el navegador. La auditoría local de generación y descarga sólo se registra si ya existe adapter aprobado. Compartir, programación, mutación de plantillas y distribución permanecen como `pending_contract` sin endpoints públicos.
+- **edge_cases:** La spec debe cubrir lista vacía preservando contexto y acción de generación, filtros sin resultados con acción para limpiar filtros, reportes en curso con progreso indeterminado y descarga bloqueada, IDs/timestamps ausentes con degradación explícita sin fallback inventado, duplicados deduplicados por ID backend, expirados conservados en historial pero no descargables, y orden/selección deterministas.
+- **ui_states:** La tesis visual queda definida como workspace editorial-operativo table-first, con cabecera y filtros compactos, banda de estado, cola dominante, preview central paginado e inspector lateral sticky. Deben ser visibles los estados loading, empty, filtered-empty, generating, ready, failed, expired, disabled y `pending_contract`. El preview es HTML fiel hasta que exista PDF generado y sólo entonces se etiqueta como PDF. Low-bandwidth conserva filtros, cola, detalle, metadatos y descargas sin decoración pesada.

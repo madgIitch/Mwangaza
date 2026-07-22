@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -33,6 +34,57 @@ class ExecutiveReportContext:
     limitations: tuple[str, ...]
     dashboard_url: str = ""
     qr_matrix: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ReportRecord:
+    id: str
+    generated_at: str
+    updated_at: str
+    expires_at: str | None
+    status: str
+    region_id: str
+    region: str
+    period_start: str
+    period_end: str
+    template_id: str
+    language: str
+    author: str
+    snapshot_id: str
+    formats: tuple[str, ...]
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id, "generated_at": self.generated_at, "updated_at": self.updated_at,
+            "expires_at": self.expires_at, "status": self.status, "region_id": self.region_id,
+            "region": self.region, "period_start": self.period_start, "period_end": self.period_end,
+            "template_id": self.template_id, "language": self.language, "author": self.author,
+            "snapshot_id": self.snapshot_id, "formats": list(self.formats), "error": self.error,
+        }
+
+
+def build_report_records(data: Any) -> tuple[ReportRecord, ...]:
+    """Create stable backend-owned records from the materialized regional snapshot."""
+    snapshot_id = str(getattr(data, "snapshot_id", "") or _snapshot_id(data))
+    records: list[ReportRecord] = []
+    for region in getattr(getattr(data, "risk_map", None), "regions", ()):
+        region_id = str(getattr(region, "region_id", "")).lower()
+        if not region_id or "-" in region_id:
+            continue
+        period_start = str(getattr(region, "period_start", "") or "")
+        period_end = str(getattr(region, "period_end", "") or "")
+        generated_at = _iso_timestamp(period_end)
+        identity = hashlib.sha256(f"{region_id}|{period_start}|{period_end}|executive-v1|en".encode()).hexdigest()[:10].upper()
+        records.append(ReportRecord(
+            id=f"RPT-{region_id.upper()}-{identity}", generated_at=generated_at,
+            updated_at=generated_at, expires_at=None, status="ready", region_id=region_id,
+            region=str(getattr(region, "name", "") or region_id.upper()), period_start=period_start,
+            period_end=period_end, template_id="executive-v1", language="en",
+            author="Mwangaza automated report", snapshot_id=snapshot_id,
+            formats=("pdf", "csv", "json"),
+        ))
+    return tuple(sorted(records, key=lambda item: (item.generated_at, item.id), reverse=True))
 
 
 def build_executive_report_context(
@@ -71,7 +123,7 @@ def build_executive_report_context(
         period_label=period_label,
         generated_at=generated,
         score=_metric_value(metrics, "Composite score"),
-        risk_level=str(getattr(map_region, "color_level", "") or _risk_from_metric(metrics)),
+        risk_level=_risk_from_metric(metrics),
         quality=_metric_value(metrics, "Data quality"),
         metrics=metrics,
         recommendations=tuple(str(item) for item in getattr(profile, "recommendations", ()) or getattr(data, "recommendations", ())),
@@ -159,8 +211,17 @@ def render_executive_report_html(context: ExecutiveReportContext) -> str:
 
 
 def render_executive_report_pdf(context: ExecutiveReportContext) -> bytes:
-    html = render_executive_report_html(context)
-    return b"%PDF-HTML\n" + html.encode("utf-8")
+    lines = [
+        "Mwangaza Executive Report", f"Region: {context.region_label}",
+        f"Period: {context.period_label}", f"Generated: {context.generated_at}",
+        f"Composite score: {context.score}", f"Risk level: {context.risk_level}",
+        f"Quality: {context.quality}", "", "Snapshot indicators",
+        *(f"{metric.label}: {metric.value} {metric.unit} - {metric.severity}" for metric in context.metrics),
+        "", "Recommended actions", *(f"- {item}" for item in context.recommendations),
+        "", "Sources and versions", *(f"- {item}" for item in (*context.sources, *context.versions)),
+        "", "Limitations", *(f"- {item}" for item in context.limitations),
+    ]
+    return _simple_pdf(lines)
 
 
 def safe_report_filename(context: ExecutiveReportContext) -> str:
@@ -198,6 +259,69 @@ def _metric_value(metrics: tuple[ReportMetric, ...], label: str) -> str:
         if metric.label == label:
             return f"{metric.value}{metric.unit}" if metric.unit else metric.value
     return "No data"
+
+
+def _snapshot_id(data: Any) -> str:
+    raw = "|".join(
+        f"{getattr(region, 'region_id', '')}:{getattr(region, 'period_end', '')}:{getattr(region, 'score', '')}"
+        for region in getattr(getattr(data, "risk_map", None), "regions", ())
+    )
+    return f"snapshot-{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
+
+
+def _iso_timestamp(value: str) -> str:
+    candidate = value.strip()
+    if not candidate:
+        return "1970-01-01T00:00:00+00:00"
+    if len(candidate) == 10:
+        return f"{candidate}T00:00:00+00:00"
+    return candidate.replace("Z", "+00:00")
+
+
+def _simple_pdf(lines: list[str]) -> bytes:
+    """Render a dependency-free, standards-compliant single-page PDF."""
+    wrapped: list[str] = []
+    for line in lines:
+        clean = line.encode("ascii", errors="replace").decode("ascii")
+        if not clean:
+            wrapped.append("")
+            continue
+        while len(clean) > 88:
+            split_at = clean.rfind(" ", 0, 88)
+            split_at = split_at if split_at > 30 else 88
+            wrapped.append(clean[:split_at])
+            clean = clean[split_at:].lstrip()
+        wrapped.append(clean)
+    wrapped = wrapped[:47]
+    commands = ["BT", "/F1 16 Tf", "54 790 Td"]
+    for index, line in enumerate(wrapped):
+        if index == 1:
+            commands.extend(["/F1 10 Tf"])
+        escaped = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+        commands.extend([f"({escaped}) Tj", "0 -15 Td"])
+    commands.append("ET")
+    stream = "\n".join(commands).encode("ascii")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+        f"<< /Length {len(stream)} >>\nstream\n".encode() + stream + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+    output = io.BytesIO()
+    output.write(b"%PDF-1.4\n")
+    offsets = [0]
+    for number, obj in enumerate(objects, 1):
+        offsets.append(output.tell())
+        output.write(f"{number} 0 obj\n".encode())
+        output.write(obj)
+        output.write(b"\nendobj\n")
+    xref = output.tell()
+    output.write(f"xref\n0 {len(objects)+1}\n0000000000 65535 f \n".encode())
+    for offset in offsets[1:]:
+        output.write(f"{offset:010d} 00000 n \n".encode())
+    output.write(f"trailer << /Size {len(objects)+1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode())
+    return output.getvalue()
 
 
 def _risk_from_metric(metrics: tuple[ReportMetric, ...]) -> str:
@@ -274,6 +398,8 @@ __all__ = [
     "ExecutiveReportContext",
     "ReportMetric",
     "build_executive_report_context",
+    "build_report_records",
+    "ReportRecord",
     "render_executive_report_html",
     "render_executive_report_pdf",
     "safe_report_filename",

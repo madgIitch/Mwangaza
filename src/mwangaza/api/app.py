@@ -9,6 +9,7 @@ import threading
 import time
 from dataclasses import dataclass
 from http import HTTPStatus
+from pathlib import Path
 from urllib.parse import parse_qs
 from typing import Any
 
@@ -17,13 +18,14 @@ from mwangaza.admin import (
     AdminValidationError,
     admin_repository_from_env,
 )
+from mwangaza.audit import AuditRepository
 from mwangaza.config import public_config_status
 from mwangaza.exports import build_visible_export, export_visible_csv, export_visible_json, safe_export_filename
 from mwangaza.gee.auth import check_gee_auth
 from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, readiness_status, reset_run_id, resolve_run_id
 from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
 from mwangaza.regions import list_regions
-from mwangaza.reports import build_executive_report_context, render_executive_report_pdf, safe_report_filename
+from mwangaza.reports import build_executive_report_context, build_report_records, render_executive_report_html, render_executive_report_pdf, safe_report_filename
 from mwangaza.services.dashboard_shell import load_alert_history, load_dashboard_shell_data, load_materialized_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
@@ -100,7 +102,7 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
         try:
             body = await _read_body(receive)
             validate_body_contract(path, body, _header(scope.get("headers", []), "content-type"))
-            payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body)
+            payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body, method=str(scope.get("method", "GET")))
             if _is_demo_mode() and isinstance(payload, dict):
                 payload.update(_demo_metadata())
             if isinstance(payload, RawResponse):
@@ -144,6 +146,7 @@ def _route_v1(
     query_string: bytes,
     headers: list[tuple[bytes, bytes]],
     body: bytes,
+    method: str = "GET",
 ) -> tuple[dict[str, Any] | RawResponse, HTTPStatus, int | None]:
     query = parse_qs(query_string.decode("utf-8", errors="ignore"))
     if path == "/api/v1/regions":
@@ -186,6 +189,69 @@ def _route_v1(
                 "source_metadata": export.source_metadata,
             },
         }, HTTPStatus.OK, 60
+    if path == "/api/v1/reports":
+        data = _load_api_dashboard_data()
+        records = _filter_reports(list(build_report_records(data)), query)
+        limit, offset = _pagination(query)
+        if method.upper() == "POST":
+            request = _json_body(body) if body else {name: _single_query(query, name, "") for name in ("region_id", "period", "template_id", "language")}
+            region_id = str(request.get("region_id", "")).lower()
+            template_id = str(request.get("template_id", "executive-v1") or "executive-v1")
+            language = str(request.get("language", "en") or "en").lower()
+            period = str(request.get("period", ""))
+            if template_id != "executive-v1":
+                raise ValueError("template_id must be executive-v1")
+            if language not in {"en", "sw", "so", "es"}:
+                raise ValueError("language is invalid")
+            record = next((item for item in records if not region_id or item.region_id == region_id), None)
+            if record is None:
+                raise ValueError("region_id is invalid or unavailable")
+            if period and period not in {record.period_start, record.period_end, f"{record.period_start[:10]} to {record.period_end[:10]}"}:
+                raise ValueError("period does not match the materialized snapshot")
+            _record_report_audit("report_generated", record, format_name="record")
+            return {"schema_version": API_SCHEMA_VERSION, "report": record.to_dict()}, HTTPStatus.CREATED, None
+        items = [record.to_dict() for record in records]
+        response = _listed(items, limit, offset)
+        response["summary"] = {
+            "ready": sum(item["status"] == "ready" for item in items),
+            "generating": sum(item["status"] in {"queued", "generating"} for item in items),
+            "failed": sum(item["status"] == "failed" for item in items),
+            "expired": sum(item["status"] == "expired" for item in items),
+        }
+        return response, HTTPStatus.OK, 60
+    if path.startswith("/api/v1/reports/") and path.endswith("/download"):
+        report_id = path.removeprefix("/api/v1/reports/").removesuffix("/download").strip("/")
+        data = _load_api_dashboard_data()
+        record = next((item for item in build_report_records(data) if item.id == report_id), None)
+        if record is None:
+            return _error("not_found", "Report does not exist"), HTTPStatus.NOT_FOUND, 30
+        if record.status in {"queued", "generating"}:
+            return _error("report_not_ready", "Report generation is still in progress"), HTTPStatus.CONFLICT, None
+        if record.status == "failed":
+            return _error("report_failed", "Report generation failed"), HTTPStatus.UNPROCESSABLE_ENTITY, None
+        if record.status == "expired":
+            return _error("report_expired", "Report has expired"), HTTPStatus.GONE, None
+        export_format = _single_query(query, "format", "pdf").lower()
+        if export_format not in record.formats:
+            raise ValueError("format must be pdf, csv or json")
+        context = build_executive_report_context(data, region_id=record.region_id, dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL"))
+        export = build_visible_export(data, region_id=record.region_id, max_rows=MAX_LIMIT, include_geometry=False)
+        if export_format == "pdf":
+            payload = RawResponse(render_executive_report_pdf(context), "application/pdf", safe_report_filename(context))
+        elif export_format == "csv":
+            payload = RawResponse(export_visible_csv(export).encode("utf-8"), "text/csv; charset=utf-8", safe_export_filename(export, "csv"))
+        else:
+            payload = RawResponse(export_visible_json(export).encode("utf-8"), "application/json", safe_export_filename(export, "json"))
+        _record_report_audit("report_downloaded", record, format_name=export_format)
+        return payload, HTTPStatus.OK, None
+    if path.startswith("/api/v1/reports/") and path not in {"/api/v1/reports/alerts", "/api/v1/reports/executive"}:
+        report_id = path.removeprefix("/api/v1/reports/")
+        data = _load_api_dashboard_data()
+        record = next((item for item in build_report_records(data) if item.id == report_id), None)
+        if record is None:
+            return _error("not_found", "Report does not exist"), HTTPStatus.NOT_FOUND, 30
+        context = build_executive_report_context(data, region_id=record.region_id)
+        return {"schema_version": API_SCHEMA_VERSION, "report": record.to_dict(), "events": _report_audit_events(record.id), "preview": {"format": "html", "content": render_executive_report_html(context)}}, HTTPStatus.OK, 60
     if path == "/api/v1/alerts":
         limit, offset = _pagination(query)
         data = _load_api_dashboard_data()
@@ -430,6 +496,62 @@ def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
     return result
 
 
+def _filter_reports(reports: list[Any], query: dict[str, list[str]]) -> list[Any]:
+    filters = {name: _single_query(query, name, "").lower() for name in ("q", "region", "type", "period", "status")}
+    valid_status = {"queued", "generating", "ready", "failed", "expired"}
+    if filters["status"] and filters["status"] not in valid_status:
+        raise ValueError("status is invalid")
+    result: list[Any] = []
+    for report in reports:
+        searchable = " ".join((report.id, report.region_id, report.region, report.template_id, report.language)).lower()
+        period = f"{report.period_start} {report.period_end}".lower()
+        if filters["q"] and filters["q"] not in searchable:
+            continue
+        if filters["region"] and filters["region"] != report.region_id:
+            continue
+        if filters["type"] and filters["type"] != report.template_id.lower():
+            continue
+        if filters["period"] and filters["period"] not in period:
+            continue
+        if filters["status"] and filters["status"] != report.status:
+            continue
+        result.append(report)
+    return result
+
+
+def _record_report_audit(event_type: str, report: Any, *, format_name: str) -> None:
+    path = Path(os.environ.get("MWANGAZA_AUDIT_DB_PATH", "data/audit.sqlite"))
+    repo: AuditRepository | None = None
+    try:
+        repo = AuditRepository(path)
+        repo.record_event(
+            actor="public-dashboard", event_type=event_type, entity_type="report",
+            entity_id=report.id, region_id=report.region_id, run_id=current_run_id(),
+            snapshot_id=report.snapshot_id, metadata={"format": format_name, "template_id": report.template_id},
+        )
+    except Exception:
+        _log("report audit unavailable", level="WARNING", report_id=report.id, event_type=event_type)
+    finally:
+        if repo is not None:
+            repo.close()
+
+
+def _report_audit_events(report_id: str) -> list[dict[str, Any]]:
+    path = Path(os.environ.get("MWANGAZA_AUDIT_DB_PATH", "data/audit.sqlite"))
+    if not path.is_file():
+        return []
+    repo: AuditRepository | None = None
+    try:
+        repo = AuditRepository(path)
+        events = (*repo.list_events(event_type="report_generated"), *repo.list_events(event_type="report_downloaded"))
+        return [event.__dict__ for event in events if event.entity_id == report_id]
+    except Exception:
+        return []
+    finally:
+        if repo is not None:
+            repo.close()
+
+
 def _all_alerts(data: Any) -> list[Any]:
     if getattr(getattr(data, "data_status", None), "mode", "") == "demo":
         return list(data.alerts)
@@ -655,6 +777,9 @@ def _openapi() -> dict[str, Any]:
         "/api/v1/alerts/{alert_id}": {"alert_id": "ALT-SOM-EXAMPLE"},
         "/api/v1/exports/alerts": {"region": "som", "severity": "critical", "status": "active", "format": "csv"},
         "/api/v1/reports/alerts": {"region": "som", "severity": "critical", "status": "active"},
+        "/api/v1/reports": {"limit": 20, "offset": 0, "region": "som", "status": "ready"},
+        "/api/v1/reports/{report_id}": {"report_id": "RPT-SOM-EXAMPLE"},
+        "/api/v1/reports/{report_id}/download": {"report_id": "RPT-SOM-EXAMPLE", "format": "pdf"},
         "/api/v1/forecasts": {"available": False},
         "/api/v1/reports/executive": {"region": "som", "period": "2026-07-01 to 2026-07-15"},
         "/api/v1/exports/snapshot": {"region": "som", "period": "2026-07-01 to 2026-07-15", "format": "csv"},

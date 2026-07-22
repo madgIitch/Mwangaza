@@ -372,7 +372,17 @@ describe("React PWA dashboard", () => {
   it("renders reports as a standalone export center instead of scrolling inside Overview", () => {
     window.history.pushState({}, "", "/reports");
 
-    render(<App initialData={demoDashboard} skipApiLoad />);
+    const reportData = {
+      ...demoDashboard,
+      reports: [{
+        id: "RPT-SOM-ABC123", generatedAt: "2026-07-15T00:00:00+00:00", updatedAt: "2026-07-15T00:00:00+00:00",
+        expiresAt: null, status: "ready" as const, regionId: "som", region: "Somalia",
+        periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", templateId: "executive-v1",
+        language: "en", author: "Mwangaza automated report", snapshotId: "snapshot-demo",
+        formats: ["pdf", "csv", "json"] as Array<"pdf" | "csv" | "json">, error: null
+      }]
+    };
+    render(<App initialData={reportData} skipApiLoad />);
 
     expect(screen.getByRole("heading", { name: "Reports Center" })).toBeInTheDocument();
     expect(screen.getByLabelText("Search reports")).toBeInTheDocument();
@@ -381,6 +391,10 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Recent exports" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Report preview" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Report contents" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Download PDF" })[0]).toHaveAttribute("href", "/api/v1/reports/RPT-SOM-ABC123/download?format=pdf");
+    expect(screen.getByText("HTML preview · 1 page")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share · pending contract" })).toBeDisabled();
+    expect(screen.queryByText(/simulated/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
   });
 
@@ -576,6 +590,7 @@ describe("React PWA dashboard", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/snapshots/latest", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/alerts?limit=20", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/reports?limit=100", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/forecasts", expect.any(Object));
     expect(data.message).toBe("Loaded from /api/v1/**");
     expect(data.alerts[0].title).toBe("API alert");

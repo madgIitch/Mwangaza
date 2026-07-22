@@ -134,12 +134,42 @@ export interface DashboardData {
   exposureNote: string;
   reportFilename: string;
   exportFilenames: { csv: string; json: string };
+  reports?: ReportRecord[];
   forecastDiagnostics: {
     available: boolean;
     message: string;
     modelVersion: string;
     confidence: string;
   };
+}
+
+export interface ReportRecord {
+  id: string;
+  generatedAt: string;
+  updatedAt: string;
+  expiresAt: string | null;
+  status: "queued" | "generating" | "ready" | "failed" | "expired";
+  regionId: string;
+  region: string;
+  periodStart: string;
+  periodEnd: string;
+  templateId: string;
+  language: string;
+  author: string;
+  snapshotId: string;
+  formats: Array<"pdf" | "csv" | "json">;
+  error: string | null;
+}
+
+export interface PublicReportsResponse {
+  items: Array<{
+    id: string; generated_at: string; updated_at: string; expires_at: string | null;
+    status: ReportRecord["status"]; region_id: string; region: string;
+    period_start: string; period_end: string; template_id: string; language: string;
+    author: string; snapshot_id: string; formats: ReportRecord["formats"]; error: string | null;
+  }>;
+  summary: { ready: number; generating: number; failed: number; expired: number };
+  limit: number; offset: number; total: number;
 }
 
 export interface PublicSnapshotResponse {

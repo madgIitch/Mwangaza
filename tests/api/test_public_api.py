@@ -4,7 +4,9 @@ import asyncio
 import importlib
 import json
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from mwangaza.api.app import app
@@ -137,7 +139,7 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(pdf_status, 200)
         self.assertEqual(pdf_headers["content-type"], "application/pdf")
         self.assertIn("attachment; filename=", pdf_headers["content-disposition"])
-        self.assertTrue(pdf.startswith(b"%PDF-HTML"))
+        self.assertTrue(pdf.startswith(b"%PDF-1.4"))
         self.assertEqual(csv_status, 200)
         self.assertTrue(csv_headers["content-type"].startswith("text/csv"))
         self.assertIn(b"row_type,region_id", csv_body)
@@ -147,6 +149,37 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(json.loads(json_body)["period"], period)
         self.assertEqual(invalid_status, 400)
         self.assertEqual(invalid["error"]["code"], "invalid_request")
+
+    def test_reports_center_contract_covers_all_igad_countries_and_real_downloads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            audit_path = Path(tmp) / "audit.sqlite"
+            with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo", "MWANGAZA_AUDIT_DB_PATH": str(audit_path)}):
+                status, _headers, reports = _request("/api/v1/reports", b"limit=100")
+                report = reports["items"][0]
+                detail_status, _detail_headers, detail = _request(f"/api/v1/reports/{report['id']}")
+                pdf_status, pdf_headers, pdf = _raw_request(f"/api/v1/reports/{report['id']}/download", b"format=pdf")
+                csv_status, _csv_headers, csv_body = _raw_request(f"/api/v1/reports/{report['id']}/download", b"format=csv")
+                json_status, _json_headers, json_body = _raw_request(f"/api/v1/reports/{report['id']}/download", b"format=json")
+                detail_after_status, _after_headers, detail_after = _request(f"/api/v1/reports/{report['id']}")
+                missing_status, _missing_headers, missing = _request("/api/v1/reports/RPT-MISSING")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(reports["total"], 8)
+        self.assertEqual({item["region_id"] for item in reports["items"]}, {"ken", "eth", "som", "sdn", "ssd", "uga", "dji", "eri"})
+        self.assertEqual(detail_status, 200)
+        self.assertEqual(detail["preview"]["format"], "html")
+        self.assertEqual(detail_after_status, 200)
+        self.assertEqual(len(detail_after["events"]), 3)
+        self.assertTrue(all(event["event_type"] == "report_downloaded" for event in detail_after["events"]))
+        self.assertEqual(pdf_status, 200)
+        self.assertEqual(pdf_headers["content-type"], "application/pdf")
+        self.assertTrue(pdf.startswith(b"%PDF-1.4"))
+        self.assertEqual(csv_status, 200)
+        self.assertTrue(csv_body)
+        self.assertEqual(json_status, 200)
+        self.assertTrue(json.loads(json_body))
+        self.assertEqual(missing_status, 404)
+        self.assertEqual(missing["error"]["code"], "not_found")
 
     def test_v1_endpoints_do_not_call_live_gee_loader(self) -> None:
         with (

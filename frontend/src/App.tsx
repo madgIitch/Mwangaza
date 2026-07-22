@@ -5,7 +5,7 @@ import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { LandingPage } from "./pages/LandingPage";
-import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
+import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -1014,8 +1014,10 @@ interface ReportRow {
   type: string;
   period: string;
   generatedOn: string;
-  status: "Ready" | "Review" | "Scheduled";
+  status: ReportRecord["status"];
   filename: string;
+  formats: ReportRecord["formats"];
+  snapshotId: string;
   profile?: RegionProfile;
   risk?: RegionRisk;
 }
@@ -1024,9 +1026,11 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
   const [query, setQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tab, setTab] = useState<"generated" | "scheduled" | "templates" | "all">("generated");
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [generationState, setGenerationState] = useState<"idle" | "generating" | "created" | "error">("idle");
 
   const reports = useMemo(() => buildReportRows(data), [data]);
   const filteredReports = reports.filter((report) => {
@@ -1034,14 +1038,27 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
     const matchesQuery = !query || text.includes(query.toLowerCase());
     const matchesRegion = regionFilter === "all" || report.regionId === regionFilter;
     const matchesType = typeFilter === "all" || report.type === typeFilter;
+    const matchesPeriod = periodFilter === "all" || report.period === periodFilter;
     const matchesStatus = statusFilter === "all" || report.status === statusFilter;
-    const matchesTab = tab === "all" || (tab === "generated" && report.status !== "Scheduled") || (tab === "scheduled" && report.status === "Scheduled") || (tab === "templates" && false);
-    return matchesQuery && matchesRegion && matchesType && matchesStatus && matchesTab;
+    const matchesTab = tab === "all" || (tab === "generated" && report.status !== "queued") || (tab === "scheduled" && false) || (tab === "templates" && false);
+    return matchesQuery && matchesRegion && matchesType && matchesPeriod && matchesStatus && matchesTab;
   });
   const selectedReport = filteredReports.find((report) => report.id === selectedReportId) ?? filteredReports[0] ?? reports[0];
   const selectedProfile = selectedReport?.profile ?? data.profiles[0];
   const selectedRisk = selectedReport?.risk ?? data.regions[0];
   const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
+  const generateReport = async (): Promise<void> => {
+    setGenerationState("generating");
+    try {
+      const response = await fetch(`/api/v1/reports?region_id=${encodeURIComponent(data.selectedRegionId)}`, { method: "POST", headers: { accept: "application/json" } });
+      if (!response.ok) throw new Error("generation failed");
+      const payload = await response.json() as { report: { id: string } };
+      setSelectedReportId(payload.report.id);
+      setGenerationState("created");
+    } catch {
+      setGenerationState("error");
+    }
+  };
 
   return (
     <section className="reports-screen" aria-label="Reports Center">
@@ -1051,8 +1068,8 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
           <p>Generate, review, and export executive drought reports across IGAD</p>
         </div>
         <div className="reports-header-actions">
-          <button type="button" title="Template management pending">Report templates</button>
-          <button type="button" title="Report generation endpoint pending">Generate new report</button>
+          <button disabled type="button" title="Authentication and template contract required">Report templates · pending contract</button>
+          <button disabled={generationState === "generating"} onClick={() => void generateReport()} type="button">{generationState === "generating" ? "Generating…" : "Generate new report"}</button>
         </div>
       </div>
 
@@ -1068,14 +1085,16 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
           <option value="Situation Brief">Situation Brief</option>
           <option value="Monthly Summary">Monthly Summary</option>
         </select>
-        <select aria-label="Report time period" disabled>
-          <option>Last 30 days</option>
+        <select aria-label="Report time period" onChange={(event) => setPeriodFilter(event.target.value)} value={periodFilter}>
+          <option value="all">Period: All</option>
+          {[...new Set(reports.map((report) => report.period))].map((period) => <option key={period} value={period}>{period}</option>)}
         </select>
         <select aria-label="Report status" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
           <option value="all">Status: All</option>
-          <option value="Ready">Ready</option>
-          <option value="Review">Review</option>
-          <option value="Scheduled">Scheduled</option>
+          <option value="ready">Ready</option>
+          <option value="generating">Generating</option>
+          <option value="failed">Failed</option>
+          <option value="expired">Expired</option>
         </select>
       </div>
 
@@ -1088,11 +1107,11 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
       </div>
 
       <section className="report-summary-grid" aria-label="Report summary">
-        <SummaryTile label="Generated this month" value={reports.filter((report) => report.status !== "Scheduled").length} detail="Derived from visible report rows" severity="normal" />
-        <SummaryTile label="Scheduled reports" value={reports.filter((report) => report.status === "Scheduled").length} detail="Schedule contract pending" severity="watch" />
-        <SummaryTile label="Pending review" value={reports.filter((report) => report.status === "Review").length} detail="Manual review placeholder" severity="warning" />
-        <SummaryTile label="Downloaded" value="Pending" detail="Download audit pending" severity="normal" />
-        <SummaryTile label="Shared with partners" value="Simulated" detail="Distribution contract pending" severity="unknown" />
+        <SummaryTile label="Ready" value={reports.filter((report) => report.status === "ready").length} detail="Backend report records" severity="normal" />
+        <SummaryTile label="Generating" value={reports.filter((report) => report.status === "generating").length} detail="Downloads remain locked" severity="watch" />
+        <SummaryTile label="Failed" value={reports.filter((report) => report.status === "failed").length} detail="Independent retry required" severity="warning" />
+        <SummaryTile label="Scheduled" value="—" detail="Pending authentication and contract" severity="unknown" />
+        <SummaryTile label="Distribution" value="—" detail="No approved distribution adapter" severity="unknown" />
       </section>
 
       <div className="reports-workspace">
@@ -1113,7 +1132,7 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
                     <td>{report.type}</td>
                     <td>{report.period}</td>
                     <td>{report.generatedOn}</td>
-                    <td><span className="report-status">{report.status}</span></td>
+                    <td><span className="report-status">{report.status[0].toUpperCase() + report.status.slice(1)}</span></td>
                     <td><button onClick={() => setSelectedReportId(report.id)} type="button">View</button></td>
                   </tr>
                 ))}
@@ -1128,7 +1147,7 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
       </div>
 
       <div className="reports-lower-grid">
-        <RecentExports report={selectedReport} data={data} />
+        <RecentExports report={selectedReport} />
         <ReportPreview report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
         <ReportSidePanels />
       </div>
@@ -1169,21 +1188,16 @@ function SelectedReportPanel({ report, metrics, risk }: { report?: ReportRow; me
       </div>
       <p>{report.region} report is based on the published snapshot for {report.period}. Indicators and recommendations should be used alongside local knowledge.</p>
       <div className="report-actions">
-        <a href="/reports">Open full preview</a>
-        <a href="/reports">Download PDF</a>
-        <a href="/reports">Share</a>
-        <a href="/reports">Export data</a>
+        <a href={`#preview-${report.id}`}>Open HTML preview</a>
+        {report.formats.map((format) => <a download href={`/api/v1/reports/${encodeURIComponent(report.id)}/download?format=${format}`} key={format}>Download {format.toUpperCase()}</a>)}
+        <button disabled title="Authentication and distribution contract required" type="button">Share · pending contract</button>
       </div>
     </section>
   );
 }
 
-function RecentExports({ report, data }: { report?: ReportRow; data: DashboardData }): JSX.Element {
-  const rows = [
-    ["PDF", report?.id ?? "RPT-PENDING", "Mwangaza Dashboard", "Local download", report?.filename ?? data.reportFilename],
-    ["CSV", report?.id ?? "RPT-PENDING", "Dashboard export", "Local download", data.exportFilenames.csv],
-    ["JSON", report?.id ?? "RPT-PENDING", "Partner API", "api.partner.org", data.exportFilenames.json]
-  ];
+function RecentExports({ report }: { report?: ReportRow }): JSX.Element {
+  const rows = (report?.formats ?? []).map((format) => [format.toUpperCase(), report?.id ?? "Incomplete record", "public-dashboard", "Local download", `/api/v1/reports/${encodeURIComponent(report?.id ?? "")}/download?format=${format}`]);
   return (
     <section className="recent-exports">
       <h2>Recent exports</h2>
@@ -1192,7 +1206,7 @@ function RecentExports({ report, data }: { report?: ReportRow; data: DashboardDa
         <tbody>
           {rows.map(([format, id, channel, destination, filename]) => (
             <tr key={`${format}-${id}`}>
-              <td>{format}</td><td>{id}</td><td>{channel}</td><td>{destination}</td><td><button title={filename} type="button">Download</button></td>
+              <td>{format}</td><td>{id}</td><td>{channel}</td><td>{destination}</td><td><a download href={filename}>Download</a></td>
             </tr>
           ))}
         </tbody>
@@ -1204,17 +1218,17 @@ function RecentExports({ report, data }: { report?: ReportRow; data: DashboardDa
 
 function ReportPreview({ report, metrics, recommendations }: { report?: ReportRow; metrics: Metric[]; recommendations: string[] }): JSX.Element {
   return (
-    <section className="report-preview-panel">
+    <section className="report-preview-panel" id={report ? `preview-${report.id}` : undefined}>
       <div className="section-heading">
         <h2>Report preview</h2>
-        <span className="muted">1 / 8</span>
+        <span className="muted">HTML preview · 1 page</span>
       </div>
       <article className="report-paper">
         <header>
           <strong>MWANGAZA EARLY WARNING REPORT</strong>
           <span>{report ? `${report.region} - ${report.period}` : "No report selected"}</span>
         </header>
-        <div className="preview-map">Drought risk map preview pending real PDF render</div>
+        <div className="preview-map">Materialized snapshot · {report?.snapshotId ?? "unavailable"}</div>
         <section>
           <h3>Key findings</h3>
           <ul>{metrics.slice(0, 3).map((metric) => <li key={metric.label}>{metric.label}: {metric.value}{metric.unit}</li>)}</ul>
@@ -1224,11 +1238,9 @@ function ReportPreview({ report, metrics, recommendations }: { report?: ReportRo
           <ul>{recommendations.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
       </article>
-      <div className="viewer-controls" aria-label="PDF viewer controls pending">
-        <button type="button">+</button>
-        <button type="button">-</button>
-        <button type="button">Full screen</button>
-        <button type="button">Print</button>
+      <div className="viewer-controls" aria-label="Report preview controls">
+        {report ? <a download href={`/api/v1/reports/${encodeURIComponent(report.id)}/download?format=pdf`}>Open generated PDF</a> : null}
+        <button onClick={() => window.print()} type="button">Print HTML preview</button>
       </div>
     </section>
   );
@@ -1251,8 +1263,8 @@ function ReportSidePanels(): JSX.Element {
       <section>
         <h2>Distribution</h2>
         <p>Dashboard: Available here</p>
-        <p>Email summary: simulated</p>
-        <p>Partner download: pending</p>
+        <p>Email summary: pending contract</p>
+        <p>Partner download: pending authentication</p>
       </section>
       <section>
         <h2>Template used</h2>
@@ -1264,19 +1276,33 @@ function ReportSidePanels(): JSX.Element {
 }
 
 function buildReportRows(data: DashboardData): ReportRow[] {
-  return data.regions.map((region, index) => {
+  if (data.reports?.length) {
+    return data.reports.map((record) => {
+      const profile = data.profiles.find((item) => item.id === record.regionId);
+      const risk = data.regions.find((item) => item.id === record.regionId);
+      return {
+        id: record.id, regionId: record.regionId, region: record.region,
+        type: record.templateId === "executive-v1" ? "Executive PDF" : record.templateId,
+        period: `${record.periodStart.slice(0, 10)} to ${record.periodEnd.slice(0, 10)}`,
+        generatedOn: record.generatedAt, status: record.status,
+        filename: `mwangaza-executive-report-${record.regionId}.pdf`, formats: record.formats,
+        snapshotId: record.snapshotId, profile, risk
+      };
+    });
+  }
+  return data.regions.map((region) => {
     const profile = data.profiles.find((item) => item.id === region.id);
-    const type = index % 3 === 2 ? "Situation Brief" : index % 3 === 1 ? "Monthly Summary" : "Executive PDF";
-    const status: ReportRow["status"] = index === 2 ? "Review" : index === 3 ? "Scheduled" : "Ready";
     return {
-      id: `RPT-${region.id.toUpperCase()}-2026-${String(index + 1).padStart(3, "0")}`,
+      id: `RPT-${region.id.toUpperCase()}-INCOMPLETE`,
       regionId: region.id,
       region: region.name,
-      type,
+      type: "Executive PDF",
       period: region.period,
-      generatedOn: "2026-07-17",
-      status,
+      generatedOn: "Incomplete record",
+      status: "failed",
       filename: region.id === data.selectedRegionId ? data.reportFilename : `mwangaza-${region.id}-report-2026-07-17.pdf`,
+      formats: [],
+      snapshotId: "Unavailable",
       profile,
       risk: region
     };

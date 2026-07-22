@@ -599,3 +599,16 @@ Decisiones registradas:
 - **tests:** API, persistencia, export y PWA cubiertos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-59-reports-center-completion -->
+## 2026-07-22 · sprint-59-reports-center-completion aprobado
+
+Contexto: se aprobó el spec `sprint-59-reports-center-completion` (Sprint 59 - Reports Center Completion).
+
+Decisiones registradas:
+
+- **auth_secrets:** `/reports` es público y de sólo lectura. Generar y descargar PDF/CSV/JSON usa exclusivamente datos ya materializados y no requiere secretos del navegador. Programación, gestión de plantillas, compartir y distribución quedan deshabilitados hasta disponer de autenticación, roles y permisos aprobados. No se simula persistencia ni envío real y no se exponen destinatarios o secretos.
+- **rollback_compat:** La experiencia es aditiva y preserva `/reports`, deep-links existentes, contratos de exports y reportes previos, demo determinista y funcionamiento offline. Payloads antiguos pueden mostrarse con degradación explícita, pero nunca se inventan IDs/timestamps. Si el historial no está disponible, generación y descargas actuales siguen operativas. No se añade feature flag; el rollback es revertir el commit del sprint.
+- **tests:** Los tests bloqueantes deben cubrir contratos y estabilidad de IDs/timestamps, estados de lifecycle, filtros combinados, orden/selección, generación y descarga real de PDF/CSV/JSON, archivos no vacíos y cabeceras seguras, preview HTML/PDF correctamente etiquetado, deep-links, low-bandwidth, errores independientes, funciones `pending_contract`, auditoría permitida, ausencia de GEE y envíos reales desde navegador, demo offline y documentación de implementado/pendiente/futuro.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

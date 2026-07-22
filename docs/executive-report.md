@@ -19,3 +19,5 @@ is provided. Without a URL, the section is omitted.
 
 The generated filename is deterministic and safe for local filesystems:
 `mwangaza-executive-report-<region>-<period>.pdf`.
+
+Sprint 59 replaces the earlier `%PDF-HTML` placeholder with a standards-compliant PDF 1.4 artifact. The PDF is generated only from the materialized snapshot, uses the composite indicator severity rather than presentation color labels, and is visually rendered during review to catch clipping or semantic mismatches.

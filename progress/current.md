@@ -1,22 +1,23 @@
 # Sesión actual
 
-Feature: **sprint-58-alerts-center-completion - Sprint 58 - Alerts Center Completion** - estado: `review_pending`, spec aprobada.
+Feature: **sprint-59-reports-center-completion - Sprint 59 - Reports Center Completion** - estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- Alerts Center table-first con filtros persistentes, banda de estado, cola principal e inspector sticky.
-- IDs/timestamps backend, lifecycle e historial de estados diferenciados.
-- Recomendaciones enriquecidas y outbox exclusivamente simulado con destinatarios enmascarados.
-- CSV, JSON y PDF respetan filtros; alert settings permanece no disponible sin autenticación.
-- Deep-links y modo low-bandwidth conservan evidencia, filtros, resumen, lifecycle, recomendaciones y descargas sin consultar GEE desde el navegador.
+- Reports Center consume registros backend estables para los ocho países IGAD.
+- API de listado, detalle, generación y descarga real PDF/CSV/JSON.
+- Preview HTML explícito, PDF 1.4 válido y auditoría append-only de generación/descarga.
+- Programación, plantillas, compartir y distribución permanecen `pending_contract` sin simulación.
+- Filtros, tabs, cola, inspector, low-bandwidth y degradación de registros incompletos preservados.
 
 ## Validación
 
-- 308 tests Python y 11 subtests: PASS.
-- 48 tests frontend: PASS.
-- Typecheck, lint y build frontend: PASS.
-- Revisión visual automatizada pendiente: no había navegador conectado en la sesión.
+- Backend enfocado: 61 tests PASS.
+- Frontend: 48 tests PASS; typecheck, lint y build PASS.
+- PDF renderizado con Poppler y revisado visualmente sin cortes ni solapamientos.
+- Ruff global conserva 5 fallos preexistentes fuera del scope; los archivos modificados pasan Ruff.
+- MyPy global está bloqueado por un stub NumPy que requiere Python 3.12 en el entorno actual.
 
 ## Siguiente acción
 
-- Smoke test humano de `/alerts`, `/alerts/<id>` y modo low-bandwidth; después cerrar Sprint 58 con `node .harness/spec.mjs done sprint-58-alerts-center-completion`.
+- Smoke test humano de `/reports`, generación y descargas; después cerrar Sprint 59.

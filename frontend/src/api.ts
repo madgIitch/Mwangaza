@@ -7,6 +7,7 @@ import type {
   Metric,
   PublicAlertsResponse,
   PublicForecastsResponse,
+  PublicReportsResponse,
   PublicSnapshotResponse,
   RegionProfile,
   RegionRisk,
@@ -171,9 +172,10 @@ export async function loadApiDashboardDetails(base: DashboardData): Promise<Dash
 
 async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<DashboardData> {
   apiLog("details load start", { baseMode: base.dataMode, selectedRegionId: base.selectedRegionId });
-  const [alertsResult, forecastsResult] = await Promise.allSettled([
+  const [alertsResult, forecastsResult, reportsResult] = await Promise.allSettled([
     getJson<PublicAlertsResponse>("/api/v1/alerts?limit=20"),
-    getJson<PublicForecastsResponse>("/api/v1/forecasts")
+    getJson<PublicForecastsResponse>("/api/v1/forecasts"),
+    getJson<PublicReportsResponse>("/api/v1/reports?limit=100")
   ]);
   apiLog("details load settled", {
     alerts: alertsResult.status,
@@ -183,6 +185,12 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
   });
   const alerts = alertsResult.status === "fulfilled" ? normalizeAlerts(alertsResult.value) : base.alerts;
   const forecasts = forecastsResult.status === "fulfilled" ? alertsForecastDiagnostics(forecastsResult.value) : base.forecastDiagnostics;
+  const reports = reportsResult.status === "fulfilled" ? reportsResult.value.items.map((item) => ({
+    id: item.id, generatedAt: item.generated_at, updatedAt: item.updated_at, expiresAt: item.expires_at,
+    status: item.status, regionId: item.region_id, region: item.region, periodStart: item.period_start,
+    periodEnd: item.period_end, templateId: item.template_id, language: item.language, author: item.author,
+    snapshotId: item.snapshot_id, formats: item.formats, error: item.error
+  })) : base.reports;
   const profiles = mergeAlertsIntoProfiles(base.profiles, alerts, base.selectedRegionId);
   apiLog("details normalized", { alerts: alerts.length, forecastAvailable: forecasts.available, profiles: profiles.length });
   return {
@@ -191,6 +199,7 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     alerts,
     recommendations: profiles[0]?.recommendations ?? base.recommendations,
     profiles,
+    reports,
     forecastDiagnostics: forecasts
   };
 }

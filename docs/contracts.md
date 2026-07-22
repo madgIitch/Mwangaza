@@ -72,3 +72,10 @@ Filtered downloads reuse the same query contract:
 - `GET /api/v1/reports/alerts`
 
 The Alerts Center consumes only API/cache payloads, including in low-bandwidth mode. Browser interaction never queries Earth Engine directly.
+## Reports Center API
+
+- `GET /api/v1/reports` lists stable report records with filters and pagination.
+- `POST /api/v1/reports?region_id=<id>` validates the materialized regional record and logs generation; optional `period`, `template_id` and `language` query parameters are validated.
+- `GET /api/v1/reports/<id>` returns record, audit events and an explicitly labelled HTML preview.
+- `GET /api/v1/reports/<id>/download?format=pdf|csv|json` returns a non-empty attachment for ready reports.
+- Scheduling, template mutation, sharing and distribution have no public mutation contract and remain `pending_contract`.

@@ -68,8 +68,9 @@ class ExecutiveReportTests(unittest.TestCase):
         pdf = render_executive_report_pdf(context)
         filename = safe_report_filename(context)
 
-        self.assertTrue(pdf.startswith(b"%PDF-HTML\n"))
+        self.assertTrue(pdf.startswith(b"%PDF-1.4\n"))
         self.assertIn(b"Mwangaza Executive Report", pdf)
+        self.assertIn(b"Risk level: critical", pdf)
         self.assertEqual(filename, "mwangaza-executive-report-somalia-2026-07-01-to-2026-07-15.pdf")
         self.assertNotIn("\\", filename)
         self.assertNotIn("/", filename)

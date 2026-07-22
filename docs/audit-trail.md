@@ -17,3 +17,5 @@ credentials, tokens and local paths redacted.
 
 Queries can filter by `region_id`, `run_id` and `event_type`. There is no public
 delete, truncate or purge method.
+
+Sprint 59 adds `report_generated` and `report_downloaded` events for public report operations. They use actor `public-dashboard`, entity type `report`, stable report ID, region, run ID, snapshot ID and sanitized format/template metadata. Reading report lists or detail does not create audit events.
