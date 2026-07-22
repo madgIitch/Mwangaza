@@ -3940,7 +3940,7 @@
     {
       "id": "sprint-58-alerts-center-completion",
       "name": "Sprint 58 - Alerts Center Completion",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.0.1",
       "estimated_hours": 8,
