@@ -713,6 +713,29 @@ class DashboardShellTests(unittest.TestCase):
         self.assertEqual(data.alerts[0].recommended_action, data.alerts[0].action)
         self.assertIn(("Model Version", "composite-risk-v1"), data.alerts[0].evidence)
 
+    def test_live_alert_fallback_covers_all_igad_country_risks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache_dir = Path(tmp) / "cache"
+            cache_dir.mkdir()
+            country_ids = ("ken", "eth", "som", "sdn", "ssd", "uga", "dji", "eri")
+            snapshots = tuple(
+                _risk_snapshot(region_id=region_id, risk_level="watch", score=40.0 + index)
+                for index, region_id in enumerate(country_ids)
+            )
+            (cache_dir / "regional-risk.json").write_text(
+                json.dumps({"payload": [snapshot.to_dict() for snapshot in snapshots]}),
+                encoding="utf-8",
+            )
+
+            data = load_dashboard_shell_data(
+                cache_dir=cache_dir,
+                data_dir=Path(tmp),
+                alert_db_path=Path(tmp) / "alerts.sqlite",
+            )
+
+        self.assertEqual({alert.region_id for alert in data.alerts}, set(country_ids))
+        self.assertEqual(len(data.alerts), 8)
+
     def test_active_alerts_hide_resolved_and_sort_by_severity_quality_date_score(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             cache_dir = Path(tmp) / "cache"

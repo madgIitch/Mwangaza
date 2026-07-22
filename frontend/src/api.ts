@@ -206,9 +206,36 @@ function normalizeAlerts(alerts: PublicAlertsResponse): Alert[] {
     action: item.recommended_action,
     quality: item.quality_flag,
     status: item.status,
+    alertType: item.alert_type ?? "drought",
+    issuedAt: item.issued_at ?? item.period,
+    updatedAt: item.updated_at ?? item.period,
+    resolvedAt: item.resolved_at,
     evidence: item.evidence?.length
       ? item.evidence.map((entry) => [entry.label, entry.value] as [string, string])
-      : [["API", "/api/v1/alerts"]]
+      : [["API", "/api/v1/alerts"]],
+    events: (item.events ?? []).map((event) => ({
+      eventType: event.event_type,
+      status: event.status,
+      createdAt: event.created_at,
+      fromSeverity: event.from_severity,
+      toSeverity: event.to_severity
+    })),
+    notifications: (item.notifications ?? []).map((notification) => ({
+      id: notification.id,
+      channel: notification.channel,
+      recipientMasked: notification.recipient_masked,
+      content: notification.content,
+      status: notification.status,
+      createdAt: notification.created_at,
+      isSimulated: notification.is_simulated
+    })),
+    recommendations: (item.recommendations ?? []).map((recommendation) => ({
+      action: recommendation.action,
+      suggestedActor: recommendation.suggested_actor,
+      urgency: recommendation.urgency,
+      horizon: recommendation.horizon,
+      recommendationVersion: recommendation.recommendation_version
+    }))
   }));
 }
 

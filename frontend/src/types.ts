@@ -36,6 +36,13 @@ export interface Alert {
   quality: string;
   status: string;
   evidence: Array<[string, string]>;
+  alertType?: string;
+  issuedAt?: string;
+  updatedAt?: string;
+  resolvedAt?: string | null;
+  events?: Array<{ eventType: string; status: string; createdAt: string; fromSeverity?: string | null; toSeverity?: string | null }>;
+  notifications?: Array<{ id: string; channel: string; recipientMasked: string; content: string; status: string; createdAt: string; isSimulated: boolean }>;
+  recommendations?: Array<{ action: string; suggestedActor?: string | null; urgency?: string | null; horizon?: string | null; recommendationVersion?: string | null }>;
 }
 
 export interface TrendPoint {
@@ -219,7 +226,18 @@ export interface PublicAlertsResponse {
     score?: number | null;
     evidence?: Array<{ label: string; value: string }>;
     recommended_action: string;
+    alert_type?: string;
+    issued_at?: string;
+    updated_at?: string;
+    resolved_at?: string | null;
+    events?: Array<{ event_type: string; status: string; created_at: string; from_severity?: string | null; to_severity?: string | null }>;
+    notifications?: Array<{ id: string; channel: string; recipient_masked: string; content: string; status: string; created_at: string; is_simulated: boolean }>;
+    recommendations?: Array<{ action: string; suggested_actor?: string | null; urgency?: string | null; horizon?: string | null; recommendation_version?: string | null }>;
   }>;
+  summary?: { active: number; severe: number; preventive: number; resolved: number; superseded: number; notifications_simulated: number };
+  limit?: number;
+  offset?: number;
+  total?: number;
 }
 
 export interface PublicForecastsResponse {

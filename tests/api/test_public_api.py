@@ -85,8 +85,45 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(detail_status, 200)
         self.assertEqual(detail["alert"]["id"], alert_id)
         self.assertTrue(detail["alert"]["evidence"])
+        self.assertTrue(detail["alert"]["events"])
+        self.assertTrue(detail["alert"]["recommendations"])
+        self.assertEqual(len(detail["alert"]["notifications"]), 4)
+        self.assertTrue(all(item["is_simulated"] for item in detail["alert"]["notifications"]))
+        self.assertTrue(all("*" in item["recipient_masked"] or item["channel"] == "dashboard" for item in detail["alert"]["notifications"]))
         self.assertEqual(missing_status, 404)
         self.assertEqual(missing["error"]["code"], "not_found")
+
+    def test_alert_filters_summary_and_validation_are_real(self) -> None:
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            status, _headers, payload = _request("/api/v1/alerts", b"region=som&severity=critical&status=active")
+            invalid_status, _headers, invalid = _request("/api/v1/alerts", b"severity=impossible")
+
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["items"])
+        self.assertTrue(all(item["region_id"] == "som" for item in payload["items"]))
+        self.assertTrue(all(item["severity"] == "critical" for item in payload["items"]))
+        self.assertEqual(payload["summary"]["active"], len(payload["items"]))
+        self.assertGreater(payload["summary"]["notifications_simulated"], 0)
+        self.assertEqual(invalid_status, 400)
+        self.assertEqual(invalid["error"]["code"], "invalid_request")
+
+    def test_filtered_alert_exports_are_downloadable(self) -> None:
+        query = b"region=som&severity=critical&format=csv"
+        with patch.dict(os.environ, {"MWANGAZA_API_DATA_MODE": "demo"}):
+            csv_status, csv_headers, csv_body = _raw_request("/api/v1/exports/alerts", query)
+            json_status, json_headers, json_body = _raw_request("/api/v1/exports/alerts", b"region=som&format=json")
+            pdf_status, pdf_headers, pdf_body = _raw_request("/api/v1/reports/alerts", b"region=som")
+
+        self.assertEqual(csv_status, 200)
+        self.assertTrue(csv_headers["content-type"].startswith("text/csv"))
+        self.assertIn(b"id,region_id,region,severity,status", csv_body)
+        self.assertIn(b",som,Somalia,critical,active,", csv_body)
+        self.assertEqual(json_status, 200)
+        self.assertEqual(json_headers["content-type"], "application/json")
+        self.assertTrue(json.loads(json_body)["items"])
+        self.assertEqual(pdf_status, 200)
+        self.assertEqual(pdf_headers["content-type"], "application/pdf")
+        self.assertTrue(pdf_body.startswith(b"%PDF-HTML"))
 
     def test_report_and_snapshot_downloads_are_real_and_context_bound(self) -> None:
         period = "2026-07-01 to 2026-07-15"
@@ -232,6 +269,8 @@ class PublicApiTests(unittest.TestCase):
         self.assertEqual(openapi_status, 200)
         self.assertIn("/api/v1/regions", openapi["paths"])
         self.assertIn("/api/v1/alerts/{alert_id}", openapi["paths"])
+        self.assertIn("/api/v1/exports/alerts", openapi["paths"])
+        self.assertIn("/api/v1/reports/alerts", openapi["paths"])
         self.assertIn("/api/v1/reports/executive", openapi["paths"])
         self.assertIn("/api/v1/exports/snapshot", openapi["paths"])
         self.assertIn("x-example", openapi["paths"]["/api/v1/regions"]["get"])

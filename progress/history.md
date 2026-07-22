@@ -207,3 +207,9 @@
 
 - Contrato regional completo demo/live, controles funcionales y smoke GEE real 10/10.
 - 233 tests Python, 35 frontend, typecheck, lint, build y gates pasan.
+
+## 2026-07-21T22:15:00Z - #sprint-58-alerts-center-completion -> review_pending
+
+- Alerts Center table-first con filtros persistentes, historial lifecycle, deep-links y exportaciones filtradas.
+- Outbox estrictamente simulado con destinatarios enmascarados; settings y mutaciones siguen deshabilitados sin autenticación.
+- 308 tests Python, 11 subtests, 48 frontend, typecheck, lint, build y gates del harness pasan.

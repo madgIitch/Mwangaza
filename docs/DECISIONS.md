@@ -586,3 +586,16 @@ Decisiones registradas:
 - **tests:** Matriz API/PWA, demo/live y ausencia de consultas GEE definida.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-58-alerts-center-completion -->
+## 2026-07-21 · sprint-58-alerts-center-completion aprobado
+
+Contexto: se aprobó el spec `sprint-58-alerts-center-completion` (Sprint 58 - Alerts Center Completion).
+
+Decisiones registradas:
+
+- **auth_secrets:** lectura segura; sin settings ni envío real.
+- **rollback_compat:** rutas/campos actuales preservados.
+- **tests:** API, persistencia, export y PWA cubiertos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -9,7 +9,7 @@ Dense alert operations console: quiet layout, strong severity signals, table-fir
 ## Content Plan
 
 1. Global shell: persistent brand, routes, data source, last update and freshness.
-2. Alerts Center header: title, description, export placeholder and alert-settings placeholder.
+2. Alerts Center header: title, description, filtered exports and an explicitly unavailable settings control.
 3. Filter layer: search, severity, country/region, status and period.
 4. Summary layer: active, severe, preventive, resolved and notification counts.
 5. Work queue: active alerts table with row selection.
@@ -32,7 +32,7 @@ Dense alert operations console: quiet layout, strong severity signals, table-fir
   - Export.
   - Alert settings.
 
-Current implementation renders both buttons as placeholders because export/settings contracts are not approved yet.
+CSV, JSON and PDF exports preserve the active filters. Alert settings remain disabled because authentication and mutation permissions are outside the public prototype.
 
 ### Filters
 
@@ -44,7 +44,7 @@ Target filters:
 - Status.
 - Time period.
 
-Current implementation supports search, severity, country and status against loaded alert rows. Time period is visible but not wired to historical API payloads.
+Search, severity, country, status and time period operate on loaded rows, persist in the URL and are also accepted by the alerts API and export endpoints.
 
 ### Status Tabs
 
@@ -55,19 +55,19 @@ Target tabs:
 - Resolved.
 - All alerts.
 
-Current implementation exposes tab controls. Preventive/resolved views show placeholders unless the payload contains matching rows.
+Tabs synchronize with the status filter. Empty preventive or resolved views state that the repository has no matching history rather than inventing rows.
 
-### Summary Cards
+### Status Band
 
-Cards:
+Compact counters:
 
 - Active alerts.
 - Severe alerts.
 - Preventive alerts.
 - Resolved this month.
-- Notifications queued.
+- Simulated notifications.
 
-Current implementation computes active/severe from loaded alerts. Preventive, resolved and queued notification totals are simulated placeholders and must be replaced by backend contracts.
+All counters are computed from the alert payload. Notifications are always marked as simulated and never imply real delivery.
 
 ### Active Alerts Queue
 
@@ -83,7 +83,7 @@ Table columns:
 - Status.
 - Action.
 
-Rows are derived from loaded active alerts. Stable alert IDs are currently generated from visible fields and must be replaced by backend IDs.
+Rows are derived from loaded active and historical alerts. Persisted repository rows use stable backend IDs; demo rows use a deterministic fallback ID.
 
 ### Selected Alert
 
@@ -99,43 +99,40 @@ Shows:
 - `View full region analysis`.
 - `Generate PDF report`.
 
-Current implementation reuses the selected region profile and visible alert evidence. Narrative text is rule-based and conservative.
+The selected alert is deep-linkable at `/alerts/{alert_id}`. It reuses the selected region profile and visible alert evidence; narrative text is rule-based and conservative.
 
 ### Recommended Early Actions
 
-Uses the selected region profile recommendations. Detailed action metadata such as actor, priority, horizon, evidence and catalog version is pending.
+Uses the backend recommendation payload when present, including suggested actor, urgency, horizon, evidence and catalog version. A conservative profile recommendation is the fallback.
 
 ### Notification Outbox
 
 Target state: simulated messages across SMS, email, Telegram and dashboard broadcast, with masked recipients and status.
 
-Current implementation renders a simulated outbox placeholder and explicitly states that no real messages are sent.
+The API exposes deterministic SMS, email, Telegram and dashboard simulations. Recipients are masked, every row carries `is_simulated=true`, and no external send occurs.
 
 ### Alert Lifecycle
 
 Target state: timeline of trigger, escalation, actions generated, notifications simulated and active/resolved state.
 
-Current implementation renders a deterministic placeholder timeline from the selected alert period.
+Persisted lifecycle events are returned by the backend. A conservative triggered/current-status pair is used only for fixture rows without repository history.
 
 ### Resolved & Recent
 
 Target state: recently resolved, downgraded or superseded alerts.
 
-Current implementation shows an explicit placeholder because the current public API does not expose resolved-alert history.
+The repository query includes resolved and superseded history. If no rows exist, the interface exposes an honest empty state.
 
 ## Implemented Now
 
 - `/alerts` route renders Alerts Center as an independent screen.
 - Search, severity, country and status filters work on loaded alert payloads.
-- Summary cards compute available active/severe counts and mark missing totals as placeholders.
-- Selecting a row updates selected alert detail, evidence, region link, PDF link placeholder, recommendations, simulated outbox and lifecycle.
+- The compact status band computes active, severe, preventive, resolved and simulated-notification totals.
+- Selecting a row updates detail, evidence, region link, filtered PDF link, recommendations, simulated outbox and lifecycle.
 - Low-bandwidth mode still preserves essential alert information in the table-first shell.
 
-## Future Sprint Notes
+## Public safety boundary
 
-- Stable backend alert IDs, issued timestamps and last-updated timestamps are tracked by `sprint-58-alerts-center-completion`.
-- Export filtered alerts and alert settings are tracked by `sprint-58-alerts-center-completion`.
-- Preventive/resolved alert payloads and status history are tracked by `sprint-58-alerts-center-completion`.
-- Notification outbox contracts, masking rules and audit actions are tracked by `sprint-58-alerts-center-completion`.
-- Alert detail deep-links, full alert pages and region-filter propagation are tracked by `sprint-58-alerts-center-completion`.
-- Detailed action metadata and full recommended-action view are tracked by `sprint-58-alerts-center-completion`.
+- Alert reads and filtered downloads are public prototype capabilities.
+- No endpoint sends a notification.
+- Alert settings and lifecycle mutations remain unavailable until institutional authentication and authorization exist.

@@ -339,10 +339,34 @@ describe("React PWA dashboard", () => {
 
     expect(screen.getByRole("heading", { name: "Alerts Center" })).toBeInTheDocument();
     expect(screen.getByLabelText("Search alerts")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Active alerts queue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Alerts queue" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Somalia - Severe" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Notification outbox/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/v1/exports/alerts?format=csv");
+    expect(screen.getByRole("button", { name: "Alert settings unavailable" })).toBeDisabled();
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
+  });
+
+  it("persists Alerts Center filters in the URL", () => {
+    window.history.pushState({}, "", "/alerts");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    fireEvent.change(screen.getByLabelText("Severity"), { target: { value: "critical" } });
+    fireEvent.change(screen.getByLabelText("Search alerts"), { target: { value: "Somalia" } });
+
+    expect(window.location.search).toContain("severity=critical");
+    expect(window.location.search).toContain("q=Somalia");
+  });
+
+  it("keeps alert evidence available in low bandwidth mode", () => {
+    window.history.pushState({}, "", "/alerts");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    fireEvent.click(screen.getByLabelText("Low bandwidth"));
+
+    expect(screen.getByRole("heading", { name: "Alerts Center · Low bandwidth" })).toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "CSV" })).toHaveAttribute("href", "/api/v1/exports/alerts?format=csv");
   });
 
   it("renders reports as a standalone export center instead of scrolling inside Overview", () => {

@@ -207,7 +207,17 @@ export function App({
           </section>
         )}
 
-        {isAlertsRoute ? (
+        {isAlertsRoute && lowBandwidth ? (
+          <LowBandwidthView
+            activeAlerts={activeAlerts}
+            data={data}
+            language={language}
+            onSelectRegion={setSelectedRegionId}
+            route={route}
+            selectedProfile={selectedProfile}
+            selectedRegion={selectedRegion}
+          />
+        ) : isAlertsRoute ? (
           <AlertsCenter data={data} activeAlerts={activeAlerts} requestedAlertId={requestedAlertId} />
         ) : route === "/reports" ? (
           <ReportsCenter data={data} />
@@ -706,11 +716,14 @@ function ProvenanceScreen(): JSX.Element {
 }
 
 function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: DashboardData; activeAlerts: Alert[]; requestedAlertId?: string }): JSX.Element {
-  const [query, setQuery] = useState("");
-  const [severityFilter, setSeverityFilter] = useState("all");
-  const [regionFilter, setRegionFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [tab, setTab] = useState<"active" | "preventive" | "resolved" | "all">("active");
+  const initialAlertParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [query, setQuery] = useState(initialAlertParams.get("q") ?? "");
+  const [severityFilter, setSeverityFilter] = useState(initialAlertParams.get("severity") ?? "all");
+  const [regionFilter, setRegionFilter] = useState(initialAlertParams.get("region") ?? "all");
+  const [statusFilter, setStatusFilter] = useState(initialAlertParams.get("status") ?? "all");
+  const [periodFilter, setPeriodFilter] = useState(initialAlertParams.get("period") ?? "all");
+  const initialStatusTab = initialAlertParams.get("status");
+  const [tab, setTab] = useState<"active" | "preventive" | "resolved" | "all">(initialStatusTab === "active" || initialStatusTab === "preventive" || initialStatusTab === "resolved" ? initialStatusTab : "active");
   const [selectedAlertKey, setSelectedAlertKey] = useState<string | null>(null);
 
   const alertRows = useMemo(() => data.alerts.map((alert) => ({
@@ -726,9 +739,12 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
     const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter;
     const matchesRegion = regionFilter === "all" || alert.regionId === regionFilter;
     const matchesStatus = statusFilter === "all" || alert.status === statusFilter;
+    const matchesPeriod = periodFilter === "all" || alert.period === periodFilter;
     const matchesTab = tab === "all" || (tab === "active" && alert.status === "active") || (tab === "preventive" && alert.status === "preventive") || (tab === "resolved" && alert.status === "resolved");
-    return matchesQuery && matchesSeverity && matchesRegion && matchesStatus && matchesTab;
+    return matchesQuery && matchesSeverity && matchesRegion && matchesStatus && matchesPeriod && matchesTab;
   });
+  const periods = Array.from(new Set(alertRows.map(({ alert }) => alert.period))).sort().reverse();
+  const resolvedRows = alertRows.filter(({ alert }) => alert.status === "resolved" || alert.status === "superseded");
   const requestedRow = requestedAlertId ? alertRows.find((row) => row.id === requestedAlertId) : undefined;
   const selectedRow = requestedRow ?? filteredRows.find((row) => row.id === selectedAlertKey) ?? filteredRows[0] ?? alertRows[0];
   const selectedAlert = selectedRow?.alert;
@@ -736,6 +752,21 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
   const selectedRegion = selectedRow?.region ?? data.regions.find((region) => region.id === selectedAlert?.regionId) ?? data.regions[0];
   const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
   const severeCount = activeAlerts.filter((alert) => alert.severity === "critical").length;
+  const preventiveCount = data.alerts.filter((alert) => alert.status === "preventive").length;
+  const resolvedCount = data.alerts.filter((alert) => alert.status === "resolved").length;
+  const simulatedNotificationCount = data.alerts.reduce((total, alert) => total + (alert.notifications?.length ?? 0), 0);
+  const filterParams = new URLSearchParams();
+  if (query) filterParams.set("q", query);
+  if (severityFilter !== "all") filterParams.set("severity", severityFilter);
+  if (regionFilter !== "all") filterParams.set("region", regionFilter);
+  if (statusFilter !== "all") filterParams.set("status", statusFilter);
+  if (periodFilter !== "all") filterParams.set("period", periodFilter);
+  const filterQuery = filterParams.toString();
+
+  useEffect(() => {
+    if (requestedAlertId) return;
+    window.history.replaceState({}, "", `/alerts${filterQuery ? `?${filterQuery}` : ""}`);
+  }, [filterQuery, requestedAlertId]);
 
   if (requestedAlertId && !requestedRow) {
     return <section className="alert-detail-page" aria-label="Alert not found"><p className="eyebrow">404</p><h2>Alert not found</h2><p>The requested alert is not present in the loaded snapshot.</p><a className="text-link" href="/alerts">Back to Alerts Center</a></section>;
@@ -753,8 +784,10 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
           <p>Track active, preventive, and resolved drought alerts across IGAD</p>
         </div>
         <div className="alerts-header-actions">
-          <button type="button" title="Filtered export endpoint pending">Export</button>
-          <button type="button" title="Admin alert settings pending">Alert settings</button>
+          <a download href={`/api/v1/exports/alerts?${filterQuery ? `${filterQuery}&` : ""}format=csv`}>Export CSV</a>
+          <a download href={`/api/v1/exports/alerts?${filterQuery ? `${filterQuery}&` : ""}format=json`}>Export JSON</a>
+          <a download href={`/api/v1/reports/alerts${filterQuery ? `?${filterQuery}` : ""}`}>Export PDF</a>
+          <button disabled type="button" title="Authentication and alert-setting permissions are not available">Alert settings unavailable</button>
         </div>
       </div>
 
@@ -778,32 +811,34 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
           <option value="monitoring">Monitoring</option>
           <option value="preventive">Preventive</option>
           <option value="resolved">Resolved</option>
+          <option value="superseded">Superseded</option>
         </select>
-        <select aria-label="Time period" disabled>
-          <option>Last 30 days</option>
+        <select aria-label="Time period" onChange={(event) => setPeriodFilter(event.target.value)} value={periodFilter}>
+          <option value="all">Period: All</option>
+          {periods.map((period) => <option key={period} value={period}>{period}</option>)}
         </select>
       </div>
 
       <div className="alert-tabs" aria-label="Alert status tabs">
         {(["active", "preventive", "resolved", "all"] as const).map((item) => (
-          <button data-active={tab === item ? "true" : "false"} key={item} onClick={() => setTab(item)} type="button">
+          <button data-active={tab === item ? "true" : "false"} key={item} onClick={() => { setTab(item); setStatusFilter(item); }} type="button">
             {item === "all" ? "All alerts" : item[0].toUpperCase() + item.slice(1)}
           </button>
         ))}
       </div>
 
-      <section className="alert-summary-grid" aria-label="Alert summary">
-        <SummaryTile label="Active alerts" value={activeAlerts.length} detail="Loaded active payload" severity="critical" />
-        <SummaryTile label="Severe alerts" value={severeCount} detail="Critical severity rows" severity="critical" />
-        <SummaryTile label="Preventive alerts" value="Pending" detail="Forecast alert contract pending" severity="watch" />
-        <SummaryTile label="Resolved this month" value="Pending" detail="Resolved history pending" severity="normal" />
-        <SummaryTile label="Notifications queued" value="Simulated" detail="No real messages are sent" severity="unknown" />
-      </section>
+      <dl className="alert-status-band" aria-label="Alert summary">
+        <div><dt>Active</dt><dd>{activeAlerts.length}</dd></div>
+        <div><dt>Severe</dt><dd>{severeCount}</dd></div>
+        <div><dt>Preventive</dt><dd>{preventiveCount}</dd></div>
+        <div><dt>Resolved</dt><dd>{resolvedCount}</dd></div>
+        <div><dt>Simulated notifications</dt><dd>{simulatedNotificationCount}</dd></div>
+      </dl>
 
       <div className="alerts-workspace">
         <section className="alerts-queue">
           <div className="section-heading">
-            <h2>Active alerts queue</h2>
+            <h2>Alerts queue</h2>
             <span className="muted">Showing {filteredRows.length ? `1 to ${filteredRows.length}` : "0"} of {alertRows.length} results</span>
           </div>
           {filteredRows.length ? (
@@ -816,9 +851,9 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
                     <td>{index + 1}</td>
                     <td><span className="table-badge" data-severity={alert.severity}>{severityLabel(alert.severity)}</span></td>
                     <td>{alert.region}</td>
-                    <td>Drought</td>
+                    <td>{alert.alertType ?? "Drought"}</td>
                     <td>{alert.title}</td>
-                    <td>{alert.period}</td>
+                    <td>{alert.issuedAt ?? alert.period}</td>
                     <td>{alert.status}</td>
                     <td><button onClick={() => setSelectedAlertKey(id)} type="button">View</button></td>
                   </tr>
@@ -826,7 +861,7 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
               </tbody>
             </table>
           ) : (
-            <Placeholder title="No alerts match filters" detail="Adjust search, severity, country or status filters." />
+            <div className="empty-alert-filter"><Placeholder title="No alerts match filters" detail="Adjust search, severity, country, status or period." /><button onClick={() => { setQuery(""); setSeverityFilter("all"); setRegionFilter("all"); setStatusFilter("all"); setPeriodFilter("all"); setTab("all"); }} type="button">Clear filters</button></div>
           )}
         </section>
 
@@ -844,8 +879,8 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
               <p className="muted">ID: {selectedRow.id}</p>
               <dl className="alert-meta">
                 <div><dt>Quality</dt><dd>{qualityLabel(selectedAlert.quality)}</dd></div>
-                <div><dt>Issued</dt><dd>{selectedAlert.period}</dd></div>
-                <div><dt>Last updated</dt><dd>{selectedRegion.period}</dd></div>
+                <div><dt>Issued</dt><dd>{selectedAlert.issuedAt ?? selectedAlert.period}</dd></div>
+                <div><dt>Last updated</dt><dd>{selectedAlert.updatedAt ?? selectedRegion.period}</dd></div>
               </dl>
               <div className="selected-alert-metrics">
                 {selectedMetrics.map((metric) => (
@@ -858,8 +893,8 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
               </div>
               <p>{alertNarrative(selectedAlert, selectedRegion)}</p>
               <div className="alert-detail-actions">
-                <a href="/region">View full region analysis</a>
-                <a href="/reports">Generate PDF report</a>
+                <a href={`/region?country=${encodeURIComponent(selectedAlert.regionId)}`}>View full region analysis</a>
+                <a href={`/api/v1/reports/alerts?q=${encodeURIComponent(selectedRow?.id ?? selectedAlert.id)}`}>Generate PDF report</a>
               </div>
             </>
           ) : (
@@ -871,10 +906,7 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
       <div className="alerts-lower-grid">
         <section>
           <h2>Recommended early actions</h2>
-          <ul className="action-list">
-            {(selectedProfile?.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => <li key={item}>{item}</li>)}
-          </ul>
-          <a className="text-link" href="/alerts">View all recommended actions</a>
+          {selectedAlert?.recommendations?.length ? <ol className="alert-recommendation-list">{selectedAlert.recommendations.map((item) => <li key={item.action}><strong>{item.action}</strong><span>{item.suggestedActor ?? "Actor pending"} · {item.urgency ?? "Priority pending"}{item.horizon ? ` · ${item.horizon}` : ""}</span><small>{item.recommendationVersion ?? "Catalog version pending"}</small></li>)}</ol> : <ul className="action-list">{(selectedProfile?.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => <li key={item}>{item}</li>)}</ul>}
         </section>
         <NotificationOutbox selectedAlert={selectedAlert} />
         <AlertLifecycle selectedAlert={selectedAlert} selectedRegion={selectedRegion} />
@@ -882,14 +914,14 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
 
       <section className="resolved-recent">
         <h2>Resolved & recent</h2>
-        <Placeholder title="Resolved alert history pending" detail="The public API does not expose resolved, downgraded or superseded alert history yet." />
+        {resolvedRows.length ? <table><thead><tr><th>ID</th><th>Region</th><th>Status</th><th>Updated</th><th>Severity</th></tr></thead><tbody>{resolvedRows.map(({ alert, id }) => <tr key={id}><td><a href={`/alerts/${encodeURIComponent(id)}`}>{id}</a></td><td>{alert.region}</td><td>{alert.status}</td><td>{alert.resolvedAt ?? alert.updatedAt ?? alert.period}</td><td><span className="table-badge" data-severity={alert.severity}>{severityLabel(alert.severity)}</span></td></tr>)}</tbody></table> : <p className="muted">No resolved or superseded alerts are available in this repository.</p>}
       </section>
     </section>
   );
 }
 
 function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert: Alert; alertIdValue: string; data: DashboardData; profile: RegionProfile; region: RegionRisk }): JSX.Element {
-  const reportUrl = downloadUrl("/api/v1/reports/executive", region.id, region.period);
+  const reportUrl = `/api/v1/reports/alerts?q=${encodeURIComponent(alertIdValue)}`;
   return (
     <section className="alert-detail-page" aria-label={`Alert ${alertIdValue}`}>
       <header>
@@ -914,10 +946,14 @@ function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert
           <div className="alert-primary-action"><span>Recommended next step</span><strong>{alert.action}</strong></div>
         </aside>
       </div>
+      <div className="alerts-lower-grid alert-detail-support">
+        <AlertLifecycle selectedAlert={alert} selectedRegion={region} />
+        <NotificationOutbox selectedAlert={alert} />
+      </div>
       <nav className="alert-detail-actions" aria-label="Alert actions">
         <a href={`/region?country=${encodeURIComponent(region.id)}`}>Open region analysis</a>
-        <a href={reportUrl}>Download executive PDF</a>
-        <a href={`/alerts?region=${encodeURIComponent(region.id)}&period=${encodeURIComponent(region.period)}&status=active`}>Back to filtered alerts</a>
+        <a href={reportUrl}>Download alert PDF</a>
+        <a href={`/alerts?region=${encodeURIComponent(region.id)}&period=${encodeURIComponent(alert.period)}&status=${encodeURIComponent(alert.status)}`}>Back to filtered alerts</a>
       </nav>
     </section>
   );
@@ -934,7 +970,7 @@ function SummaryTile({ label, value, detail, severity }: { label: string; value:
 }
 
 function NotificationOutbox({ selectedAlert }: { selectedAlert?: Alert }): JSX.Element {
-  const rows = ["SMS", "Email", "Telegram", "Dashboard broadcast"];
+  const rows = selectedAlert?.notifications ?? [];
   return (
     <section>
       <div className="section-heading">
@@ -944,14 +980,15 @@ function NotificationOutbox({ selectedAlert }: { selectedAlert?: Alert }): JSX.E
       <table>
         <thead><tr><th>Channel</th><th>Message</th><th>Recipients</th><th>Status</th></tr></thead>
         <tbody>
-          {rows.map((channel, index) => (
-            <tr key={channel}>
-              <td>{channel}</td>
-              <td>{selectedAlert ? `${selectedAlert.region}: ${selectedAlert.title}` : "Alert message pending"}</td>
-              <td>{index === 0 ? "+251 9** *** 123" : index === 1 ? "ops***@relief.org" : index === 2 ? "@relief_channel" : "All users"}</td>
-              <td>{index === 3 ? "Delivered simulated" : "Queued"}</td>
+          {rows.map((item) => (
+            <tr key={item.id}>
+              <td>{item.channel}</td>
+              <td>{item.content}</td>
+              <td>{item.recipientMasked}</td>
+              <td><span className="simulation-badge">{item.isSimulated ? "Simulated" : "Blocked"}</span> {item.status}</td>
             </tr>
           ))}
+          {!rows.length ? <tr><td colSpan={4}>No simulated notification payload is available for this alert.</td></tr> : null}
         </tbody>
       </table>
     </section>
@@ -959,16 +996,12 @@ function NotificationOutbox({ selectedAlert }: { selectedAlert?: Alert }): JSX.E
 }
 
 function AlertLifecycle({ selectedAlert, selectedRegion }: { selectedAlert?: Alert; selectedRegion: RegionRisk }): JSX.Element {
-  const label = selectedAlert?.period ?? selectedRegion.period;
+  const events = selectedAlert?.events ?? [];
   return (
     <section>
       <h2>Alert lifecycle</h2>
       <ol className="lifecycle-list">
-        <li><strong>Triggered</strong><span>{label}</span></li>
-        <li><strong>Escalated to {selectedAlert ? severityLabel(selectedAlert.severity) : "current level"}</strong><span>{selectedRegion.period}</span></li>
-        <li><strong>Recommended actions generated</strong><span>Simulated from action catalog</span></li>
-        <li><strong>Notifications simulated</strong><span>No external adapter enabled</span></li>
-        <li><strong>Still active</strong><span>{selectedAlert?.status ?? "unknown"}</span></li>
+        {events.length ? events.map((event, index) => <li key={`${event.eventType}-${event.createdAt}-${index}`}><strong>{event.eventType.replaceAll("_", " ")}</strong><span>{event.createdAt} · {event.status}{event.toSeverity ? ` · ${event.toSeverity}` : ""}</span></li>) : <li><strong>Lifecycle unavailable</strong><span>{selectedRegion.period}</span></li>}
       </ol>
     </section>
   );
@@ -2333,9 +2366,89 @@ function LowBandwidthView({
   selectedRegion: RegionRisk;
 }): JSX.Element {
   const [selectedUnitId, setSelectedUnitId] = useState("");
+  const liteAlertParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [liteQuery, setLiteQuery] = useState(liteAlertParams.get("q") ?? "");
+  const [liteRegion, setLiteRegion] = useState(liteAlertParams.get("region") ?? "all");
+  const [liteSeverity, setLiteSeverity] = useState(liteAlertParams.get("severity") ?? "all");
+  const [liteStatus, setLiteStatus] = useState(liteAlertParams.get("status") ?? "all");
+  const [litePeriod, setLitePeriod] = useState(liteAlertParams.get("period") ?? "all");
   const administrativeUnits = selectedProfile.administrativeUnits ?? [];
   const selectedUnit = administrativeUnits.find((unit) => unit.regionId === selectedUnitId);
+  const litePeriods = Array.from(new Set(data.alerts.map((alert) => alert.period))).sort().reverse();
+  const liteFilteredAlerts = data.alerts.filter((alert) => {
+    const text = `${alertId(alert)} ${alert.region} ${alert.title} ${alert.action}`.toLowerCase();
+    return (!liteQuery || text.includes(liteQuery.toLowerCase()))
+      && (liteRegion === "all" || alert.regionId === liteRegion)
+      && (liteSeverity === "all" || alert.severity === liteSeverity)
+      && (liteStatus === "all" || alert.status === liteStatus)
+      && (litePeriod === "all" || alert.period === litePeriod);
+  });
   useEffect(() => setSelectedUnitId(""), [selectedRegion.id]);
+  useEffect(() => {
+    if (!route.startsWith("/alerts") || route.startsWith("/alerts/")) return;
+    const params = new URLSearchParams();
+    if (liteQuery) params.set("q", liteQuery);
+    if (liteRegion !== "all") params.set("region", liteRegion);
+    if (liteSeverity !== "all") params.set("severity", liteSeverity);
+    if (liteStatus !== "all") params.set("status", liteStatus);
+    if (litePeriod !== "all") params.set("period", litePeriod);
+    const query = params.toString();
+    window.history.replaceState({}, "", `/alerts${query ? `?${query}` : ""}`);
+  }, [litePeriod, liteQuery, liteRegion, liteSeverity, liteStatus, route]);
+
+  if (route.startsWith("/alerts")) {
+    const requestedAlertId = route.startsWith("/alerts/") ? decodeURIComponent(route.slice("/alerts/".length)) : undefined;
+    const requestedAlert = requestedAlertId ? data.alerts.find((alert) => alertId(alert) === requestedAlertId) : undefined;
+    const visibleAlerts = requestedAlert ? [requestedAlert] : liteFilteredAlerts;
+    const exportParams = new URLSearchParams();
+    if (liteQuery) exportParams.set("q", liteQuery);
+    if (liteRegion !== "all") exportParams.set("region", liteRegion);
+    if (liteSeverity !== "all") exportParams.set("severity", liteSeverity);
+    if (liteStatus !== "all") exportParams.set("status", liteStatus);
+    if (litePeriod !== "all") exportParams.set("period", litePeriod);
+    const exportQuery = exportParams.toString();
+    const activeCount = visibleAlerts.filter((alert) => alert.status === "active").length;
+    const severeCount = visibleAlerts.filter((alert) => alert.severity === "critical").length;
+    const simulatedCount = visibleAlerts.reduce((count, alert) => count + (alert.notifications?.length ?? 0), 0);
+    return (
+      <section className="lite-view lite-alerts-view" aria-label="Low bandwidth Alerts Center">
+        <div className="section-heading">
+          <div><p className="eyebrow">Operational alerts</p><h2>Alerts Center · Low bandwidth</h2></div>
+          <span>{visibleAlerts.length} alerts loaded</span>
+        </div>
+        <p>All alert evidence is supplied by the API. Notification entries below are simulations and do not represent real delivery.</p>
+        {!requestedAlert ? <div className="alerts-filters" aria-label="Low bandwidth alert filters">
+          <input aria-label="Search low bandwidth alerts" onChange={(event) => setLiteQuery(event.target.value)} placeholder="Search alerts" value={liteQuery} />
+          <select aria-label="Low bandwidth country or region" onChange={(event) => setLiteRegion(event.target.value)} value={liteRegion}><option value="all">All regions</option>{data.regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}</select>
+          <select aria-label="Low bandwidth severity" onChange={(event) => setLiteSeverity(event.target.value)} value={liteSeverity}><option value="all">All severities</option><option value="critical">Severe</option><option value="warning">Alert</option><option value="watch">Watch</option><option value="normal">Green</option><option value="unknown">Unknown</option></select>
+          <select aria-label="Low bandwidth status" onChange={(event) => setLiteStatus(event.target.value)} value={liteStatus}><option value="all">All statuses</option><option value="active">Active</option><option value="monitoring">Monitoring</option><option value="preventive">Preventive</option><option value="resolved">Resolved</option><option value="superseded">Superseded</option></select>
+          <select aria-label="Low bandwidth period" onChange={(event) => setLitePeriod(event.target.value)} value={litePeriod}><option value="all">All periods</option>{litePeriods.map((period) => <option key={period} value={period}>{period}</option>)}</select>
+        </div> : null}
+        <dl className="alert-status-band" aria-label="Low bandwidth alert summary"><div><dt>Results</dt><dd>{visibleAlerts.length}</dd></div><div><dt>Active</dt><dd>{activeCount}</dd></div><div><dt>Severe</dt><dd>{severeCount}</dd></div><div><dt>Simulated notifications</dt><dd>{simulatedCount}</dd></div></dl>
+        <nav className="lite-downloads" aria-label="Alert downloads">
+          <a download href={`/api/v1/exports/alerts?${exportQuery ? `${exportQuery}&` : ""}format=csv`}>CSV</a>
+          <a download href={`/api/v1/exports/alerts?${exportQuery ? `${exportQuery}&` : ""}format=json`}>JSON</a>
+          <a download href={`/api/v1/reports/alerts${exportQuery ? `?${exportQuery}` : ""}`}>PDF</a>
+        </nav>
+        {requestedAlertId && !requestedAlert ? <Placeholder title="Alert not found" detail="The requested alert is not present in the loaded snapshot." /> : null}
+        {visibleAlerts.length ? <table>
+          <thead><tr><th>ID</th><th>Region</th><th>Severity</th><th>Status</th><th>Issued</th><th>Recommended action</th></tr></thead>
+          <tbody>{visibleAlerts.map((alert) => <tr key={alertId(alert)}><td><a href={`/alerts/${encodeURIComponent(alertId(alert))}`}>{alertId(alert)}</a></td><td>{alert.region}</td><td>{severityLabel(alert.severity)}</td><td>{alert.status}</td><td>{alert.issuedAt ?? alert.period}</td><td>{alert.action}</td></tr>)}</tbody>
+        </table> : <p>No alerts are available in the loaded snapshot.</p>}
+        {requestedAlert ? <>
+          <h3>Evidence</h3>
+          <table><thead><tr><th>Signal</th><th>Value</th></tr></thead><tbody>{requestedAlert.evidence.map(([label, value]) => <tr key={`${label}-${value}`}><td>{label}</td><td>{value}</td></tr>)}</tbody></table>
+          <h3>Recommendations</h3>
+          <ol>{requestedAlert.recommendations?.length ? requestedAlert.recommendations.map((item) => <li key={item.action}>{item.action}{item.suggestedActor ? ` · ${item.suggestedActor}` : ""}{item.urgency ? ` · ${item.urgency}` : ""}</li>) : <li>{requestedAlert.action}</li>}</ol>
+          <h3>Lifecycle</h3>
+          <ol>{(requestedAlert.events ?? []).map((event, index) => <li key={`${event.eventType}-${event.createdAt}-${index}`}>{event.createdAt}: {event.eventType} ({event.status})</li>)}</ol>
+          <h3>Simulated notification outbox</h3>
+          <ul>{(requestedAlert.notifications ?? []).map((item) => <li key={item.id}>{item.channel}: {item.recipientMasked} · {item.status}</li>)}</ul>
+          <a href="/alerts">Back to Alerts Center</a>
+        </> : null}
+      </section>
+    );
+  }
 
   if (route === "/region") {
     return (

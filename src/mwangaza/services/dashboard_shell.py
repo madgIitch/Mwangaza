@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -64,6 +64,12 @@ class AlertSummary:
     region_type: str = "country"
     period_start: str = ""
     period_end: str = ""
+    alert_id: str = ""
+    issued_at: str = ""
+    updated_at: str = ""
+    resolved_at: str | None = None
+    events: tuple[dict[str, Any], ...] = ()
+    recommendations: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -255,6 +261,13 @@ def load_materialized_dashboard_shell_data(
     )
 
 
+def load_alert_history(*, data_dir: Path | None = None, alert_db_path: Path | None = None) -> tuple[AlertSummary, ...]:
+    """Read persisted alerts across lifecycle states without starting remote work."""
+
+    _cache_dir, resolved_data_dir = _resolve_local_paths(None, data_dir)
+    return _read_alerts(alert_db_path or resolved_data_dir / "alerts.sqlite", active_only=False)
+
+
 def fallback_dashboard_shell_data() -> DashboardShellData:
     data = _demo_dashboard_shell_data("demo")
     return DashboardShellData(
@@ -388,7 +401,7 @@ def _dashboard_data_from_payloads(
     is_simulated = _all_simulated([payload for payload in (risk, snapshot, *signals) if payload])
     source = source_simulated if is_simulated else source_observed
     message = message_simulated if is_simulated else message_observed
-    alerts = active_alerts or _alerts_from_risk(risk)
+    alerts = active_alerts or _alerts_from_risks(risks)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     region_profiles = _region_profiles_from_payloads(period_payloads, active_alerts, trend_payloads=cached_payloads)
     trends = _trends_for_region(cached_payloads, selected_region_id)
@@ -486,7 +499,7 @@ def _temporal_period_from_payloads(
         snapshot.get("region_id") if snapshot else None,
         *(signal.get("region_id") for signal in signals),
     )
-    alerts = active_alerts or _alerts_from_risk(risk)
+    alerts = active_alerts or _alerts_from_risks(risks)
     recommendations = _recommendations_from_alerts(alerts) or _recommendations_from_risk(risk)
     partial = _is_partial_period(payloads)
     comparison_payloads = history_payloads or payloads
@@ -835,17 +848,25 @@ def _selected_region_id(payloads: tuple[dict[str, Any], ...]) -> str:
 
 
 def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
+    return _read_alerts(alert_db_path, active_only=True)
+
+
+def _read_alerts(alert_db_path: Path, *, active_only: bool) -> tuple[AlertSummary, ...]:
     if not alert_db_path.is_file():
         return ()
     try:
         conn = sqlite3.connect(alert_db_path)
         conn.row_factory = sqlite3.Row
+        where_clause = "WHERE status='active'" if active_only else ""
         rows = conn.execute(
-            """
-            SELECT region_id, alert_type, period_start, period_end, severity, status,
-              score, quality_flag, evidence_json, recommendations_json
+            f"""
+            SELECT id, region_id, alert_type, period_start, period_end, severity, status,
+              score, quality_flag, evidence_json, recommendations_json,
+              COALESCE((SELECT MIN(created_at) FROM alert_events WHERE alert_id=alerts.id), period_start) AS issued_at,
+              COALESCE((SELECT MAX(created_at) FROM alert_events WHERE alert_id=alerts.id), period_end) AS updated_at,
+              (SELECT MAX(created_at) FROM alert_events WHERE alert_id=alerts.id AND status='resolved') AS resolved_at
             FROM alerts
-            WHERE status='active'
+            {where_clause}
             LIMIT 50
             """
         ).fetchall()
@@ -856,8 +877,10 @@ def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
             conn.close()
         except UnboundLocalError:
             pass
-    alerts = tuple(
-        AlertSummary(
+    alerts: list[AlertSummary] = []
+    for row in rows:
+        recommendations = _recommendation_items(row["recommendations_json"])
+        alerts.append(AlertSummary(
             region=_region_label(str(row["region_id"])),
             severity=_severity(str(row["severity"])),
             title=_alert_title(str(row["severity"]), row["score"]),
@@ -873,10 +896,14 @@ def _read_active_alerts(alert_db_path: Path) -> tuple[AlertSummary, ...]:
             region_type=_region_type(str(row["region_id"])),
             period_start=str(row["period_start"] or ""),
             period_end=str(row["period_end"] or ""),
-        )
-        for row in rows
-    )
-    return _prioritized_alerts(alerts)
+            alert_id=f"ALT-{str(row['region_id']).upper()}-{int(row['id']):06d}",
+            issued_at=str(row["issued_at"] or row["period_start"] or ""),
+            updated_at=str(row["updated_at"] or row["period_end"] or ""),
+            resolved_at=str(row["resolved_at"]) if row["resolved_at"] else None,
+            events=_repository_alert_events(alert_db_path, int(row["id"])),
+            recommendations=recommendations,
+        ))
+    return _prioritized_alerts(tuple(alerts))
 
 
 def _alerts_for_region(alerts: tuple[AlertSummary, ...], region_id: str) -> tuple[AlertSummary, ...]:
@@ -915,6 +942,25 @@ def _alerts_from_risk(risk: dict[str, Any] | None) -> tuple[AlertSummary, ...]:
     ))
 
 
+def _alerts_from_risks(risks: tuple[dict[str, Any], ...]) -> tuple[AlertSummary, ...]:
+    """Build the regional queue from the latest national risk for every IGAD country."""
+    country_ids = {region.id for region in list_regions(level=COUNTRY_LEVEL, include_pilots=False)}
+    latest_by_region: dict[str, dict[str, Any]] = {}
+    for risk in risks:
+        region_id = _first_text(risk.get("region_id")).lower()
+        if region_id not in country_ids:
+            continue
+        current = latest_by_region.get(region_id)
+        if current is None or _payload_sort_time(risk) > _payload_sort_time(current):
+            latest_by_region[region_id] = risk
+    alerts = tuple(
+        alert
+        for region_id in sorted(latest_by_region)
+        for alert in _alerts_from_risk(latest_by_region[region_id])
+    )
+    return _prioritized_alerts(alerts)
+
+
 def _recommendations_from_risk(risk: dict[str, Any] | None) -> tuple[str, ...]:
     if risk is None:
         return ()
@@ -942,27 +988,7 @@ def _recommendations_from_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[str,
 
 def _prioritized_alerts(alerts: tuple[AlertSummary, ...]) -> tuple[AlertSummary, ...]:
     ordered = sorted(alerts, key=_alert_sort_key)
-    return tuple(
-        AlertSummary(
-            alert.region,
-            alert.severity,
-            alert.title,
-            alert.period,
-            alert.action,
-            alert.region_id,
-            alert.alert_type,
-            alert.status,
-            alert.score,
-            alert.quality_flag,
-            alert.evidence,
-            alert.recommended_action,
-            index,
-            alert.region_type,
-            alert.period_start,
-            alert.period_end,
-        )
-        for index, alert in enumerate(ordered, start=1)
-    )
+    return tuple(replace(alert, priority_rank=index) for index, alert in enumerate(ordered, start=1))
 
 
 def _alert_sort_key(alert: AlertSummary) -> tuple[int, int, str, float]:
@@ -990,6 +1016,50 @@ def _region_type(region_id: str) -> str:
                 return "country"
             return region.level
     return "unknown"
+
+
+def _recommendation_items(raw_json: object) -> tuple[dict[str, Any], ...]:
+    try:
+        payload = json.loads(str(raw_json or "[]"))
+    except (TypeError, ValueError):
+        return ()
+    if not isinstance(payload, list):
+        return ()
+    return tuple(dict(item) for item in payload if isinstance(item, dict))
+
+
+def _repository_alert_events(path: Path, alert_id: int) -> tuple[dict[str, Any], ...]:
+    conn: sqlite3.Connection | None = None
+    try:
+        conn = sqlite3.connect(path)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT event_type, from_severity, to_severity, status, metadata_json, created_at
+            FROM alert_events WHERE alert_id=? ORDER BY id
+            """,
+            (alert_id,),
+        ).fetchall()
+    except sqlite3.Error:
+        return ()
+    finally:
+        if conn is not None:
+            conn.close()
+    events: list[dict[str, Any]] = []
+    for row in rows:
+        try:
+            metadata = json.loads(row["metadata_json"] or "{}")
+        except (TypeError, ValueError):
+            metadata = {}
+        events.append({
+            "event_type": str(row["event_type"]),
+            "from_severity": row["from_severity"],
+            "to_severity": row["to_severity"],
+            "status": str(row["status"]),
+            "created_at": str(row["created_at"]),
+            "metadata": metadata if isinstance(metadata, dict) else {},
+        })
+    return tuple(events)
 
 
 def _primary_recommendation(raw_json: object) -> str:

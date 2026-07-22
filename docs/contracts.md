@@ -57,3 +57,18 @@ Live GEE computes ADM1 only for the current period. By default it processes ever
 Live API reads use stale-while-revalidate semantics. A valid materialized response is returned immediately while one process-local background refresh updates GEE data; `/alerts` and `/forecasts` never wait behind that remote calculation. The PWA polls the snapshot while `data_mode=cache` and promotes it to `live` without a page reload. Successful live loads atomically persist a last-known-good payload batch, and an incomplete newer cache period cannot displace an older usable score for the preferred region.
 
 The ADM1 NDVI batch accepts MOD13Q1 `SummaryQA` values 0 (good) and 1 (marginal but useful), records the accepted values in indicator metadata and rejects snow/ice and cloudy values 2-3. This ADM1-specific rule prevents small administrative areas from becoming falsely unassessed while retaining real source pixels; aggregated country/history queries keep the stricter configured QA filter.
+
+# Alerts Center contract (Sprint 58)
+
+`GET /api/v1/alerts` accepts `q`, `region`, `severity`, `status`, `period`, `limit` and `offset`. Valid lifecycle statuses are `preventive`, `active`, `monitoring`, `resolved` and `superseded`; invalid severity or status values return a structured `400 invalid_request`. The response includes a filtered `summary` alongside paginated items.
+
+Every alert publishes a stable `id`, region, severity, status, alert type, period boundaries, issued/updated/resolved timestamps, score, quality, evidence, recommended action, recommendation metadata, lifecycle events and simulated notification entries. Persisted IDs are repository-backed; fixture IDs are deterministic. Missing history is represented conservatively and never changes alert state.
+
+Simulated notification rows include channel, masked recipient, content, status, timestamp and `is_simulated=true`. These rows are previews only: the public API has no send endpoint and does not contact SMS, email or messaging providers.
+
+Filtered downloads reuse the same query contract:
+
+- `GET /api/v1/exports/alerts?format=csv|json`
+- `GET /api/v1/reports/alerts`
+
+The Alerts Center consumes only API/cache payloads, including in low-bandwidth mode. Browser interaction never queries Earth Engine directly.

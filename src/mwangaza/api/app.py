@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import hashlib
+import csv
+import io
 import os
 import threading
 import time
@@ -22,7 +24,7 @@ from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, r
 from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
 from mwangaza.regions import list_regions
 from mwangaza.reports import build_executive_report_context, render_executive_report_pdf, safe_report_filename
-from mwangaza.services.dashboard_shell import load_dashboard_shell_data, load_materialized_dashboard_shell_data
+from mwangaza.services.dashboard_shell import load_alert_history, load_dashboard_shell_data, load_materialized_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
 DEMO_REFERENCE_DATE = "2026-07-15"
@@ -187,20 +189,44 @@ def _route_v1(
     if path == "/api/v1/alerts":
         limit, offset = _pagination(query)
         data = _load_api_dashboard_data()
-        alerts = [_alert_payload(alert) for alert in data.alerts]
+        filtered = _filter_alerts(_all_alerts(data), query)
+        alerts = [_alert_payload(alert) for alert in filtered]
         _log("alerts export", data_mode=data.data_status.mode, total=len(alerts), limit=limit, offset=offset)
         METRICS.observe_workload(active_alerts=len(alerts))
-        return _listed(alerts, limit, offset), HTTPStatus.OK, 60
+        response = _listed(alerts, limit, offset)
+        response["summary"] = _alert_summary(alerts)
+        return response, HTTPStatus.OK, 60
     if path.startswith("/api/v1/alerts/"):
         alert_id = path.removeprefix("/api/v1/alerts/")
         data = _load_api_dashboard_data()
-        match = next((alert for alert in data.alerts if _stable_alert_id(alert) == alert_id), None)
+        match = next((alert for alert in _all_alerts(data) if _stable_alert_id(alert) == alert_id), None)
         if match is None:
             return _error("not_found", "Alert does not exist"), HTTPStatus.NOT_FOUND, 30
         return {
             "schema_version": API_SCHEMA_VERSION,
             "alert": _alert_payload(match),
         }, HTTPStatus.OK, 60
+    if path == "/api/v1/exports/alerts":
+        data = _load_api_dashboard_data()
+        alerts = [_alert_payload(alert) for alert in _filter_alerts(_all_alerts(data), query)]
+        export_format = _single_query(query, "format", "csv").lower()
+        if export_format == "csv":
+            body = _alerts_csv(alerts)
+            content_type = "text/csv; charset=utf-8"
+        elif export_format == "json":
+            body = json.dumps({"schema_version": API_SCHEMA_VERSION, "items": alerts}, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            content_type = "application/json"
+        else:
+            raise ValueError("format must be csv or json")
+        return RawResponse(body=body, content_type=content_type, filename=f"mwangaza-alerts.{export_format}"), HTTPStatus.OK, 60
+    if path == "/api/v1/reports/alerts":
+        data = _load_api_dashboard_data()
+        alerts = [_alert_payload(alert) for alert in _filter_alerts(_all_alerts(data), query)]
+        return RawResponse(
+            body=_alerts_pdf(alerts),
+            content_type="application/pdf",
+            filename="mwangaza-alerts.pdf",
+        ), HTTPStatus.OK, 60
     if path == "/api/v1/reports/executive":
         data = _load_api_dashboard_data()
         region_id, requested_period = _download_context(query, data)
@@ -298,6 +324,9 @@ def _admin_payload(repo: Any, *, version: Any | None = None) -> dict[str, Any]:
 
 
 def _stable_alert_id(alert: Any) -> str:
+    supplied = str(getattr(alert, "alert_id", "") or "").strip()
+    if supplied:
+        return supplied
     region_id = str(getattr(alert, "region_id", "") or "region").lower()
     identity = "|".join(
         (
@@ -312,8 +341,27 @@ def _stable_alert_id(alert: Any) -> str:
 
 
 def _alert_payload(alert: Any) -> dict[str, Any]:
+    alert_id = _stable_alert_id(alert)
+    issued_at = str(getattr(alert, "issued_at", "") or getattr(alert, "period_start", "") or getattr(alert, "period", ""))
+    updated_at = str(getattr(alert, "updated_at", "") or getattr(alert, "period_end", "") or issued_at)
+    events = list(getattr(alert, "events", ()) or ())
+    if not events:
+        events = [
+            {"event_type": "triggered", "status": "active", "created_at": issued_at, "from_severity": None, "to_severity": alert.severity, "metadata": {}},
+            {"event_type": "status_observed", "status": alert.status, "created_at": updated_at, "from_severity": alert.severity, "to_severity": alert.severity, "metadata": {}},
+        ]
+    recommendations = list(getattr(alert, "recommendations", ()) or ())
+    if not recommendations:
+        recommendations = [{
+            "action": alert.recommended_action or alert.action,
+            "suggested_actor": None,
+            "urgency": _alert_urgency(alert.severity),
+            "horizon": None,
+            "evidence": {"region_id": alert.region_id, "score": alert.score, "quality_flag": alert.quality_flag},
+            "recommendation_version": None,
+        }]
     return {
-        "id": _stable_alert_id(alert),
+        "id": alert_id,
         "region_id": alert.region_id,
         "region": alert.region,
         "severity": alert.severity,
@@ -322,11 +370,101 @@ def _alert_payload(alert: Any) -> dict[str, Any]:
         "period": alert.period,
         "period_start": alert.period_start,
         "period_end": alert.period_end,
+        "issued_at": issued_at,
+        "updated_at": updated_at,
+        "resolved_at": getattr(alert, "resolved_at", None),
+        "alert_type": getattr(alert, "alert_type", "drought"),
         "quality_flag": alert.quality_flag,
         "score": alert.score,
         "evidence": [{"label": label, "value": value} for label, value in alert.evidence],
         "recommended_action": alert.recommended_action or alert.action,
+        "recommendations": recommendations,
+        "events": events,
+        "notifications": _simulated_notifications(alert, alert_id),
     }
+
+
+def _alert_urgency(severity: str) -> str:
+    return {"critical": "urgent_activation", "warning": "prepositioning", "watch": "preparation"}.get(severity, "monitoring")
+
+
+def _simulated_notifications(alert: Any, alert_id: str) -> list[dict[str, Any]]:
+    recipients = (("sms", "***0000"), ("email", "op***@example.org"), ("telegram", "@m***"), ("dashboard", "authenticated users"))
+    return [
+        {
+            "id": hashlib.sha256(f"{alert_id}|{channel}".encode("utf-8")).hexdigest()[:12],
+            "channel": channel,
+            "recipient_masked": recipient,
+            "content": f"[SIMULATED] {alert.region}: {alert.title}",
+            "status": "simulated",
+            "created_at": str(getattr(alert, "updated_at", "") or getattr(alert, "period_end", "") or getattr(alert, "period", "")),
+            "is_simulated": True,
+        }
+        for channel, recipient in recipients
+    ]
+
+
+def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
+    filters = {name: _single_query(query, name, "").lower() for name in ("q", "region", "severity", "status", "period")}
+    valid_severity = {"normal", "watch", "warning", "critical", "unknown"}
+    valid_status = {"preventive", "active", "monitoring", "resolved", "superseded"}
+    if filters["severity"] and filters["severity"] not in valid_severity:
+        raise ValueError("severity is invalid")
+    if filters["status"] and filters["status"] not in valid_status:
+        raise ValueError("status is invalid")
+    result: list[Any] = []
+    for alert in alerts:
+        searchable = " ".join((_stable_alert_id(alert), str(alert.region), str(alert.title), str(alert.action), str(alert.quality_flag), str(alert.evidence))).lower()
+        if filters["q"] and filters["q"] not in searchable:
+            continue
+        if filters["region"] and filters["region"] != str(alert.region_id).lower():
+            continue
+        if filters["severity"] and filters["severity"] != str(alert.severity).lower():
+            continue
+        if filters["status"] and filters["status"] != str(alert.status).lower():
+            continue
+        period_values = " ".join((str(alert.period), str(alert.period_start), str(alert.period_end))).lower()
+        if filters["period"] and filters["period"] not in period_values:
+            continue
+        result.append(alert)
+    return result
+
+
+def _all_alerts(data: Any) -> list[Any]:
+    if getattr(getattr(data, "data_status", None), "mode", "") == "demo":
+        return list(data.alerts)
+    persisted = list(load_alert_history())
+    if not persisted:
+        return list(data.alerts)
+    by_id = {_stable_alert_id(alert): alert for alert in persisted}
+    for alert in data.alerts:
+        by_id.setdefault(_stable_alert_id(alert), alert)
+    return sorted(by_id.values(), key=lambda alert: (str(alert.status) not in {"active", "preventive"}, getattr(alert, "priority_rank", 999), _stable_alert_id(alert)))
+
+
+def _alert_summary(alerts: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        "active": sum(item["status"] == "active" for item in alerts),
+        "severe": sum(item["severity"] == "critical" for item in alerts),
+        "preventive": sum(item["status"] == "preventive" for item in alerts),
+        "resolved": sum(item["status"] == "resolved" for item in alerts),
+        "superseded": sum(item["status"] == "superseded" for item in alerts),
+        "notifications_simulated": sum(len(item["notifications"]) for item in alerts),
+    }
+
+
+def _alerts_csv(alerts: list[dict[str, Any]]) -> bytes:
+    stream = io.StringIO(newline="")
+    fields = ("id", "region_id", "region", "severity", "status", "alert_type", "issued_at", "updated_at", "resolved_at", "score", "quality_flag", "title", "recommended_action")
+    writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(alerts)
+    return stream.getvalue().encode("utf-8")
+
+
+def _alerts_pdf(alerts: list[dict[str, Any]]) -> bytes:
+    rows = "\n".join(f"{item['id']} | {item['region']} | {item['severity']} | {item['status']} | {item['title']}" for item in alerts)
+    return f"%PDF-HTML\nMwangaza filtered alerts\n{rows}\n".encode("utf-8")
 
 
 def _download_context(query: dict[str, list[str]], data: Any) -> tuple[str, str]:
@@ -515,6 +653,8 @@ def _openapi() -> dict[str, Any]:
         "/api/v1/snapshots/latest": {"schema_version": API_SCHEMA_VERSION},
         "/api/v1/alerts": {"limit": 10, "offset": 0},
         "/api/v1/alerts/{alert_id}": {"alert_id": "ALT-SOM-EXAMPLE"},
+        "/api/v1/exports/alerts": {"region": "som", "severity": "critical", "status": "active", "format": "csv"},
+        "/api/v1/reports/alerts": {"region": "som", "severity": "critical", "status": "active"},
         "/api/v1/forecasts": {"available": False},
         "/api/v1/reports/executive": {"region": "som", "period": "2026-07-01 to 2026-07-15"},
         "/api/v1/exports/snapshot": {"region": "som", "period": "2026-07-01 to 2026-07-15", "format": "csv"},

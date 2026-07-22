@@ -1402,3 +1402,44 @@ Objetivo no negociable:
 - **external_contracts:** Rutas de detalle y endpoints de descarga concretos.
 - **edge_cases:** Zoom, selección, orden y comparación deterministas.
 - **ui_states:** Cockpit completo, accesible y equivalente en low-bandwidth.
+
+<!-- harness:sprint-58-alerts-center-completion -->
+## sprint-58-alerts-center-completion · Sprint 58 - Alerts Center Completion
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `src/mwangaza/contracts/**`
+  - `tests/contracts/**`
+  - `src/mwangaza/alerts/**`
+  - `tests/alerts/**`
+  - `src/mwangaza/actions/**`
+  - `tests/actions/**`
+  - `src/mwangaza/notifications/**`
+  - `tests/notifications/**`
+  - `src/mwangaza/audit/**`
+  - `tests/audit/**`
+  - `src/mwangaza/services/dashboard_shell.py`
+  - `tests/ui/test_dashboard_shell.py`
+  - `src/mwangaza/exports/**`
+  - `tests/exports/**`
+  - `src/mwangaza/reports/**`
+  - `tests/reports/**`
+  - `docs/alerts-interface.md`
+  - `docs/contracts.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-58-alerts-center-completion-*/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** identidad backend y lifecycle append-only.
+- **external_contracts:** listado, detalle y export filtrados.
+- **edge_cases:** orden, filtros, selección y paginación deterministas.
+- **ui_states:** workspace table-first con inspector operativo.
