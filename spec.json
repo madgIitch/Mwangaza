@@ -46,7 +46,9 @@
       "Una estimacion de exposicion nunca se denomina numero de personas afectadas.",
       "Los umbrales del prototipo no se presentan como umbrales oficiales de IGAD.",
       "Una alerta con calidad critica no puede publicarse como concluyente.",
-      "Toda cifra visible conserva fuente, periodo, unidad y version de transformacion."
+      "Toda cifra visible conserva fuente, periodo, unidad y version de transformacion.",
+      "Una probabilidad predictiva describe la evolucion futura del indicador de riesgo de Mwangaza, no la probabilidad de sequia oficial, crisis humanitaria, perdidas agricolas o personas afectadas.",
+      "Mwangaza no publica una probabilidad cuando el modelo no demuestra skill fuera de muestra frente a los baselines aprobados o cuando la calidad, calibracion, cobertura regional, drift u horizonte bloquean su uso."
     ],
     "security_invariants": [
       "Ninguna credencial de Google Earth Engine se incluye en Git, imagen Docker, logs o respuestas.",
@@ -4150,6 +4152,320 @@
       "answers_hash": "sha256:6182d7b6d06161ebf8fbd9a034f9f3cd405354880c77b2980596dba16e82cd39",
       "approved_by": "peorr",
       "approved_at": "2026-07-23T16:52:30.839Z"
+    },
+    {
+      "id": "sprint-61-probabilistic-training-dataset",
+      "name": "Sprint 61 - Probabilistic Training Dataset",
+      "status": "done",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-17-data-quality",
+        "sprint-19-composite-drought-score",
+        "sprint-37-forecast-confidence"
+      ],
+      "objective": "Construir un dataset historico versionado region-periodo con variables temporales y targets futuros de riesgo severo, garantizando que cada fila utiliza solo informacion disponible hasta su fecha as_of.",
+      "user_stories": [
+        {
+          "id": "HU61.1",
+          "story": "Como cientifico de datos quiero ejemplos historicos sin fuga temporal para entrenar y evaluar probabilidades defendibles."
+        },
+        {
+          "id": "HU61.2",
+          "story": "Como auditor quiero reconstruir cada feature y etiqueta con versiones de fuente, transformacion, calidad y umbrales."
+        }
+      ],
+      "tasks": [
+        "Definir contrato region-period-features-target con as_of, region_id, frecuencia, lineage, quality y threshold_version.",
+        "Materializar variables actuales, lags 1-3, ventanas 3/6, pendientes, deltas, deterioro consecutivo, deficit acumulado y estacionalidad sin usar datos futuros.",
+        "Definir target binario risk_level_at_or_above_orange para horizontes 1, 2 y 3 usando la version historica de umbrales.",
+        "Excluir labels concluyentes cuando el target futuro o los datos requeridos tienen calidad bloqueada.",
+        "Versionar schema, feature manifest, dataset hash y limites de cobertura.",
+        "Anadir validadores y tests adversariales que fallen ante leakage temporal, solapamiento indebido o orden no determinista."
+      ],
+      "deliverable": "Dataset reproducible y versionado de entrenamiento probabilistico con tres horizontes, lineage completo y tests explicitos anti-leakage.",
+      "acceptance": [
+        "Cada fila se identifica por `region_id`, `as_of` UTC y `horizon_periods`; ninguna feature usa una observación posterior a `as_of`, demostrado con un sentinel futuro.",
+        "Target binario exacto para orange/red, cero para green/yellow y null con reason code para unknown, calidad bloqueada, gap o futuro ausente.",
+        "Horizontes 1-3 y features deterministas: actuales, lags 1-3, rolling 3/6, pendiente, delta, deterioro consecutivo, extremos/deficit y estacionalidad cíclica.",
+        "Ventanas usan periodos contiguos; gaps, frecuencia mixta, región nueva e historia corta no se imputan silenciosamente.",
+        "Cada fila conserva source, transformation, score, quality, geometry y threshold versions.",
+        "Dataset expone schema/manifest, rango, regiones, frecuencia, conteos y SHA-256 estable sobre JSON canónico.",
+        "Splits recomendados quedan definidos por fechas globales con gap por horizonte; el dataset no genera split aleatorio.",
+        "Tests cubren leakage, gaps, duplicados, orden, timezone, no finitos, calidad, threshold_version y reproducibilidad.",
+        "No se entrena modelo ni se añade endpoint o porcentaje.",
+        "Documentación declara que las etiquetas son niveles Mwangaza, no verdad oficial independiente."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "config/probabilistic/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        "docs/probabilistic-risk.md",
+        "docs/contracts.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-61-probabilistic-training-dataset-*/**",
+        "progress/**"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-23T17:13:15.714Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:b142b834229c6c6f0cf89e5d2b7dfe363e71ecf7b834cec06011ed633ef69af5",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-23T17:13:15.836Z"
+    },
+    {
+      "id": "sprint-62-calibrated-risk-classifier",
+      "name": "Sprint 62 - Calibrated Risk Classifier",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 10,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-61-probabilistic-training-dataset"
+      ],
+      "objective": "Entrenar candidatos reproducibles para estimar P(risk_level_at_or_above_orange) en horizontes 1, 2 y 3 y seleccionar solo modelos con skill fuera de muestra.",
+      "user_stories": [
+        {
+          "id": "HU62.1",
+          "story": "Como analista quiero comparar modelos probabilisticos sencillos contra baselines fuertes antes de confiar en una prediccion."
+        },
+        {
+          "id": "HU62.2",
+          "story": "Como mantenedor quiero artefactos reproducibles con dataset hash, semilla, parametros y periodo de entrenamiento."
+        }
+      ],
+      "tasks": [
+        "Implementar regresion logistica e HistGradientBoostingClassifier con preprocessing determinista.",
+        "Implementar baselines de persistencia, climatologia estacional y frecuencia historica.",
+        "Entrenar un candidato por horizonte sobre un modelo regional compartido.",
+        "Ejecutar walk-forward validation por fecha global con gap igual o superior al horizonte.",
+        "Comparar Brier score fuera de muestra y registrar todos los candidatos, parametros y razones de seleccion.",
+        "Persistir artefactos locales versionados sin deserializacion insegura ni entrenamiento bajo request publica."
+      ],
+      "deliverable": "Registro reproducible de candidatos y modelo seleccionado por horizonte, o rechazo explicito cuando ningun candidato mejora los baselines.",
+      "acceptance": [
+        "Se entrenan candidatos logistic regression e histogram gradient boosting para cada horizonte 1, 2 y 3, junto con persistencia, climatologia estacional y frecuencia historica.",
+        "El split es walk-forward por fecha global para todas las regiones y aplica un gap minimo igual al horizonte; un test falla si se usa shuffle, split aleatorio o datos posteriores al fold de prueba.",
+        "Cada candidato produce probabilidades finitas en `[0,1]`; clases ausentes, muestras insuficientes o un unico valor objetivo generan rechazo estructurado, no un modelo degenerado.",
+        "La seleccion primaria usa Brier score agregado fuera de muestra; empates y tolerancias tienen una regla determinista que favorece el modelo mas simple.",
+        "Un candidato ML solo queda seleccionado si mejora tanto el baseline de persistencia como el de climatologia segun el margen aprobado; si no, el estado es `rejected_insufficient_skill`.",
+        "Se usa inicialmente un modelo regional compartido; region/pais puede ser categorica, pero no se crean modelos por region sin minimo historico, positivos suficientes, skill superior y evaluacion aprobada.",
+        "Cada artefacto registra model_name, model_version, horizon, dataset_hash, feature_manifest_version, threshold_version, seed, hiperparametros, trained_until, folds y versiones de librerias.",
+        "Dos ejecuciones con iguales datos/configuracion producen la misma seleccion, metricas dentro de tolerancia y hash de manifiesto.",
+        "Los artefactos se generan offline o en pipeline controlado; ningun endpoint publico puede iniciar entrenamiento ni aceptar paths/modelos arbitrarios.",
+        "Tests cubren imbalance, regiones no vistas, categorias desconocidas, NaN, reproducibilidad, baselines, rechazo por skill y ausencia de red/GEE."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "config/probabilistic/**",
+        "data/models/.gitkeep",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        "docs/probabilistic-risk.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62-calibrated-risk-classifier-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-63-probability-calibration-skill-gate",
+      "name": "Sprint 63 - Probability Calibration and Skill Gate",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-62-calibrated-risk-classifier"
+      ],
+      "objective": "Calibrar las probabilidades fuera de muestra, medir su skill y producir una decision persistida de elegibilidad por modelo, region y horizonte.",
+      "user_stories": [
+        {
+          "id": "HU63.1",
+          "story": "Como usuario quiero que un 70 por ciento tenga significado empirico y no sea solo un score reescalado."
+        },
+        {
+          "id": "HU63.2",
+          "story": "Como responsable cientifico quiero que Mwangaza se abstenga con una razon verificable cuando la evidencia sea insuficiente."
+        }
+      ],
+      "tasks": [
+        "Calibrar con sigmoid usando predicciones fuera de muestra separadas del fit base.",
+        "Calcular Brier score, log loss, recall, precision, calibration bins y Brier Skill Score.",
+        "Definir gates por modelo, horizonte y representacion regional para skill, calidad, positivos, calibracion, drift y cobertura.",
+        "Persistir metricas, thresholds de gate, decision y razones estructuradas.",
+        "Definir estado unavailable estable y pruebas de abstencion.",
+        "Reservar isotonic y probabilidades multiclase como alcance futuro no implementado."
+      ],
+      "deliverable": "Probabilidades sigmoid calibradas con evaluacion persistida y gate estricto de publicacion por horizonte y region.",
+      "acceptance": [
+        "La calibracion inicial es exclusivamente sigmoid/Platt y usa predicciones fuera de muestra o folds separados de los datos usados para ajustar el clasificador base.",
+        "Por horizonte se persisten Brier score, baseline Brier, Brier Skill Score, log loss, recall, precision, conteos de clase y calibration bins con limites y frecuencias observadas.",
+        "Brier Skill Score se calcula como `1 - brier_model / brier_climatology`; baseline cero o invalido bloquea elegibilidad con razon estable.",
+        "La probabilidad solo es elegible cuando BSS es mayor que cero y se cumplen los minimos aprobados de historia, positivos, cobertura, calidad y representacion regional.",
+        "El gate bloquea calidad actual critica, drift por encima del umbral aprobado, horizonte no validado, region insuficientemente representada y calibracion no evaluable o extremadamente pobre.",
+        "Cada decision devuelve `eligible` y una lista ordenada de reason codes; la misma entrada produce exactamente la misma decision.",
+        "Las metricas globales no ocultan fallos regionales: se registra diagnostico por region/horizonte y puede abstenerse para una region aunque el modelo compartido sea globalmente elegible.",
+        "Un resultado no elegible conserva diagnosticos pero no expone `probability`; el mensaje publico canonico es `Probability unavailable - insufficient validated skill for this region and horizon.`",
+        "Isotonic, multiclase y ajuste automatico de thresholds quedan explicitamente fuera de alcance hasta una spec posterior.",
+        "Tests cubren calibracion separada, probabilidades extremas, clase rara, bins vacios, BSS positivo/cero/negativo, drift, calidad, regiones insuficientes y persistencia reproducible."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "config/probabilistic/**",
+        "pyproject.toml",
+        "requirements*.txt",
+        "Makefile",
+        "docs/probabilistic-risk.md",
+        "docs/testing.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-63-probability-calibration-skill-gate-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-64-risk-probability-api-drivers",
+      "name": "Sprint 64 - Risk Probability API and Drivers",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-63-probability-calibration-skill-gate"
+      ],
+      "objective": "Materializar, explicar y exponer probabilidades elegibles mediante un contrato publico versionado sin ejecutar entrenamiento bajo demanda.",
+      "user_stories": [
+        {
+          "id": "HU64.1",
+          "story": "Como consumidor API quiero probabilidades, validacion, calidad y drivers trazables bajo un contrato estable."
+        },
+        {
+          "id": "HU64.2",
+          "story": "Como evaluador quiero explicaciones asociativas y honestas, sin presentar correlaciones del modelo como causas."
+        }
+      ],
+      "tasks": [
+        "Definir contrato versionado RiskProbability con estado eligible/unavailable y tres horizontes.",
+        "Materializar inferencias desde snapshots y artefactos previamente aprobados.",
+        "Exponer GET /api/v1/risk-probabilities con filtros acotados por region y horizonte.",
+        "Calcular tres drivers principales con metodo determinista apropiado al modelo.",
+        "Sanear metadata y bloquear paths, secretos, artefactos no aprobados y entrenamiento bajo request.",
+        "Anadir fixtures demo explicitamente experimentales y contract tests."
+      ],
+      "deliverable": "Endpoint publico de solo lectura con probabilidades calibradas elegibles o abstencion, metricas de skill, calidad y tres drivers no causales.",
+      "acceptance": [
+        "`GET /api/v1/risk-probabilities` acepta filtros acotados `region_id`, `as_of` y `horizon_periods=1|2|3`, devuelve payload versionado y no inicia GEE, entrenamiento, calibracion ni escritura.",
+        "Un resultado elegible incluye region_id, as_of, horizon_periods, target=`risk_level_at_or_above_orange`, probability en `[0,1]`, band, current_level, model metadata, validation, quality, `is_experimental=true` y exactamente hasta tres drivers.",
+        "Un resultado no elegible incluye estado `unavailable`, reason codes, calidad y diagnosticos permitidos, omite `probability` y usa el copy canonico de abstencion.",
+        "El contrato afirma `estimated probability that the Mwangaza risk indicator reaches orange or red`; nunca afirma probabilidad oficial de sequia, crisis, perdida agricola o personas afectadas.",
+        "Los drivers se ordenan por magnitud absoluta, declaran direccion y metodo, y usan lenguaje `associated_with_higher_or_lower_model_output`; no usan verbos causales ni inventan puntos porcentuales si el metodo no los soporta.",
+        "Regresion logistica usa contribuciones reproducibles basadas en features transformadas; gradient boosting usa el metodo explicativo aprobado en la entrevista SDD y degrada a drivers unavailable si no puede calcularlos con seguridad.",
+        "La API solo lee artefactos y predicciones materializados con dataset/model/threshold hashes aprobados; mismatch, corrupcion o modelo no elegible produce unavailable y nunca fallback a porcentaje inventado.",
+        "Paginacion, orden, cache headers, errores 400/404 y OpenAPI siguen los patrones v1 existentes; payloads no filtran paths locales, secretos ni datos personales.",
+        "Demo es determinista, offline y claramente fixture/experimental; live/cache no mezclan fixtures.",
+        "Contract, API y security tests cubren eligible/unavailable, filtros, tres horizontes, drivers, lenguaje, mismatch, corrupcion y prueba negativa de que una request no entrena ni consulta GEE."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "src/mwangaza/contracts/**",
+        "src/mwangaza/api/**",
+        "src/mwangaza/services/**",
+        "tests/probabilistic/**",
+        "tests/contracts/**",
+        "tests/api/**",
+        "tests/security/**",
+        "tests/fixtures/probabilistic/**",
+        "demo_data/**",
+        "docs/probabilistic-risk.md",
+        "docs/contracts.md",
+        "docs/public-api.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-64-risk-probability-api-drivers-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-65-probability-ui-integration",
+      "name": "Sprint 65 - Probability UI Integration",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 8,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-56-region-explorer-completion",
+        "sprint-59-reports-center-completion",
+        "sprint-64-risk-probability-api-drivers"
+      ],
+      "objective": "Integrar una lectura compacta y responsable de probabilidad de riesgo severo en Region Explorer y reportes sin crear otra pantalla ni ocultar la abstencion.",
+      "user_stories": [
+        {
+          "id": "HU65.1",
+          "story": "Como analista regional quiero ver la probabilidad por horizonte, sus drivers y su skill junto al contexto observado."
+        },
+        {
+          "id": "HU65.2",
+          "story": "Como decisor quiero distinguir claramente prediccion experimental, riesgo actual, resultado mas probable y ausencia de skill."
+        }
+      ],
+      "tasks": [
+        "Anadir un unico modulo Severe-risk probability al inspector de Region Explorer.",
+        "Mostrar horizontes 1-3, probabilidad elegible, riesgo actual, calidad, confianza, skill y tres drivers.",
+        "Representar distribucion por niveles solo si existe un contrato multiclase posterior; no derivarla del target binario.",
+        "Soportar unavailable, disagreement y metadata incompleta sin numeros sustitutos.",
+        "Incorporar la prediccion elegible y su disclaimer a reportes materializados.",
+        "Preservar low-bandwidth, idiomas, accesibilidad, demo offline y ausencia de GEE desde navegador."
+      ],
+      "deliverable": "Modulo compacto de probabilidad experimental en Region y Reports con explicacion, validacion y abstencion equivalentes en UI normal y low-bandwidth.",
+      "acceptance": [
+        "Region Explorer incorpora un solo modulo `Severe-risk probability` dentro del workspace existente; no crea una ruta o dashboard nuevo ni un velocimetro dominante.",
+        "El usuario puede elegir horizontes 1, 2 y 3 y ve probability, periodo objetivo, current level, model confidence/quality, BSS o skill status y hasta tres drivers solo cuando el payload es elegible.",
+        "El copy visible dice que se estima la probabilidad de que el indicador de riesgo Mwangaza alcance orange/red y muestra `Experimental prediction`; no usa `probability of drought` ni claims de impacto humano.",
+        "Unavailable ocupa el mismo lugar visual, no muestra 0%, conserva reason codes traducidos y presenta el mensaje canonico de skill insuficiente.",
+        "La interfaz no muestra distribucion green/yellow/orange/red mientras el backend solo modele el target binario; cualquier distribucion multiclase requiere un contrato futuro aprobado.",
+        "Drivers se presentan como asociaciones del modelo, no causalidad; tooltip o detalle conserva feature, direccion, metodo y periodo.",
+        "Reports incorpora solo probabilidades materializadas elegibles con as_of, horizonte, modelo, skill, calidad y disclaimer; unavailable se documenta como abstencion, no se omite silenciosamente.",
+        "Navegador y generacion de reportes no entrenan, calibran ni consultan GEE; consumen exclusivamente API/snapshots materializados.",
+        "Low-bandwidth conserva horizonte, probabilidad o abstencion, riesgo actual, skill, calidad, drivers y disclaimer en texto/tabla; idiomas no traducen IDs, versiones, unidades ni reason codes.",
+        "Tests frontend/reports cubren eligible, unavailable, cambio de horizonte, deep state, metadata parcial, lenguaje no causal, ausencia de 0% fallback, low-bandwidth, demo offline y ausencia de llamadas de entrenamiento/GEE."
+      ],
+      "scope": [
+        "frontend/**",
+        "tests/frontend/**",
+        "src/mwangaza/services/dashboard_shell.py",
+        "src/mwangaza/reports/**",
+        "tests/ui/**",
+        "tests/reports/**",
+        "docs/probabilistic-risk.md",
+        "docs/region-interface.md",
+        "docs/reports-interface.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-65-probability-ui-integration-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
     }
   ]
 }
