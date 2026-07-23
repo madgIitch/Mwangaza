@@ -1,6 +1,7 @@
 import { demoDashboard } from "./fixtures";
 import type {
   Alert,
+  AboutStatusResponse,
   AdminConfigResponse,
   AdminConfiguration,
   DashboardData,
@@ -78,6 +79,10 @@ export async function activateAdminConfig(versionId: string): Promise<AdminConfi
 
 export async function loadTechnicalStatus(): Promise<TechnicalStatusResponse> {
   return getJson<TechnicalStatusResponse>("/api/v1/observability");
+}
+
+export async function loadAboutStatus(): Promise<AboutStatusResponse> {
+  return getJson<AboutStatusResponse>("/api/v1/about/status");
 }
 
 export async function loadApiDashboard(): Promise<DashboardData> {

@@ -16,3 +16,12 @@ Implementación lista para smoke test humano. Los contratos públicos son aditiv
 ## Pendiente humano
 
 - Confirmar jerarquía visual, generación, las tres descargas y responsive/low-bandwidth en navegador real.
+
+## Iteración visual posterior
+
+- Sustituida la cuadrícula de cinco tarjetas por una banda operativa compacta.
+- Recompuesto `/reports` como estudio de tres zonas: índice/cola, documento dominante e inspector contextual.
+- Exportaciones recientes quedan integradas bajo la cola; contenidos, distribución y plantilla comparten un único contexto lateral con divisores.
+- El fallback ya no inventa ocho registros fallidos: muestra un único estado degradado si `/api/v1/reports` no está disponible.
+- Preview y selección incorporan transiciones breves y respetan `prefers-reduced-motion`.
+- Typecheck, lint, 48 tests frontend y build pasan tras la iteración.

@@ -1,6 +1,22 @@
 export type Severity = "normal" | "watch" | "warning" | "critical" | "unknown";
 export type DataMode = "live" | "cache" | "demo" | "offline";
 export type Language = "en" | "es" | "sw" | "so";
+export type ThemePreference = "light" | "dark";
+
+export interface AboutStatusResponse {
+  schema_version: string;
+  app_version: string;
+  methodology_version: string;
+  data_mode: DataMode;
+  snapshot_id: string | null;
+  snapshot_updated_at: string | null;
+  documentation_status: "current" | "stale" | "partial";
+  documentation_updated_at: string;
+  license: { name: string; path: string };
+  repository: { label: string; url: string | null };
+  contact: { label: string; url: string | null };
+  refresh: { kind: "metadata_only"; gee_triggered: false; writes_performed: false };
+}
 
 export interface Metric {
   label: string;

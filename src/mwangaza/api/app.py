@@ -29,6 +29,8 @@ from mwangaza.reports import build_executive_report_context, build_report_record
 from mwangaza.services.dashboard_shell import load_alert_history, load_dashboard_shell_data, load_materialized_dashboard_shell_data
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
+APP_VERSION = "1.0.0"
+METHODOLOGY_VERSION = "mwangaza-methodology-v1"
 DEMO_REFERENCE_DATE = "2026-07-15"
 DEMO_SNAPSHOT_ID = "mwangaza-offline-demo-v1"
 MAX_LIMIT = 100
@@ -188,6 +190,25 @@ def _route_v1(
                 "periods": _dashboard_periods(data),
                 "source_metadata": export.source_metadata,
             },
+        }, HTTPStatus.OK, 60
+    if path == "/api/v1/about/status":
+        data = _load_api_dashboard_data()
+        export = build_visible_export(data, max_rows=1)
+        return {
+            "schema_version": API_SCHEMA_VERSION,
+            "app_version": APP_VERSION,
+            "methodology_version": METHODOLOGY_VERSION,
+            "data_mode": data.data_status.mode,
+            "snapshot_id": export.source_metadata.get("snapshot_id"),
+            "snapshot_updated_at": export.source_metadata.get("generated_at")
+            or export.source_metadata.get("reference_date")
+            or export.period,
+            "documentation_status": "current",
+            "documentation_updated_at": "2026-07-23",
+            "license": {"name": "MIT", "path": "/LICENSE"},
+            "repository": {"label": "Mwangaza source repository", "url": os.environ.get("MWANGAZA_PUBLIC_REPOSITORY_URL")},
+            "contact": {"label": "Project contact", "url": os.environ.get("MWANGAZA_PUBLIC_CONTACT_URL")},
+            "refresh": {"kind": "metadata_only", "gee_triggered": False, "writes_performed": False},
         }, HTTPStatus.OK, 60
     if path == "/api/v1/reports":
         data = _load_api_dashboard_data()
@@ -773,6 +794,7 @@ def _openapi() -> dict[str, Any]:
     examples = {
         "/api/v1/regions": {"limit": 10, "offset": 0},
         "/api/v1/snapshots/latest": {"schema_version": API_SCHEMA_VERSION},
+        "/api/v1/about/status": {"app_version": APP_VERSION, "methodology_version": METHODOLOGY_VERSION},
         "/api/v1/alerts": {"limit": 10, "offset": 0},
         "/api/v1/alerts/{alert_id}": {"alert_id": "ALT-SOM-EXAMPLE"},
         "/api/v1/exports/alerts": {"region": "som", "severity": "critical", "status": "active", "format": "csv"},

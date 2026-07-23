@@ -409,9 +409,21 @@ describe("React PWA dashboard", () => {
     expect(screen.getByText("Google Earth Engine")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "How Mwangaza Works" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Limitations" })).toBeInTheDocument();
-    expect(screen.getByText("Privacy Policy pending")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Terms of Use" })).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Data provenance and methodology" })).toHaveAttribute("href", "/about/provenance");
+  });
+
+  it("persists the global theme and links the brand to Overview", () => {
+    window.history.pushState({}, "", "/about");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("link", { name: "Mwangaza — go to Overview" })).toHaveAttribute("href", "/overview");
+    fireEvent.click(screen.getByRole("button", { name: "Switch to dark theme" }));
+    expect(window.localStorage.getItem("mwangaza-theme")).toBe("dark");
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   });
 
   it("renders canonical data provenance with lineage and responsible-use definitions", () => {

@@ -118,10 +118,15 @@ The page must visibly state:
 - Current snapshot, source mode, forecast status and export labels reuse existing `DashboardData`.
 - Missing theme switching, deep methodology pages, privacy policy, terms, contact page, source-detail drawers and refresh-status endpoint remain explicit placeholders.
 
-## Future Sprint Notes
+## Sprint 60 Completion
 
-- Persisted Light/Dark theme switching, sidebar illustration and logo route behavior are tracked by `sprint-60-about-methodology-completion`.
-- Source-detail drawers and methodology deep-links are tracked by `sprint-60-about-methodology-completion`.
-- Privacy policy, terms of use and contact pages are tracked by `sprint-60-about-methodology-completion`.
-- Documentation/status refresh endpoint and app version metadata from backend are tracked by `sprint-60-about-methodology-completion`.
-- Public license display and repository link are tracked by `sprint-60-about-methodology-completion`.
+- Light/Dark theme switching persists locally, defaults to the system preference and applies to the full shell. Low-bandwidth keeps content while omitting the decorative illustration and transitions.
+- The logo links to `/overview`. Source rows expose accessible details for dataset/provider, unit, resolution, frequency, baseline, transformations, limitations and approved documentation links.
+- `/methodology` (with `/about/provenance` preserved for compatibility), `/privacy`, `/terms` and `/contact` are real public routes.
+- `GET /api/v1/about/status` exposes only versioned, public metadata and performs no Earth Engine work, pipeline refresh or write.
+- MIT license metadata is visible. Repository and contact links render only when public destinations are configured; missing destinations remain explicit rather than invented.
+
+## Pending / Future
+
+- Institution-specific legal review and authenticated contact workflows remain outside the public prototype.
+- Production deployments may configure public repository/contact URLs through deployment configuration.

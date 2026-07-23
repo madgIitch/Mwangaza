@@ -612,3 +612,16 @@ Decisiones registradas:
 - **tests:** Los tests bloqueantes deben cubrir contratos y estabilidad de IDs/timestamps, estados de lifecycle, filtros combinados, orden/selección, generación y descarga real de PDF/CSV/JSON, archivos no vacíos y cabeceras seguras, preview HTML/PDF correctamente etiquetado, deep-links, low-bandwidth, errores independientes, funciones `pending_contract`, auditoría permitida, ausencia de GEE y envíos reales desde navegador, demo offline y documentación de implementado/pendiente/futuro.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-60-about-methodology-completion -->
+## 2026-07-23 · sprint-60-about-methodology-completion aprobado
+
+Contexto: se aprobó el spec `sprint-60-about-methodology-completion` (Sprint 60 - About and Methodology Completion).
+
+Decisiones registradas:
+
+- **auth_secrets:** Todas las superficies son públicas, de sólo lectura y saneadas.
+- **rollback_compat:** Se preservan rutas, demo y contratos existentes.
+- **tests:** Contratos, UI, seguridad, offline y accesibilidad quedan cubiertos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

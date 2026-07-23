@@ -213,3 +213,13 @@
 - Alerts Center table-first con filtros persistentes, historial lifecycle, deep-links y exportaciones filtradas.
 - Outbox estrictamente simulado con destinatarios enmascarados; settings y mutaciones siguen deshabilitados sin autenticación.
 - 308 tests Python, 11 subtests, 48 frontend, typecheck, lint, build y gates del harness pasan.
+
+## 2026-07-23T17:00:00Z - #sprint-59-reports-center-completion -> done
+
+- Sprint aceptado al solicitar la siguiente iteración.
+
+## 2026-07-23T19:00:00Z - #sprint-60-about-methodology-completion -> review_pending
+
+- About, metodología, fuentes, rutas legales/contacto y tema persistente completados.
+- Endpoint de estado público metadata-only, sin GEE ni escrituras.
+- 49 tests frontend, 18 API enfocados, typecheck, lint y build pasan.

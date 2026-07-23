@@ -1,5 +1,9 @@
 # Data Contracts
 
+## About status
+
+`GET /api/v1/about/status` is a cacheable, public, read-only metadata endpoint. It returns application and methodology versions, data mode, snapshot/documentation status, license and optional public repository/contact links. Its `refresh` object explicitly reports `kind=metadata_only`, `gee_triggered=false` and `writes_performed=false`. It never initializes Earth Engine, refreshes indicators or exposes private configuration.
+
 Sprint 4 defines versioned data contracts in `mwangaza.contracts`.
 
 ## Version

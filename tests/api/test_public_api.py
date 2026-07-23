@@ -15,6 +15,15 @@ api_app = importlib.import_module("mwangaza.api.app")
 
 
 class PublicApiTests(unittest.TestCase):
+    def test_about_status_is_public_metadata_only(self) -> None:
+        status, _headers, payload = _request("/api/v1/about/status")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["app_version"], "1.0.0")
+        self.assertEqual(payload["methodology_version"], "mwangaza-methodology-v1")
+        self.assertEqual(payload["refresh"], {"kind": "metadata_only", "gee_triggered": False, "writes_performed": False})
+        self.assertNotIn("credentials", json.dumps(payload).lower())
+
     def setUp(self) -> None:
         api_app._DASHBOARD_CACHE = None
         api_app._DASHBOARD_REFRESHING = False

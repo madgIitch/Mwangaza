@@ -1476,3 +1476,25 @@ Objetivo no negociable:
 - **external_contracts:** La spec aprueba endpoints aditivos bajo `/api/v1/reports` para listar reportes, obtener detalle, generar reportes y descargar PDF/CSV/JSON. La generación usa snapshots materializados y nunca consulta GEE desde el navegador. La auditoría local de generación y descarga sólo se registra si ya existe adapter aprobado. Compartir, programación, mutación de plantillas y distribución permanecen como `pending_contract` sin endpoints públicos.
 - **edge_cases:** La spec debe cubrir lista vacía preservando contexto y acción de generación, filtros sin resultados con acción para limpiar filtros, reportes en curso con progreso indeterminado y descarga bloqueada, IDs/timestamps ausentes con degradación explícita sin fallback inventado, duplicados deduplicados por ID backend, expirados conservados en historial pero no descargables, y orden/selección deterministas.
 - **ui_states:** La tesis visual queda definida como workspace editorial-operativo table-first, con cabecera y filtros compactos, banda de estado, cola dominante, preview central paginado e inspector lateral sticky. Deben ser visibles los estados loading, empty, filtered-empty, generating, ready, failed, expired, disabled y `pending_contract`. El preview es HTML fiel hasta que exista PDF generado y sólo entonces se etiqueta como PDF. Low-bandwidth conserva filtros, cola, detalle, metadatos y descargas sin decoración pesada.
+
+<!-- harness:sprint-60-about-methodology-completion -->
+## sprint-60-about-methodology-completion · Sprint 60 - About and Methodology Completion
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/api/**`
+  - `tests/api/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Metadata pública y catálogo de fuentes tienen campos, propiedad y degradación definidos.
+- **external_contracts:** Endpoint ligero, rutas PWA y navegación están definidos.
+- **edge_cases:** Tema, almacenamiento, URLs, metadata inválida y low-bandwidth están cubiertos.
+- **ui_states:** Jerarquía editorial, tema, documentos y degradación están definidos.

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { activateAdminConfig, loadAdminConfig, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus, saveAdminConfig } from "./api";
+import { activateAdminConfig, loadAboutStatus, loadAdminConfig, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus, saveAdminConfig } from "./api";
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { LandingPage } from "./pages/LandingPage";
-import type { AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, TrendSeries } from "./types";
+import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -36,6 +36,14 @@ const IGAD_COUNTRIES: Array<{ id: string; name: string }> = [
 const LIVE_REFRESH_POLL_MS = 3000;
 const LIVE_REFRESH_MAX_ATTEMPTS = 30;
 
+function initialTheme(): ThemePreference {
+  try {
+    const stored = window.localStorage.getItem("mwangaza-theme");
+    if (stored === "light" || stored === "dark") return stored;
+  } catch { /* use system preference */ }
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export function App({
   initialData,
   initialLanguage,
@@ -53,6 +61,12 @@ export function App({
   );
   const [offline, setOffline] = useState(initialOffline ?? navigator.onLine === false);
   const [selectedRegionId, setSelectedRegionId] = useState(data.selectedRegionId);
+  const [theme, setTheme] = useState<ThemePreference>(() => initialTheme());
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try { window.localStorage.setItem("mwangaza-theme", theme); } catch { /* storage can be unavailable */ }
+  }, [theme]);
 
   useEffect(() => {
     if (skipApiLoad || initialData) {
@@ -145,15 +159,15 @@ export function App({
   if (route === "/landing") return <LandingPage />;
 
   return (
-    <div className="app-shell" data-low-bandwidth={lowBandwidth ? "true" : "false"}>
+    <div className="app-shell" data-low-bandwidth={lowBandwidth ? "true" : "false"} data-theme={theme}>
       <aside className="sidebar" aria-label="Mwangaza navigation">
-        <div className="brand-block">
+        <a className="brand-block" href="/overview" aria-label="Mwangaza — go to Overview">
           <div className="brand-mark" aria-hidden="true" />
           <div>
             <h1>{data.project}</h1>
             <p>{data.tagline}</p>
           </div>
-        </div>
+        </a>
         <nav>
           <a data-active={isOverviewRoute ? "true" : "false"} href="/overview">{t(language, "overview")}</a>
           <a data-active={route === "/region" ? "true" : "false"} href="/region">{t(language, "regions")}</a>
@@ -174,6 +188,9 @@ export function App({
           <input checked={lowBandwidth} onChange={(event) => setLowBandwidth(event.target.checked)} type="checkbox" />
           <span>{t(language, "lowBandwidth")}</span>
         </label>
+        <button className="theme-toggle" onClick={() => setTheme(theme === "light" ? "dark" : "light")} type="button" aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}>
+          {theme === "light" ? "Dark" : "Light"} theme
+        </button>
       </aside>
 
       <main>
@@ -221,10 +238,16 @@ export function App({
           <AlertsCenter data={data} activeAlerts={activeAlerts} requestedAlertId={requestedAlertId} />
         ) : route === "/reports" ? (
           <ReportsCenter data={data} />
-        ) : route === "/about/provenance" ? (
-          <ProvenanceScreen />
+        ) : route === "/about/provenance" || route === "/methodology" ? (
+          <MethodologyScreen />
+        ) : route === "/privacy" ? (
+          <PolicyScreen kind="privacy" />
+        ) : route === "/terms" ? (
+          <PolicyScreen kind="terms" />
+        ) : route === "/contact" ? (
+          <PolicyScreen kind="contact" />
         ) : route === "/about" ? (
-          <AboutScreen data={data} />
+          <AboutScreen data={data} lowBandwidth={lowBandwidth} autoRefresh={!skipApiLoad} />
         ) : route === "/admin" ? (
           <AdminPanel lowBandwidth={lowBandwidth} />
         ) : route === "/technical" ? (
@@ -519,7 +542,19 @@ function StandalonePage({ title, detail }: { title: string; detail: string }): J
   );
 }
 
-function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
+function AboutScreen({ data, lowBandwidth, autoRefresh }: { data: DashboardData; lowBandwidth: boolean; autoRefresh: boolean }): JSX.Element {
+  const [status, setStatus] = useState<AboutStatusResponse | null>(null);
+  const [statusError, setStatusError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshStatus = async (): Promise<void> => {
+    setRefreshing(true);
+    setStatusError("");
+    try { setStatus(await loadAboutStatus()); } catch { setStatusError("Documentation status is temporarily unavailable."); }
+    finally { setRefreshing(false); }
+  };
+  useEffect(() => {
+    if (autoRefresh) void refreshStatus();
+  }, [autoRefresh]);
   const ndvi = metricByLabel(data.metrics, "NDVI");
   const rainfall = metricByLabel(data.metrics, "Rainfall");
   const lst = metricByLabel(data.metrics, "LST");
@@ -555,12 +590,12 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
   ];
 
   const sources = [
-    ["Google Earth Engine", "Cloud geospatial processing platform used to access and aggregate satellite and climate datasets."],
-    ["MODIS vegetation / NDVI", "Satellite imagery used to derive recent vegetation conditions and NDVI signals."],
-    ["CHIRPS rainfall", "Satellite and station-based rainfall estimates used to calculate recent totals and anomalies."],
-    ["MODIS Land Surface Temperature", "Satellite-derived land surface temperature used as a complementary drought stress indicator."],
-    ["Administrative boundaries", "National and pilot subnational geography used for aggregation and map display."],
-    ["Population / exposure", exposure ? `${exposure.value}${exposure.unit} estimate. ${exposure.detail}` : "No valid exposure dataset is available in this snapshot."]
+    { id: "gee", name: "Google Earth Engine", type: "Processing platform", provider: "Google", unit: "Not applicable", resolution: "Dataset dependent", frequency: "On materialized refresh", baseline: "Not applicable", transformation: "Access and regional aggregation", limitation: "Platform availability and quota; it is not itself an observation dataset.", url: "https://developers.google.com/earth-engine/datasets" },
+    { id: "ndvi", name: "MODIS vegetation / NDVI", type: "Dataset", provider: "NASA LP DAAC", unit: "NDVI index", resolution: "250 m", frequency: "16 days", baseline: "Seasonally comparable historical periods", transformation: "QA mask, scale factor and regional aggregation", limitation: "Cloud and QA gaps can reduce valid coverage.", url: "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD13Q1" },
+    { id: "chirps", name: "CHIRPS rainfall", type: "Dataset", provider: "UCSB Climate Hazards Center", unit: "mm", resolution: "0.05 degree", frequency: "Daily", baseline: "Seasonally comparable historical periods", transformation: "Period total, anomaly and regional aggregation", limitation: "Satellite and station estimates can differ from local gauges.", url: "https://developers.google.com/earth-engine/datasets/catalog/UCSB-CHG_CHIRPS_DAILY" },
+    { id: "lst", name: "MODIS Land Surface Temperature", type: "Dataset", provider: "NASA LP DAAC", unit: "°C land surface temperature", resolution: "1 km", frequency: "8 days", baseline: "Seasonally comparable historical periods", transformation: "QA mask, Kelvin scaling, Celsius conversion and aggregation", limitation: "Land surface temperature is not air temperature.", url: "https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A2" },
+    { id: "boundaries", name: "Administrative boundaries", type: "Geometry", provider: "Versioned Mwangaza catalog", unit: "GeoJSON", resolution: "National and available ADM1", frequency: "Versioned release", baseline: "Not applicable", transformation: "Validation and display simplification", limitation: "Pilot geometry is not complete operational subnational coverage.", url: null },
+    { id: "exposure", name: "Population / exposure", type: "Estimate", provider: "Snapshot metadata", unit: exposure?.unit ?? "Not available", resolution: "Not available", frequency: "Snapshot dependent", baseline: "Not applicable", transformation: "Population overlay estimate", limitation: exposure ? `${exposure.value}${exposure.unit}. ${exposure.detail}` : "No valid exposure dataset is available in this snapshot.", url: null }
   ];
 
   return (
@@ -572,10 +607,11 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
           <p>Methodology, data sources and project information</p>
         </div>
         <div className="about-header-actions">
-          <span>Version 1.0.0 prototype</span>
+          <span>Version {status?.app_version ?? "Loading…"}</span>
           <span>{data.dataMode.toUpperCase()}</span>
           <span>{data.lastUpdated}</span>
-          <button type="button" title="Documentation/status refresh endpoint pending">Refresh status</button>
+          <button disabled={refreshing} onClick={() => void refreshStatus()} type="button">{refreshing ? "Refreshing…" : "Refresh status"}</button>
+          {statusError ? <small role="alert">{statusError}</small> : null}
         </div>
       </div>
 
@@ -594,7 +630,7 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
             ))}
           </div>
         </div>
-        <div className="about-illustration" aria-label="Satellite drought monitoring concept">
+        {!lowBandwidth ? <div className="about-illustration" aria-label="Satellite drought monitoring concept">
           <div className="sun" />
           <div className="satellite">SAT</div>
           <div className="horn-map">
@@ -604,7 +640,7 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
             <span data-severity="critical" />
           </div>
           <div className="field-lines" />
-        </div>
+        </div> : null}
       </section>
 
       <div className="about-main-grid">
@@ -612,17 +648,24 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
           <h2>Data Sources</h2>
           <p>Mwangaza uses open satellite, climate and administrative datasets. Every indicator keeps its source, period, unit and processing context visible where the API provides it.</p>
           <div className="source-list">
-            {sources.map(([name, detail]) => (
-              <article key={name}>
-                <span>{name.slice(0, 2).toUpperCase()}</span>
+            {sources.map((source) => (
+              <details key={source.id} id={`source-${source.id}`}>
+                <summary>
+                <span>{source.name.slice(0, 2).toUpperCase()}</span>
                 <div>
-                  <strong>{name}</strong>
-                  <p>{detail}</p>
+                  <strong>{source.name}</strong>
+                  <p>{source.type} · {source.provider}</p>
                 </div>
-              </article>
+                </summary>
+                <dl className="source-metadata">
+                  <div><dt>Unit</dt><dd>{source.unit}</dd></div><div><dt>Resolution</dt><dd>{source.resolution}</dd></div>
+                  <div><dt>Frequency</dt><dd>{source.frequency}</dd></div><div><dt>Baseline</dt><dd>{source.baseline}</dd></div>
+                  <div><dt>Transformations</dt><dd>{source.transformation}</dd></div><div><dt>Limitations</dt><dd>{source.limitation}</dd></div>
+                </dl>
+                {source.url ? <a href={source.url} rel="noreferrer" target="_blank">Official dataset documentation</a> : <span className="muted">Documentation link not configured</span>}
+              </details>
             ))}
           </div>
-          <Placeholder title="Source detail drawers pending" detail="Dataset resolution, frequency, transformations and limitations need a dedicated metadata contract." />
         </section>
 
         <section className="about-panel">
@@ -647,6 +690,7 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
             <li><strong>Act</strong><span>Surface alerts, recommendations and exportable reports.</span></li>
           </ol>
           <a className="text-link" href="/about/provenance">Data provenance and methodology</a>
+          <a className="text-link" href="/methodology">Open methodology route</a>
         </section>
 
         <section className="about-panel">
@@ -661,10 +705,11 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
         <section className="about-panel">
           <h2>Version and System Status</h2>
           <dl className="system-status-list">
-            <div><dt>App version</dt><dd>1.0.0 prototype</dd></div>
+            <div><dt>App version</dt><dd>{status?.app_version ?? "Loading…"}</dd></div>
             <div><dt>Source mode</dt><dd>{data.dataMode}</dd></div>
             <div><dt>Current snapshot</dt><dd>{data.lastUpdated}</dd></div>
-            <div><dt>Methodology version</dt><dd>dashboard-v1</dd></div>
+            <div><dt>Methodology version</dt><dd>{status?.methodology_version ?? "Loading…"}</dd></div>
+            <div><dt>Documentation</dt><dd>{status?.documentation_status ?? (statusError ? "Unavailable" : "Loading…")}</dd></div>
             <div><dt>Forecast status</dt><dd>{data.forecastDiagnostics.available ? "Available" : data.forecastDiagnostics.message}</dd></div>
           </dl>
         </section>
@@ -679,23 +724,24 @@ function AboutScreen({ data }: { data: DashboardData }): JSX.Element {
           <li>Composite scores depend on configurable thresholds.</li>
           <li>Land surface temperature is not air temperature.</li>
           <li>Exposure means potentially exposed, not confirmed affected population.</li>
-          <li>Operational privacy, terms and contact pages are still pending.</li>
+          <li>Prototype use remains subject to the published privacy and terms pages.</li>
         </ul>
       </section>
 
       <footer className="about-footer">
-        <p>(c) 2026 Mwangaza Project. Open-source license display pending.</p>
+        <p>© 2026 Mwangaza Project · {status?.license.name ?? "MIT"} open-source license.</p>
         <nav aria-label="About footer links">
-          <a href="/about">Privacy Policy pending</a>
-          <a href="/about">Terms of Use pending</a>
-          <a href="/about">Contact pending</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Use</a>
+          <a href="/contact">Contact</a>
+          {status?.repository.url ? <a href={status.repository.url} rel="noreferrer">Source repository</a> : <span>Repository link not configured</span>}
         </nav>
       </footer>
     </section>
   );
 }
 
-function ProvenanceScreen(): JSX.Element {
+function MethodologyScreen(): JSX.Element {
   const sources = [
     ["MODIS/061/MOD13Q1", "NDVI", "index", "250 m / 16 days", "NASA Earthdata open data terms"],
     ["UCSB-CHG/CHIRPS/DAILY", "Rainfall", "mm", "0.05 degree / daily", "CHIRPS data terms"],
@@ -711,8 +757,16 @@ function ProvenanceScreen(): JSX.Element {
     <p>An observation describes a measured period. An anomaly compares it with a seasonal baseline. A score combines normalized anomalies using configurable, non-official prototype thresholds. A forecast estimates a future period. Exposure means potentially exposed population, not confirmed affected people.</p>
     <h2>Coverage and interpretation</h2><p>Clouds and QA masking reduce coverage; publication schedules create latency; aggregation can hide local variation. Live, cache and demo provenance remain explicit.</p>
     <h2>Data lineage</h2><div className="lineage-flow" aria-label="Data lineage">Source → Transformation and QA → Cache → API → UI → Report</div>
+    <h2>Quality and responsible interpretation</h2>
+    <p>Quality flags reflect source coverage, validity and pipeline checks. Missing or critically degraded evidence remains unknown; it is never converted to green risk. Forecast confidence is experimental and cannot override blocked quality.</p>
     <a className="text-link" href="/about">Back to About</a>
   </section>;
+}
+
+function PolicyScreen({ kind }: { kind: "privacy" | "terms" | "contact" }): JSX.Element {
+  if (kind === "privacy") return <article className="policy-screen"><p className="eyebrow">Legal</p><h2>Privacy Policy</h2><p>Mwangaza presents regional environmental indicators and administrative-area summaries. This prototype does not request or persist names, phone numbers, personal identifiers, device geolocation or household and community coordinates.</p><p>Operational diagnostics expose aggregate counts. Production deployment requires institutional authentication, retention and privacy review.</p><a href="/about">Back to About</a></article>;
+  if (kind === "terms") return <article className="policy-screen"><p className="eyebrow">Legal</p><h2>Terms of Use</h2><p>Mwangaza is an open-source decision-support prototype, not an official warning service. Outputs must be interpreted with current field information, local expertise and applicable institutional procedures.</p><p>Satellite latency, missing pixels, configurable thresholds and aggregation can affect results. No output is a guarantee, emergency order or confirmation of people affected.</p><a href="/about">Back to About</a></article>;
+  return <article className="policy-screen"><p className="eyebrow">Project</p><h2>Contact</h2><p>This public build does not collect contact submissions or personal data. Project and repository links appear on About only when configured by the deployment operator.</p><p>For the hackathon build, use the public repository link shown on the About page; no personal email address is embedded in the application.</p><a href="/about">Back to About</a></article>;
 }
 
 function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: DashboardData; activeAlerts: Alert[]; requestedAlertId?: string }): JSX.Element {
@@ -959,16 +1013,6 @@ function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert
   );
 }
 
-function SummaryTile({ label, value, detail, severity }: { label: string; value: number | string; detail: string; severity: Severity }): JSX.Element {
-  return (
-    <article className="summary-tile" data-severity={severity}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <p>{detail}</p>
-    </article>
-  );
-}
-
 function NotificationOutbox({ selectedAlert }: { selectedAlert?: Alert }): JSX.Element {
   const rows = selectedAlert?.notifications ?? [];
   return (
@@ -1106,15 +1150,16 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
         ))}
       </div>
 
-      <section className="report-summary-grid" aria-label="Report summary">
-        <SummaryTile label="Ready" value={reports.filter((report) => report.status === "ready").length} detail="Backend report records" severity="normal" />
-        <SummaryTile label="Generating" value={reports.filter((report) => report.status === "generating").length} detail="Downloads remain locked" severity="watch" />
-        <SummaryTile label="Failed" value={reports.filter((report) => report.status === "failed").length} detail="Independent retry required" severity="warning" />
-        <SummaryTile label="Scheduled" value="—" detail="Pending authentication and contract" severity="unknown" />
-        <SummaryTile label="Distribution" value="—" detail="No approved distribution adapter" severity="unknown" />
+      <section className="report-status-line" aria-label="Report summary">
+        <strong>{reports.filter((report) => report.status === "ready").length}<span>Ready</span></strong>
+        <strong>{reports.filter((report) => report.status === "generating").length}<span>Generating</span></strong>
+        <strong>{reports.filter((report) => report.status === "failed").length}<span>Failed</span></strong>
+        <p><span className="status-dot" /> Materialized snapshots · {data.regions.length} IGAD countries</p>
+        <small>Scheduling and distribution require authentication</small>
       </section>
 
-      <div className="reports-workspace">
+      <div className="reports-studio">
+        <div className="reports-index">
         <section className="reports-queue">
           <div className="section-heading">
             <h2>Generated reports queue</h2>
@@ -1139,17 +1184,16 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
               </tbody>
             </table>
           ) : (
-            <Placeholder title="No reports match filters" detail="Adjust search, region, type or status filters." />
+            <Placeholder title={reports.length ? "No reports match filters" : "Report records unavailable"} detail={reports.length ? "Adjust or clear the active filters." : "The dashboard snapshot is loaded, but /api/v1/reports is not available. Restart the API to load backend-owned records."} />
           )}
         </section>
-
-        <SelectedReportPanel report={selectedReport} metrics={selectedMetrics} risk={selectedRisk} />
-      </div>
-
-      <div className="reports-lower-grid">
         <RecentExports report={selectedReport} />
+        </div>
         <ReportPreview report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
-        <ReportSidePanels />
+        <aside className="reports-inspector">
+          <SelectedReportPanel report={selectedReport} metrics={selectedMetrics} risk={selectedRisk} />
+          <ReportSidePanels />
+        </aside>
       </div>
     </section>
   );
@@ -1248,7 +1292,7 @@ function ReportPreview({ report, metrics, recommendations }: { report?: ReportRo
 
 function ReportSidePanels(): JSX.Element {
   return (
-    <aside className="report-side-panels">
+    <div className="report-context">
       <section>
         <h2>Report contents</h2>
         <ul>
@@ -1271,7 +1315,7 @@ function ReportSidePanels(): JSX.Element {
         <p>Executive PDF</p>
         <p className="muted">Includes map, trends, recommendations and data provenance.</p>
       </section>
-    </aside>
+    </div>
   );
 }
 
@@ -1290,23 +1334,7 @@ function buildReportRows(data: DashboardData): ReportRow[] {
       };
     });
   }
-  return data.regions.map((region) => {
-    const profile = data.profiles.find((item) => item.id === region.id);
-    return {
-      id: `RPT-${region.id.toUpperCase()}-INCOMPLETE`,
-      regionId: region.id,
-      region: region.name,
-      type: "Executive PDF",
-      period: region.period,
-      generatedOn: "Incomplete record",
-      status: "failed",
-      filename: region.id === data.selectedRegionId ? data.reportFilename : `mwangaza-${region.id}-report-2026-07-17.pdf`,
-      formats: [],
-      snapshotId: "Unavailable",
-      profile,
-      risk: region
-    };
-  });
+  return [];
 }
 
 function RegionExplorer({

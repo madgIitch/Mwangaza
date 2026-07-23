@@ -1,23 +1,19 @@
 # Sesión actual
 
-Feature: **sprint-59-reports-center-completion - Sprint 59 - Reports Center Completion** - estado: `review_pending`, spec aprobada.
+Feature: **sprint-60-about-methodology-completion - Sprint 60 - About and Methodology Completion** - estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- Reports Center consume registros backend estables para los ocho países IGAD.
-- API de listado, detalle, generación y descarga real PDF/CSV/JSON.
-- Preview HTML explícito, PDF 1.4 válido y auditoría append-only de generación/descarga.
-- Programación, plantillas, compartir y distribución permanecen `pending_contract` sin simulación.
-- Filtros, tabs, cola, inspector, low-bandwidth y degradación de registros incompletos preservados.
+- About y metodología completos con fuentes verificables y lenguaje conservador.
+- Tema persistente, rutas legales/contacto, logo navegable y low-bandwidth.
+- Estado documental/backend ligero sin GEE ni escrituras.
 
 ## Validación
 
-- Backend enfocado: 61 tests PASS.
-- Frontend: 48 tests PASS; typecheck, lint y build PASS.
-- PDF renderizado con Poppler y revisado visualmente sin cortes ni solapamientos.
-- Ruff global conserva 5 fallos preexistentes fuera del scope; los archivos modificados pasan Ruff.
-- MyPy global está bloqueado por un stub NumPy que requiere Python 3.12 en el entorno actual.
+- 49 tests frontend, typecheck, lint y build pasan.
+- 18 tests API enfocados pasan.
+- Gates globales bloqueados por el entorno local de Corepack/Python; detalles en `progress/review_sprint-60-about-methodology-completion.md`.
 
 ## Siguiente acción
 
-- Smoke test humano de `/reports`, generación y descargas; después cerrar Sprint 59.
+- Smoke test humano de `/about`, cambio de tema, detalles de fuente, `/methodology`, `/privacy`, `/terms` y `/contact`; después cerrar Sprint 60.
