@@ -4024,7 +4024,7 @@
     {
       "id": "sprint-59-reports-center-completion",
       "name": "Sprint 59 - Reports Center Completion",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.0.1",
       "estimated_hours": 8,
