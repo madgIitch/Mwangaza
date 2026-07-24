@@ -638,3 +638,12 @@ Decisiones registradas:
 - **tests:** Matriz anti-leakage y reproducibilidad definida.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-62-calibrated-risk-classifier -->
+## 2026-07-24 · sprint-62-calibrated-risk-classifier aprobado
+
+Contexto: se aprobó el spec `sprint-62-calibrated-risk-classifier` (Sprint 62 - Calibrated Risk Classifier).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -229,3 +229,9 @@
 - Dataset temporal versionado con tres horizontes, lineage, null reasons y hash canónico.
 - Sentinel futuro y ventanas contiguas bloquean leakage e imputación silenciosa.
 - 11 tests propios y regresión enfocada de 44 tests + 6 subtests pasan.
+
+## 2026-07-24T12:00:00Z - #sprint-62-calibrated-risk-classifier -> review_pending
+
+- Cinco candidatos evaluados por horizonte dekadal mediante walk-forward global con gap.
+- Selección ML requiere mejorar persistencia y climatología en Brier OOF.
+- 49 tests + 6 subtests y Ruff enfocado pasan.

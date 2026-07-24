@@ -85,7 +85,6 @@ Objetivo no negociable:
   - `docs/**`
   - `spec/**`
   - `progress/**`
-
 ### Contexto técnico
 
 - **data_model:** Define `Settings` como dataclass inmutable en `src/mwangaza/config.py`, construido por `load_settings(env: Mapping[str, str] | None = None)`, sin Pydantic. Campos, tipos, defaults y perfiles validos quedan especificados: `environment`, `log_level`, rutas, paises habilitados, periodo de climatologia, credenciales GEE opcionales y `max_remote_pixels`.
@@ -1526,3 +1525,24 @@ Objetivo no negociable:
 - **external_contracts:** API Python y escritura atómica definidas.
 - **edge_cases:** Frecuencia, gaps, ventanas, timestamps y targets exactos.
 - **ui_states:** Sin UI; semántica documental explícita.
+
+<!-- harness:sprint-62-calibrated-risk-classifier -->
+## sprint-62-calibrated-risk-classifier · Sprint 62 - Calibrated Risk Classifier
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `config/probabilistic/**`
+  - `data/models/.gitkeep`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `docs/probabilistic-risk.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62-calibrated-risk-classifier-*/**`
+  - `progress/**`

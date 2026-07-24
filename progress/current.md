@@ -1,21 +1,22 @@
 # Sesión actual
 
-Feature: **sprint-61-probabilistic-training-dataset - Sprint 61 - Probabilistic Training Dataset** - estado: `review_pending`, spec aprobada.
+Feature: **sprint-62-calibrated-risk-classifier - Sprint 62 - Calibrated Risk Classifier** - estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- Dataset inmutable y determinista para frecuencias mensual/dekadal.
-- Features actuales, lags 1-3, ventanas 3/6, pendientes, deltas, extremos, déficit, deterioro y estacionalidad.
-- Targets exactos para horizontes 1-3 con null/reason codes y lineage versionado.
-- JSON canónico, SHA-256 y escritura atómica.
-- Sin entrenamiento, API pública o porcentaje.
+- Persistencia, climatología estacional, frecuencia histórica, logística y histogram gradient boosting.
+- Modelos compartidos para horizontes 10/20/30 días.
+- Walk-forward global con gap, preprocessing por fold y regiones nuevas seguras.
+- Selección por Brier OOF o abstención `rejected_insufficient_skill`.
+- Manifiesto reproducible con hashes, versiones, parámetros y folds.
+- Sin endpoint ni porcentaje público.
 
 ## Validación
 
-- 11 tests propios PASS.
-- Regresión enfocada: 44 tests y 6 subtests PASS.
+- 16 tests probabilísticos PASS.
+- Regresión enfocada: 49 tests y 6 subtests PASS.
 - Ruff enfocado PASS.
 
 ## Siguiente acción
 
-- Revisar Sprint 61; al continuar, cerrarlo y preparar la spec de Sprint 62.
+- Revisar Sprint 62; sólo tras aceptación preparar Sprint 63.

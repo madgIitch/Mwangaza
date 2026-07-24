@@ -12,6 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Mwangaza contributors" }]
 dependencies = [
   "earthengine-api>=1.7.35",
+  "scikit-learn>=1.5,<2",
 ]
 
 [project.optional-dependencies]

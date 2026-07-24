@@ -4270,6 +4270,7 @@
         "tests/fixtures/probabilistic/**",
         "config/probabilistic/**",
         "data/models/.gitkeep",
+        "scripts/train_probabilistic_demo.py",
         "pyproject.toml",
         "requirements*.txt",
         "Makefile",

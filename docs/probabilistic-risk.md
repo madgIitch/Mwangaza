@@ -42,6 +42,14 @@ Future observations may determine a target but cannot enter the feature vector f
 
 Dekadal is the primary training cadence. Daily CHIRPS observations are aggregated into rainfall features inside each 10-day period; they do not create duplicate daily training rows. MODIS NDVI and LST retain their actual `observed_at`, and the dataset exposes `*_age_days` so an older composite is never presented as a new observation. Monthly remains a secondary reporting-compatible frequency.
 
+## Sprint 62 implementation
+
+`mwangaza.probabilistic.training` evaluates persistence, seasonal climatology, historical frequency, logistic regression and histogram gradient boosting independently for horizons of 10, 20 and 30 days.
+
+Walk-forward folds use globally shared dekadal dates. Every fold leaves a gap equal to its forecast horizon; preprocessing, median imputation, scaling and region encoding are learned only from the training side. New regions are treated as unknown categories rather than causing failure or borrowing another region's identity.
+
+Selection uses out-of-sample Brier score. An ML model is selected only when it improves both persistence and seasonal climatology; otherwise the horizon is retained as `rejected_insufficient_skill`. Runs record dataset and feature hashes, threshold versions, seed, scikit-learn version, folds, parameters, OOF probabilities and a canonical run hash. This sprint does not publish probabilities.
+
 ## Non-negotiable gates
 
 No percentage is published when any approved gate fails, including insufficient history or positive cases, blocked current quality, non-positive skill against climatology, unacceptable calibration, material drift, unsupported horizon, regional under-representation, corrupt artifacts or version/hash mismatch.
