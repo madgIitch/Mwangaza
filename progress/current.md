@@ -1,19 +1,21 @@
 # Sesión actual
 
-Feature: **sprint-60-about-methodology-completion - Sprint 60 - About and Methodology Completion** - estado: `review_pending`, spec aprobada.
+Feature: **sprint-61-probabilistic-training-dataset - Sprint 61 - Probabilistic Training Dataset** - estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- About y metodología completos con fuentes verificables y lenguaje conservador.
-- Tema persistente, rutas legales/contacto, logo navegable y low-bandwidth.
-- Estado documental/backend ligero sin GEE ni escrituras.
+- Dataset inmutable y determinista para frecuencias mensual/dekadal.
+- Features actuales, lags 1-3, ventanas 3/6, pendientes, deltas, extremos, déficit, deterioro y estacionalidad.
+- Targets exactos para horizontes 1-3 con null/reason codes y lineage versionado.
+- JSON canónico, SHA-256 y escritura atómica.
+- Sin entrenamiento, API pública o porcentaje.
 
 ## Validación
 
-- 49 tests frontend, typecheck, lint y build pasan.
-- 18 tests API enfocados pasan.
-- Gates globales bloqueados por el entorno local de Corepack/Python; detalles en `progress/review_sprint-60-about-methodology-completion.md`.
+- 11 tests propios PASS.
+- Regresión enfocada: 44 tests y 6 subtests PASS.
+- Ruff enfocado PASS.
 
 ## Siguiente acción
 
-- Smoke test humano de `/about`, cambio de tema, detalles de fuente, `/methodology`, `/privacy`, `/terms` y `/contact`; después cerrar Sprint 60.
+- Revisar Sprint 61; al continuar, cerrarlo y preparar la spec de Sprint 62.

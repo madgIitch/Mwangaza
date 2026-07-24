@@ -10,3 +10,5 @@ a configured predicted drop.
 
 Rejected models remain available as diagnostics with a persisted reason. The
 dashboard labels forecasts as experimental estimates, not observed facts.
+
+Sprints 61-65 extend this abstention principle to calibrated probabilities: publication requires positive out-of-sample skill and approved quality, calibration, drift, horizon and regional-representation gates.

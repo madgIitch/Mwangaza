@@ -223,3 +223,9 @@
 - About, metodología, fuentes, rutas legales/contacto y tema persistente completados.
 - Endpoint de estado público metadata-only, sin GEE ni escrituras.
 - 49 tests frontend, 18 API enfocados, typecheck, lint y build pasan.
+
+## 2026-07-23T19:20:00Z - #sprint-61-probabilistic-training-dataset -> review_pending
+
+- Dataset temporal versionado con tres horizontes, lineage, null reasons y hash canónico.
+- Sentinel futuro y ventanas contiguas bloquean leakage e imputación silenciosa.
+- 11 tests propios y regresión enfocada de 44 tests + 6 subtests pasan.

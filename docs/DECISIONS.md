@@ -625,3 +625,16 @@ Decisiones registradas:
 - **tests:** Contratos, UI, seguridad, offline y accesibilidad quedan cubiertos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-61-probabilistic-training-dataset -->
+## 2026-07-23 · sprint-61-probabilistic-training-dataset aprobado
+
+Contexto: se aprobó el spec `sprint-61-probabilistic-training-dataset` (Sprint 61 - Probabilistic Training Dataset).
+
+Decisiones registradas:
+
+- **auth_secrets:** Offline y metadata saneada.
+- **rollback_compat:** Implementación aditiva.
+- **tests:** Matriz anti-leakage y reproducibilidad definida.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

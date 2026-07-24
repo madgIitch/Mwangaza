@@ -4,6 +4,10 @@
 
 `GET /api/v1/about/status` is a cacheable, public, read-only metadata endpoint. It returns application and methodology versions, data mode, snapshot/documentation status, license and optional public repository/contact links. Its `refresh` object explicitly reports `kind=metadata_only`, `gee_triggered=false` and `writes_performed=false`. It never initializes Earth Engine, refreshes indicators or exposes private configuration.
 
+## Probabilistic training dataset
+
+`mwangaza.probabilistic.dataset` exposes `HistoricalRiskPeriod`, `DatasetConfig`, `TrainingRow`, `TrainingDataset`, `build_training_dataset`, `canonical_dataset_json` and `write_training_dataset`. The v1 schema uses UTC `as_of`, a single explicit frequency per dataset and horizons 1-3. Dekadal is preferred, mapping those horizons to 10/20/30 days; monthly is secondary. Signal values may retain a real `signal_observed_at`, producing age features and rejecting future timestamps. Features contain only information available at `as_of`; target fields may reference the exact future period. Null targets always include a reason and never mean class zero.
+
 Sprint 4 defines versioned data contracts in `mwangaza.contracts`.
 
 ## Version

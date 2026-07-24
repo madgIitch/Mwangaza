@@ -1498,3 +1498,31 @@ Objetivo no negociable:
 - **external_contracts:** Endpoint ligero, rutas PWA y navegación están definidos.
 - **edge_cases:** Tema, almacenamiento, URLs, metadata inválida y low-bandwidth están cubiertos.
 - **ui_states:** Jerarquía editorial, tema, documentos y degradación están definidos.
+
+<!-- harness:sprint-61-probabilistic-training-dataset -->
+## sprint-61-probabilistic-training-dataset · Sprint 61 - Probabilistic Training Dataset
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `config/probabilistic/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `docs/probabilistic-risk.md`
+  - `docs/contracts.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-61-probabilistic-training-dataset-*/**`
+  - `progress/**`
+
+### Contexto técnico
+
+- **data_model:** Contratos inmutables de entrada, fila, manifest y dataset.
+- **external_contracts:** API Python y escritura atómica definidas.
+- **edge_cases:** Frecuencia, gaps, ventanas, timestamps y targets exactos.
+- **ui_states:** Sin UI; semántica documental explícita.
