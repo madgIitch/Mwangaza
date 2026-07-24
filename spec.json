@@ -4224,7 +4224,7 @@
     {
       "id": "sprint-62-calibrated-risk-classifier",
       "name": "Sprint 62 - Calibrated Risk Classifier",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 10,
@@ -4253,7 +4253,7 @@
       ],
       "deliverable": "Registro reproducible de candidatos y modelo seleccionado por horizonte, o rechazo explicito cuando ningun candidato mejora los baselines.",
       "acceptance": [
-        "Entrena logística, histogram gradient boosting, persistencia, climatología estacional y frecuencia histórica para horizontes 1-3.",
+        "Entrena logística, histogram gradient boosting, persistencia, climatología estacional y frecuencia histórica para horizontes dekadales de 10/20/30 días.",
         "Walk-forward usa fechas globales y gap mínimo h; no existe shuffle/split aleatorio.",
         "Probabilidades finitas [0,1]; clase única o muestra insuficiente rechaza.",
         "Selección por Brier OOF con desempate determinista hacia modelo simple.",
@@ -4279,7 +4279,13 @@
         "spec/sprint-62-calibrated-risk-classifier-*/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-24T12:13:15.698Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:ce5dc93704d99347ed1e90ddd461b02f7e4d8fafe913a0a64e7cde94bd99e736",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-24T12:13:15.850Z"
     },
     {
       "id": "sprint-63-probability-calibration-skill-gate",
