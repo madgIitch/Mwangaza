@@ -9,7 +9,7 @@ from typing import Callable, Iterable
 
 from mwangaza.probabilistic.adm1 import Adm1PreparedRow, Adm1RawRow, SignalObservation
 
-ANTECEDENT_TRANSFORMATION_VERSION = "adm1-antecedents-empirical-spi-v1"
+ANTECEDENT_TRANSFORMATION_VERSION = "adm1-antecedents-empirical-spi-v2"
 SPI_SCALES = (1, 3, 6)
 
 
@@ -31,6 +31,7 @@ def prepare_adm1_antecedents(
     *,
     reference_end: date,
     min_reference_years: int = 15,
+    output_start: date | None = None,
     progress: Callable[[int, int], None] | None = None,
 ) -> tuple[Adm1PreparedRow, ...]:
     if min_reference_years < 3:
@@ -80,22 +81,22 @@ def prepare_adm1_antecedents(
                     as_of=row.as_of,
                 )
             signals.update(_ndvi_features(history, index, ndvi_reference))
-            result.append(
-                Adm1PreparedRow(
-                    region_id=row.region_id,
-                    parent_region_id=row.parent_region_id,
-                    parent_iso3=row.parent_iso3,
-                    boundary_id=row.boundary_id,
-                    boundary_iso=row.boundary_iso,
-                    boundary_source=row.boundary_source,
-                    boundary_version=row.boundary_version,
-                    period_start=row.period_start,
-                    period_end=row.period_end,
-                    as_of=row.as_of,
-                    signals=signals,
-                    transformation_version=ANTECEDENT_TRANSFORMATION_VERSION,
-                )
+            prepared_row = Adm1PreparedRow(
+                region_id=row.region_id,
+                parent_region_id=row.parent_region_id,
+                parent_iso3=row.parent_iso3,
+                boundary_id=row.boundary_id,
+                boundary_iso=row.boundary_iso,
+                boundary_source=row.boundary_source,
+                boundary_version=row.boundary_version,
+                period_start=row.period_start,
+                period_end=row.period_end,
+                as_of=row.as_of,
+                signals=signals,
+                transformation_version=ANTECEDENT_TRANSFORMATION_VERSION,
             )
+            if output_start is None or date.fromisoformat(row.period_start) >= output_start:
+                result.append(prepared_row)
             completed += 1
             if progress:
                 progress(completed, len(ordered))
@@ -203,9 +204,9 @@ def _spi_signal(
     as_of: str,
 ) -> SignalObservation:
     if current is None:
-        return _derived_missing("CHIRPS empirical SPI", "mm→z", "incomplete_month_window")
+        return _derived_missing("CHIRPS empirical SPI", "z_score", "incomplete_month_window")
     if reference is None:
-        return _derived_missing("CHIRPS empirical SPI", "mm→z", "insufficient_reference")
+        return _derived_missing("CHIRPS empirical SPI", "z_score", "insufficient_reference")
     less = sum(value < current[0] for value in reference)
     equal = sum(value == current[0] for value in reference)
     probability = (less + 0.5 * equal + 0.5) / (len(reference) + 1)

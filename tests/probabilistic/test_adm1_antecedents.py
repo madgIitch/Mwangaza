@@ -241,6 +241,31 @@ def test_empirical_spi_uses_only_pre_cut_reference_and_months_are_complete() -> 
     assert first_dekad.signals["spi_1m"].observed_at.startswith("2018-11-30")
 
 
+def test_warmup_rows_complete_six_month_reference_but_are_not_published() -> None:
+    region = _region("adm1-one")
+    history = tuple(
+        _raw_row(region, year, month, day, rain=10 + month, ndvi=0.5)
+        for year, months in (
+            (2002, range(7, 13)),
+            *((year, range(1, 13)) for year in range(2003, 2018)),
+        )
+        for month in months
+        for day in (1, 11, 21)
+    )
+
+    prepared = prepare_adm1_antecedents(
+        history,
+        reference_end=date(2017, 12, 31),
+        min_reference_years=15,
+        output_start=date(2003, 1, 1),
+    )
+
+    assert prepared[0].period_start == "2003-01-01"
+    assert all(row.period_start >= "2003-01-01" for row in prepared)
+    assert prepared[0].signals["spi_6m"].value is not None
+    assert prepared[0].signals["spi_6m"].unit == "z_score"
+
+
 def test_ndvi_trajectory_marks_gaps_and_computes_velocity() -> None:
     region = _region("adm1-one")
     baseline = tuple(

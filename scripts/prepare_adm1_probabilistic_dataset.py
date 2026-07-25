@@ -30,6 +30,12 @@ def main() -> None:
         help="Last date allowed to fit SPI, rainfall and NDVI reference distributions.",
     )
     parser.add_argument("--min-reference-years", type=int, default=15)
+    parser.add_argument(
+        "--output-start",
+        type=date.fromisoformat,
+        default=date(2003, 1, 1),
+        help="First period retained in the prepared artifact; earlier rows are warm-up only.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -41,6 +47,7 @@ def main() -> None:
     print(f"Input rows: {len(rows)}")
     print(f"Regions: {len({row.region_id for row in rows})}")
     print(f"Reference cutoff: {args.reference_end}")
+    print(f"Publishable period starts: {args.output_start}")
     print(f"Output: {args.output}")
     if args.dry_run:
         return
@@ -48,6 +55,7 @@ def main() -> None:
         rows,
         reference_end=args.reference_end,
         min_reference_years=args.min_reference_years,
+        output_start=args.output_start,
         progress=EtaProgress("ADM1 data treatment"),
     )
     manifest = write_prepared_rows(prepared, args.output)

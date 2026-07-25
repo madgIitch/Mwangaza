@@ -90,7 +90,7 @@ Threshold v3 freezes climatology and cuts on `2003-2017`, then labels the disjoi
 
 ## ADM1 antecedent feature pipeline
 
-Sprint 62C changes the information available to a future model instead of trying more estimators on the national feature set. `scripts/backfill_adm1_antecedent_signals.py` materializes one source row per complete calendar dekad and each of the 121 version-pinned IGAD ADM1 units. Earth Engine requests batch both regions and windows; every completed batch is written atomically and can be resumed.
+Sprint 62C changes the information available to a future model instead of trying more estimators on the national feature set. `scripts/backfill_adm1_antecedent_signals.py` materializes one source row per complete calendar dekad and each of the 121 version-pinned IGAD ADM1 units. Earth Engine requests batch both regions and windows; every completed batch is written atomically and can be resumed. The raw extraction starts in July 2002 to provide the six-month warm-up required by SPI; the prepared, publishable artifact continues to start on 1 January 2003.
 
 The backfill contains CHIRPS rainfall, MOD13Q1 NDVI, SPEIbase 1/3/6 month values, FLDAS top-layer/root-zone soil moisture and evapotranspiration rate, plus ECMWF IFS cumulative precipitation forecasts at 240 and 360 hours where historically available. Monthly values keep native timestamps. MOD13Q1 is admitted only after its full 16-day composite closes, so a source start timestamp cannot hide future pixels. Forecasts keep creation time and lead and never populate `observed_at`.
 

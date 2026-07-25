@@ -17,7 +17,15 @@ from mwangaza.regions import ADM1_LEVEL, get_region, list_regions
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--start", type=date.fromisoformat, default=date(2003, 1, 1))
+    parser.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=date(2002, 7, 1),
+        help=(
+            "First raw dekad to extract. The default includes six months of "
+            "warm-up before the publishable dataset starts in 2003."
+        ),
+    )
     parser.add_argument("--end", type=date.fromisoformat, default=last_complete_dekad())
     parser.add_argument(
         "--output",
