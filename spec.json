@@ -4289,6 +4289,74 @@
       "approved_at": "2026-07-24T12:13:15.850Z"
     },
     {
+      "id": "sprint-62b-real-historical-backfill",
+      "name": "Sprint 62B - Real Historical Backfill",
+      "status": "done",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 12,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-61-probabilistic-training-dataset",
+        "sprint-62-calibrated-risk-classifier"
+      ],
+      "objective": "Materializar desde Google Earth Engine un historico regional real, dekadal y reanudable desde 2024 para alimentar el dataset probabilistico sin confundir la cadencia diaria de CHIRPS con los compuestos MODIS.",
+      "user_stories": [
+        {
+          "id": "HU62B.1",
+          "story": "Como cientifico de datos quiero descargar agregados historicos reales por region y dekada para entrenar fuera de datos sinteticos."
+        },
+        {
+          "id": "HU62B.2",
+          "story": "Como operador quiero reanudar el backfill tras errores de cuota o red sin repetir periodos ya verificados."
+        }
+      ],
+      "tasks": [
+        "Implementar un extractor GEE offline para CHIRPS Daily, MOD13Q1 y MOD11A2.",
+        "Generar ventanas dekadales exactas y limitar el final a la ultima dekada completa.",
+        "Agregar lluvia diaria dentro de cada dekada y resolver NDVI/LST por ultimo compuesto disponible sin mirar al futuro.",
+        "Conservar observed_at, age_days, cobertura, source/version y razones de ausencia por senal.",
+        "Persistir filas atomicas, checkpoints reanudables y un manifiesto canonico con SHA-256.",
+        "Crear CLI con piloto Kenya y expansion explicita a los ocho paises IGAD.",
+        "Transformar el backfill validado a HistoricalRiskPeriod y TrainingDataset sin ejecutar entrenamiento automaticamente."
+      ],
+      "deliverable": "Artefacto local versionado con historico GEE real desde 2024, informe de cobertura y comando reanudable para Kenya e IGAD.",
+      "acceptance": [
+        "Kenya desde 2024 hasta la ultima dekada completa por defecto.",
+        "CHIRPS dekadal con dias y cobertura.",
+        "NDVI/LST sin lookahead, con fecha y edad reales.",
+        "Ausencias estructuradas sin ceros inventados ni fallo global.",
+        "Artefacto atomico, canonico, versionado y con SHA-256.",
+        "Reanudacion sin repetir filas; `--force` recalcula.",
+        "Dry-run sin red y expansion IGAD con confirmacion explicita.",
+        "Datos locales y secretos fuera de Git.",
+        "Tests offline y smoke manual Kenya documentado."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "src/mwangaza/gee/**",
+        "scripts/backfill_probabilistic_history.py",
+        "scripts/prepare_probabilistic_dataset.py",
+        "scripts/train_probabilistic_model.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "data/historical/.gitkeep",
+        ".gitignore",
+        "docs/probabilistic-risk.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62b-real-historical-backfill-*/**",
+        "progress/**"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-24T14:51:15.824Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:396a4b75c585988da7bcd8c64daa428bce515c91a9c049ef8897be717d82ac7f",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-24T14:51:16.011Z"
+    },
+    {
       "id": "sprint-63-probability-calibration-skill-gate",
       "name": "Sprint 63 - Probability Calibration and Skill Gate",
       "status": "pending",
@@ -4297,7 +4365,8 @@
       "estimated_hours": 8,
       "demo_critical": false,
       "dependencies": [
-        "sprint-62-calibrated-risk-classifier"
+        "sprint-62-calibrated-risk-classifier",
+        "sprint-62b-real-historical-backfill"
       ],
       "objective": "Calibrar las probabilidades fuera de muestra, medir su skill y producir una decision persistida de elegibilidad por modelo, region y horizonte.",
       "user_stories": [
