@@ -40,6 +40,34 @@ affected.
 - FNID geometry resolution was verified for
   `KE2016C312010019` through `feature.geojson`.
 
+### Verified IGAD coverage snapshot
+
+An anonymous `scenario=CS&page_size=1` count was queried on 2026-07-25 for
+every enabled country:
+
+| ISO2 | Country | Public CS records |
+|---|---|---:|
+| DJ | Djibouti | 401 |
+| ER | Eritrea | 0 |
+| ET | Ethiopia | 40,416 |
+| KE | Kenya | 28,358 |
+| SO | Somalia | 11,536 |
+| SS | South Sudan | 3,993 |
+| SD | Sudan | 8,398 |
+| UG | Uganda | 18,412 |
+|  | **Total** | **111,514** |
+
+These are source records, not usable ADM1/dekad labels. The counts include
+Admin-0 rows, multiple source documents, changing boundary versions,
+classification scales and alternative humanitarian-assistance variants.
+Normalization must deduplicate only through explicit source identity and must
+preserve differing classifications rather than selecting a maximum phase.
+
+Eritrea has no public FEWS NET CS rows in this endpoint, so its coverage is
+unknown rather than negative. Query latency also varied materially (the
+one-row Ethiopia count took roughly 27 seconds), making pagination,
+checkpointing, retry and ETA mandatory for the eventual downloader.
+
 Training defaults:
 
 - Accept only `scenario=CS` (Current Situation / assessed).
@@ -48,6 +76,9 @@ Training defaults:
   a classification cannot be visible before publication.
 - Preserve `classification_scale`; FEWS NET classifications are IPC-compatible
   but are not necessarily IPC consensus results.
+- Preserve `is_allowing_for_assistance`; assisted and counterfactual/no-
+  assistance variants are distinct observations and cannot silently overwrite
+  each other.
 - Map source geometries to the pinned ADM1 catalog by area overlap, recording
   numerator, denominator, method and unmatched area. Never join by name alone.
 - Values `66`, `88`, `99`, missing geometry and unpublished collections are
