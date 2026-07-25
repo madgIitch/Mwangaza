@@ -88,6 +88,38 @@ The first v2 run produced three severe observations: Eritrea 2025-06-30, Kenya 2
 
 Threshold v3 freezes climatology and cuts on `2003-2017`, then labels the disjoint `2018-2026` period. It produces 2,464 labeled observations, 7,392 horizon rows and 86 severe targets per horizon. Despite the larger positive class, ML still does not beat historical frequency: the final status remains `rejected_insufficient_skill` for 10, 20 and 30 days. Training progress is reported by walk-forward fold so long runs expose a meaningful ETA.
 
+## ADM1 antecedent feature pipeline
+
+Sprint 62C changes the information available to a future model instead of trying more estimators on the national feature set. `scripts/backfill_adm1_antecedent_signals.py` materializes one source row per complete calendar dekad and each of the 121 version-pinned IGAD ADM1 units. Earth Engine requests batch both regions and windows; every completed batch is written atomically and can be resumed.
+
+The backfill contains CHIRPS rainfall, MOD13Q1 NDVI, SPEIbase 1/3/6 month values, FLDAS top-layer/root-zone soil moisture and evapotranspiration rate, plus ECMWF IFS cumulative precipitation forecasts at 240 and 360 hours where historically available. Monthly values keep native timestamps. MOD13Q1 is admitted only after its full 16-day composite closes, so a source start timestamp cannot hide future pixels. Forecasts keep creation time and lead and never populate `observed_at`.
+
+Run an offline plan first:
+
+```powershell
+uv run python scripts/backfill_adm1_antecedent_signals.py --dry-run
+```
+
+Then start or resume the complete extraction:
+
+```powershell
+uv run python scripts/backfill_adm1_antecedent_signals.py --confirm-remote
+```
+
+The default covers `2003-01-01` through the last complete dekad. Progress is measured in ADM1/dekad rows and prints an ETA. To validate a small remote slice before the long run, repeat `--region`:
+
+```powershell
+uv run python scripts/backfill_adm1_antecedent_signals.py --region adm1-ke-43 --region adm1-so-hi --start 2025-01-01 --end 2025-01-31 --output data/historical/adm1-smoke --confirm-remote --force
+```
+
+Prepare leakage-safe features after the backfill:
+
+```powershell
+uv run python scripts/prepare_adm1_probabilistic_dataset.py
+```
+
+Preparation derives empirical SPI 1/3/6, cumulative rainfall deficits 1/3/6, seasonal NDVI anomaly, consecutive negative-anomaly persistence and 3/6-dekad OLS velocity. SPI and climatologies use only complete windows from the reference period ending `2017-12-31`. First and second dekads therefore use the latest prior complete month; no future part of the current month enters the feature vector. This artifact contains features only: it does not train, publish probabilities or create labels from the Mwangaza score.
+
 ## Non-negotiable gates
 
 No percentage is published when any approved gate fails, including insufficient history or positive cases, blocked current quality, non-positive skill against climatology, unacceptable calibration, material drift, unsupported horizon, regional under-representation, corrupt artifacts or version/hash mismatch.

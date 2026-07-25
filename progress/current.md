@@ -1,24 +1,21 @@
 # Sesión actual
 
-Feature: **sprint-62b-real-historical-backfill - Sprint 62B - Real Historical Backfill** - estado: `review_pending`, spec aprobada.
+Feature: **sprint-62c-adm1-antecedent-signals - Sprint 62C - ADM1 Antecedent Drought Signals** - estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- CLI offline/reanudable para Kenya o IGAD desde 2024.
-- CHIRPS acumulado por dekada; MODIS NDVI/LST con timestamp y edad reales sin lookahead.
-- JSONL local atómico y manifiesto SHA-256; datos descargados fuera de Git.
-- Dataset IGAD real: 736 filas hasta 2026-07-20, 720 completas y 16 con CHIRPS aún no publicado.
-- Scripts con ETA para baseline 2003-2023, tratamiento/labels y entrenamiento reproducible.
-- Thresholds v3 P75/P90/P97.5 congelados por país con referencia 2003-2017.
-- Historia etiquetada 2018-2026: 7.392 filas y 86 positivos por horizonte.
-- ML rechazado en 10/20/30 días por no superar frecuencia histórica.
+- Backfill batched/reanudable para las 121 ADM1 con manifiesto de geometrías y SHA-256.
+- CHIRPS, MOD13Q1, SPEIbase 1/3/6, FLDAS soil moisture/ET y ECMWF 10/15 días.
+- SPI empírico 1/3/6, déficit 1/3/6 y persistencia/velocidad NDVI sin lookahead.
+- Scripts separados de backfill y preparación con progreso y ETA.
+- Forecast separado de observaciones mediante creation time y lead.
 
 ## Validación
 
-- Tests de backfill offline PASS.
+- 6 tests ADM1 enfocados PASS.
 - Ruff enfocado PASS.
-- Smoke Earth Engine Kenya PASS.
+- Smoke Earth Engine Turkana (Kenya) + Hiiraan (Somalia): 6/6 filas, 0 señales ausentes.
 
 ## Siguiente acción
 
-- Revisar la abstención: ampliar historia ya no aporta skill; valorar features/labels externos antes del Sprint 63.
+- Revisar el Sprint 62C y ejecutar opcionalmente el backfill completo; no iniciar Sprint 62D hasta confirmación humana.

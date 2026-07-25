@@ -1,6 +1,12 @@
 # Data provenance and methodology
 
-The canonical metadata catalog is `docs/data-sources/catalog.json` (`mwangaza.provenance.v1`). It covers MODIS NDVI, CHIRPS rainfall, MODIS land-surface temperature, administrative boundaries and potential exposure. `Pending verification` means terms are not yet confirmed and the source must not be presented as operationally approved.
+The canonical metadata catalog is `docs/data-sources/catalog.json` (`mwangaza.provenance.v1`). It covers MODIS NDVI, CHIRPS rainfall, MODIS land-surface temperature, SPEIbase, FLDAS, ECMWF IFS, administrative boundaries and potential exposure. `Pending verification` means terms are not yet confirmed and the source must not be presented as operationally approved.
+
+The ADM1 antecedent artifact pins 121 geoBoundaries gbOpen units from `wmgeolab/geoBoundaries@9469f09`. Its manifest keeps each complete geometry once; dekadal rows join by stable boundary identity. This avoids repeating large polygons in every row while preserving an auditable spatial snapshot.
+
+Monthly SPEIbase and FLDAS values retain their source timestamp and are only attached after a complete source month. CHIRPS empirical SPI is fitted from complete monthly accumulations ending on or before the configured reference cutoff. The provider SPEI value and Mwangaza SPI are separate features and must not be conflated.
+
+ECMWF IFS precipitation is stored only when `creation_time <= as_of`; `forecast_hours` is preserved and `observed_at` remains null. Dates before 2024-11-12 use `not_available_for_date`. A forecast is never substituted for a missing observation.
 
 ## Product concepts
 

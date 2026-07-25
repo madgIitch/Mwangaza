@@ -241,3 +241,9 @@
 - Piloto Kenya desde 2024: 92 filas locales, 90 completas y 2 ausencias CHIRPS explícitas.
 - Sprint 63 permanece bloqueado hasta revisar el histórico.
 - Backfill ampliado a IGAD: 736 filas reales; training bloqueado hasta derivar anomalías y labels.
+
+## 2026-07-25T15:43:09+02:00 - #sprint-62c-adm1-antecedent-signals -> review_pending
+
+- Pipeline de 121 ADM1 con CHIRPS, NDVI, SPI/SPEI, déficit, soil moisture, ET y forecast.
+- 27 tests probabilísticos, gates del harness y smoke GEE Kenya/Somalia pasan.
+- Se detiene antes de labels independientes para revisión humana entre sprints.

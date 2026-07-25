@@ -665,6 +665,12 @@ Absolute 25/50/75 cuts produced no severe labels because the anomaly composite o
 
 Threshold v3 strengthens temporal separation: `2003-2017` fits climatology and country thresholds, while only `2018-2026` is labeled for modeling. This yields 86 severe targets per horizon without allowing labeled dates to influence their own cuts. The expanded run still loses to historical frequency and therefore remains in abstention.
 
+## 2026-07-25 · ADM1 antecedents separate observations, provider indices and forecasts
+
+The next predictive dataset uses all 121 version-pinned IGAD ADM1 units. Raw source values and derived antecedents are separate artifacts: SPEIbase remains a provider-standardized monthly signal, while Mwangaza computes empirical SPI 1/3/6 from complete CHIRPS months using only the pre-cut reference distribution. Rainfall deficits and NDVI persistence/velocity likewise require contiguous completed windows.
+
+FLDAS soil moisture remains a volume fraction and `Evap_tavg` remains a rate in `kg/m²/s`; neither is silently converted. MOD13Q1 is filtered by the end of its 16-day composite rather than only its start timestamp. ECMWF cumulative precipitation is converted from metres to millimetres but retains creation time and 240/360-hour lead. It is structurally unavailable before 2024-11-12 and never has an observation timestamp. A dekad becomes available at the start of the day after its final included daily observation.
+
 <!-- harness:sprint-62c-adm1-antecedent-signals -->
 ## 2026-07-25 · sprint-62c-adm1-antecedent-signals aprobado
 

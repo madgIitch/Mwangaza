@@ -1569,7 +1569,18 @@ Objetivo no negociable:
 <!-- harness:sprint-62c-adm1-antecedent-signals -->
 ## sprint-62c-adm1-antecedent-signals · Sprint 62C - ADM1 Antecedent Drought Signals
 
+`mwangaza.gee.adm1_antecedent` builds one multi-band image per dekad and applies
+`reduceRegions` to bounded ADM1 batches. The client materializer batches both
+regions and windows, checkpoints canonical JSONL atomically, and stores the 121
+version-pinned geometries once in the manifest. Rows reference those geometries
+through stable boundary IDs.
 
+`mwangaza.probabilistic.antecedents` is a separate local transformation stage.
+It forms complete CHIRPS calendar months, fits empirical SPI distributions only
+through a configured reference cutoff, and derives rainfall deficits plus NDVI
+persistence and slopes. Provider observations retain `observed_at` and
+`available_at`; ECMWF values instead retain creation time as `available_at`,
+forecast lead, and a null `observed_at`.
 
 ### Scope aprobado
 
@@ -1588,4 +1599,3 @@ Objetivo no negociable:
   - `docs/DECISIONS.md`
   - `spec/sprint-62c-adm1-antecedent-signals-*/**`
   - `progress/**`
-
