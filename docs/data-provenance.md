@@ -4,6 +4,10 @@ The canonical metadata catalog is `docs/data-sources/catalog.json` (`mwangaza.pr
 
 The ADM1 antecedent artifact pins 121 geoBoundaries gbOpen units from `wmgeolab/geoBoundaries@9469f09`. Its manifest keeps each complete geometry once; dekadal rows join by stable boundary identity. This avoids repeating large polygons in every row while preserving an auditable spatial snapshot.
 
+The access, license and semantic audit for future independent labels is
+`docs/data-sources/independent-label-source-audit.md`. In particular, food
+security impact labels and drought-hazard event labels remain separate.
+
 Monthly SPEIbase and FLDAS values retain their source timestamp and are only attached after a complete source month. CHIRPS empirical SPI is fitted from complete monthly accumulations ending on or before the configured reference cutoff. The provider SPEI value and Mwangaza SPI are separate features and must not be conflated.
 
 ECMWF IFS precipitation is stored only when `creation_time <= as_of`; `forecast_hours` is preserved and `observed_at` remains null. Dates before 2024-11-12 use `not_available_for_date`. A forecast is never substituted for a missing observation.
