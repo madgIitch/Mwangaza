@@ -647,3 +647,20 @@ Contexto: se aprobó el spec `sprint-62-calibrated-risk-classifier` (Sprint 62 -
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-62b-real-historical-backfill -->
+## 2026-07-24 · sprint-62b-real-historical-backfill aprobado
+
+Contexto: se aprobó el spec `sprint-62b-real-historical-backfill` (Sprint 62B - Real Historical Backfill).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+## 2026-07-24 · Real historical data uses native source cadence
+
+The probabilistic backfill stores one regional row per calendar dekad, but it does not pretend that every signal is observed dekadally. CHIRPS Daily is accumulated within the period; MOD13Q1 and MOD11A2 retain the timestamp of the latest non-future composite and expose its age. Empty or not-yet-published upstream periods remain null with a reason code. Source rasters and downloaded local aggregates are not committed to Git.
+## 2026-07-24 · Probabilistic thresholds are frozen from the pre-2024 baseline
+
+Absolute 25/50/75 cuts produced no severe labels because the anomaly composite observed maximum was below 50. Threshold v2 uses country-level P75/P90/P97.5 calculated only from valid 2003-2023 baseline scores. The cuts are persisted before labeling current history, preventing 2024+ observations from tuning their own target. Model selection must improve persistence, seasonal climatology and historical frequency; otherwise Mwangaza abstains.
+
+Threshold v3 strengthens temporal separation: `2003-2017` fits climatology and country thresholds, while only `2018-2026` is labeled for modeling. This yields 86 severe targets per horizon without allowing labeled dates to influence their own cuts. The expanded run still loses to historical frequency and therefore remains in abstention.

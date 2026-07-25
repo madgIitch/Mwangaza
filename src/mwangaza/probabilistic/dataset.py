@@ -222,6 +222,22 @@ def write_training_dataset(dataset: TrainingDataset, path: str | Path) -> Path:
     return target
 
 
+def load_training_dataset(path: str | Path) -> TrainingDataset:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload["regions"] = tuple(payload["regions"])
+    payload["feature_names"] = tuple(payload["feature_names"])
+    payload["rows"] = tuple(
+        TrainingRow(
+            **{
+                **row,
+                "feature_reasons": tuple(row["feature_reasons"]),
+            }
+        )
+        for row in payload["rows"]
+    )
+    return TrainingDataset(**payload)
+
+
 def _features(
     current: HistoricalRiskPeriod,
     history: list[HistoricalRiskPeriod | None],

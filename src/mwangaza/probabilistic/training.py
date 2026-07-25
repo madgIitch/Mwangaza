@@ -5,7 +5,7 @@ import json
 import math
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 import sklearn
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -104,14 +104,47 @@ class TrainingRun:
 
 
 def train_risk_candidates(
-    dataset: TrainingDataset, config: TrainingConfig | None = None
+    dataset: TrainingDataset,
+    config: TrainingConfig | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> TrainingRun:
     resolved = config or TrainingConfig()
     _validate_dataset(dataset)
-    results = tuple(
-        _train_horizon(dataset, horizon, resolved)
-        for horizon in sorted({row.horizon_periods for row in dataset.rows})
-    )
+    horizons = sorted({row.horizon_periods for row in dataset.rows})
+    horizon_steps = {
+        horizon: max(
+            0,
+            len({row.as_of for row in dataset.rows if row.horizon_periods == horizon})
+            - resolved.initial_train_periods
+            - horizon,
+        )
+        for horizon in horizons
+    }
+    total_steps = sum(horizon_steps.values())
+    completed_steps = 0
+    trained = []
+    if progress is not None:
+        progress(0, total_steps)
+    for horizon in horizons:
+        offset = completed_steps
+        trained.append(
+            _train_horizon(
+                dataset,
+                horizon,
+                resolved,
+                fold_progress=(
+                    None
+                    if progress is None
+                    else lambda completed, offset=offset: progress(
+                        offset + completed, total_steps
+                    )
+                ),
+            )
+        )
+        completed_steps += horizon_steps[horizon]
+        if progress is not None:
+            progress(completed_steps, total_steps)
+    results = tuple(trained)
     base = {
         "schema_version": TRAINING_SCHEMA_VERSION,
         "dataset_hash": dataset.dataset_hash,
@@ -138,7 +171,10 @@ def canonical_training_run_json(run: TrainingRun) -> str:
 
 
 def _train_horizon(
-    dataset: TrainingDataset, horizon: int, config: TrainingConfig
+    dataset: TrainingDataset,
+    horizon: int,
+    config: TrainingConfig,
+    fold_progress: Callable[[int], None] | None = None,
 ) -> HorizonTrainingResult:
     rows = [
         row for row in dataset.rows if row.horizon_periods == horizon and row.target is not None
@@ -150,13 +186,17 @@ def _train_horizon(
     predictions: dict[str, list[OofPrediction]] = {name: [] for name in MODEL_ORDER}
     failures: dict[str, str] = {}
     folds: list[FoldSummary] = []
-    for test_index in range(config.initial_train_periods + horizon, len(dates)):
+    for step, test_index in enumerate(
+        range(config.initial_train_periods + horizon, len(dates)), 1
+    ):
         test_date = dates[test_index]
         train_end_index = test_index - horizon - 1
         train_dates = set(dates[: train_end_index + 1])
         train_rows = [row for row in rows if row.as_of in train_dates]
         test_rows = [row for row in rows if row.as_of == test_date]
         if not _eligible_training_rows(train_rows, config):
+            if fold_progress is not None:
+                fold_progress(step)
             continue
         fold_number = len(folds)
         folds.append(
@@ -188,6 +228,8 @@ def _train_horizon(
                         fold=fold_number,
                     )
                 )
+        if fold_progress is not None:
+            fold_progress(step)
 
     candidates = tuple(
         _candidate_result(name, predictions[name], failures.get(name, "")) for name in MODEL_ORDER
@@ -197,24 +239,25 @@ def _train_horizon(
     by_name = {candidate.name: candidate for candidate in candidates}
     persistence = by_name["persistence"].brier_score
     climatology = by_name["seasonal_climatology"].brier_score
+    historical = by_name["historical_frequency"].brier_score
     ml = [
         candidate
         for candidate in candidates
         if candidate.name in {"logistic_regression", "hist_gradient_boosting"}
         and candidate.brier_score is not None
     ]
-    if persistence is None or climatology is None or not ml:
+    if persistence is None or climatology is None or historical is None or not ml:
         return _rejected_horizon(
             horizon, rows, "baseline_or_ml_unavailable", candidates=candidates, folds=tuple(folds)
         )
     best = min(ml, key=lambda item: (item.brier_score, MODEL_ORDER.index(item.name)))  # type: ignore[arg-type]
-    threshold = min(persistence, climatology) - config.improvement_tolerance
+    threshold = min(persistence, climatology, historical) - config.improvement_tolerance
     if best.brier_score is None or best.brier_score >= threshold:
         return HorizonTrainingResult(
             horizon_periods=horizon,
             horizon_days=_horizon_days(rows),
             status="rejected_insufficient_skill",
-            reason="ml_did_not_improve_persistence_and_climatology",
+            reason="ml_did_not_improve_all_baselines",
             selected_model=None,
             candidates=candidates,
             folds=tuple(folds),

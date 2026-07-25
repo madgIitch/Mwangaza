@@ -12,3 +12,7 @@ __pycache__/
 node_modules/
 dist/
 .demo/
+data/historical/*
+!data/historical/.gitkeep
+data/models/*
+!data/models/.gitkeep

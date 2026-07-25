@@ -111,7 +111,6 @@ Objetivo no negociable:
   - `docs/**`
   - `spec/**`
   - `progress/**`
-
 ### Contexto técnico
 
 - **data_model:** Contrato publico definido bajo `gee` en `/health` y en `GeeAuthResult.to_public_dict()`: `status` literal `ok|auth_error|permission_error|quota_error|network_error`; `configured` bool; `project_configured` bool; `service_account_configured` bool; `checked_at` ISO8601 UTC string; `attempts` int; `max_attempts` int; `message` string saneado; `missing_required_variables` list[str]; `error_code` string estable opcional. Nunca incluye project id, service account, private key ni payload JSON.
@@ -1545,4 +1544,24 @@ Objetivo no negociable:
   - `docs/ARCHITECTURE.md`
   - `docs/DECISIONS.md`
   - `spec/sprint-62-calibrated-risk-classifier-*/**`
+  - `progress/**`
+
+<!-- harness:sprint-62b-real-historical-backfill -->
+## sprint-62b-real-historical-backfill · Sprint 62B - Real Historical Backfill
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `src/mwangaza/gee/**`
+  - `scripts/backfill_probabilistic_history.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `data/historical/.gitkeep`
+  - `.gitignore`
+  - `docs/probabilistic-risk.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62b-real-historical-backfill-*/**`
   - `progress/**`

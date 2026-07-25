@@ -235,3 +235,9 @@
 - Cinco candidatos evaluados por horizonte dekadal mediante walk-forward global con gap.
 - Selección ML requiere mejorar persistencia y climatología en Brier OOF.
 - 49 tests + 6 subtests y Ruff enfocado pasan.
+## 2026-07-24 · Sprint 62B en revisión
+
+- Implementado backfill GEE real, dekadal, atómico y reanudable.
+- Piloto Kenya desde 2024: 92 filas locales, 90 completas y 2 ausencias CHIRPS explícitas.
+- Sprint 63 permanece bloqueado hasta revisar el histórico.
+- Backfill ampliado a IGAD: 736 filas reales; training bloqueado hasta derivar anomalías y labels.

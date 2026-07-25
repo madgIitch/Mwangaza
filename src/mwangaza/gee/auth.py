@@ -103,7 +103,6 @@ def check_gee_auth(
         )
 
     missing = _missing_gee_variables(resolved)
-    configured = not missing
     if missing:
         return GeeAuthResult(
             status="auth_error",
