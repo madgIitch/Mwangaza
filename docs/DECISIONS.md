@@ -664,3 +664,12 @@ The probabilistic backfill stores one regional row per calendar dekad, but it do
 Absolute 25/50/75 cuts produced no severe labels because the anomaly composite observed maximum was below 50. Threshold v2 uses country-level P75/P90/P97.5 calculated only from valid 2003-2023 baseline scores. The cuts are persisted before labeling current history, preventing 2024+ observations from tuning their own target. Model selection must improve persistence, seasonal climatology and historical frequency; otherwise Mwangaza abstains.
 
 Threshold v3 strengthens temporal separation: `2003-2017` fits climatology and country thresholds, while only `2018-2026` is labeled for modeling. This yields 86 severe targets per horizon without allowing labeled dates to influence their own cuts. The expanded run still loses to historical frequency and therefore remains in abstention.
+
+<!-- harness:sprint-62c-adm1-antecedent-signals -->
+## 2026-07-25 · sprint-62c-adm1-antecedent-signals aprobado
+
+Contexto: se aprobó el spec `sprint-62c-adm1-antecedent-signals` (Sprint 62C - ADM1 Antecedent Drought Signals).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

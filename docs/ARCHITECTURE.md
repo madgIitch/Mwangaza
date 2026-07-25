@@ -1565,3 +1565,27 @@ Objetivo no negociable:
   - `docs/DECISIONS.md`
   - `spec/sprint-62b-real-historical-backfill-*/**`
   - `progress/**`
+
+<!-- harness:sprint-62c-adm1-antecedent-signals -->
+## sprint-62c-adm1-antecedent-signals · Sprint 62C - ADM1 Antecedent Drought Signals
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `src/mwangaza/gee/**`
+  - `scripts/backfill_adm1_antecedent_signals.py`
+  - `scripts/prepare_adm1_probabilistic_dataset.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `data/historical/.gitkeep`
+  - `.gitignore`
+  - `docs/data-sources/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/data-provenance.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62c-adm1-antecedent-signals-*/**`
+  - `progress/**`
+

@@ -4357,6 +4357,170 @@
       "approved_at": "2026-07-24T14:51:16.011Z"
     },
     {
+      "id": "sprint-62c-adm1-antecedent-signals",
+      "name": "Sprint 62C - ADM1 Antecedent Drought Signals",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 18,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-62b-real-historical-backfill"
+      ],
+      "objective": "Materializar features antecedentes por ADM1 para mejorar señal predictiva: SPI 1/3/6, SPEI, déficit acumulado, persistencia/velocidad NDVI, humedad del suelo, evapotranspiración y forecast meteorológico aprobado cuando exista.",
+      "user_stories": [
+        {
+          "id": "HU62C.1",
+          "story": "Como científico de datos quiero conservar sequías subnacionales y sus antecedentes hidrometeorológicos sin diluirlos en medias nacionales."
+        },
+        {
+          "id": "HU62C.2",
+          "story": "Como auditor quiero que cada señal declare fuente, licencia, disponibilidad, observed_at y ausencia estructurada."
+        }
+      ],
+      "tasks": [
+        "Usar las 121 geometrías ADM1 versionadas del catálogo local.",
+        "Implementar backfill GEE batched ADM1 para CHIRPS, MODIS, SPEIbase y FLDAS.",
+        "Calcular SPI 1/3/6 sin lookahead sobre precipitación mensual/dekadal.",
+        "Calcular déficit acumulado y persistencia/velocidad de deterioro NDVI.",
+        "Materializar humedad de suelo y evapotranspiración FLDAS con unidades explícitas.",
+        "Añadir adapter ECMWF IFS 15 días solo para fechas soportadas desde 2024-11-12 y marcar unavailable antes.",
+        "Persistir artefactos reanudables con progreso/ETA, lineage, cobertura y hashes.",
+        "Generar dataset ADM1 preparado sin entrenar ni publicar probabilidades."
+      ],
+      "deliverable": "Dataset ADM1 histórico y versionado con señales antecedentes, cobertura auditable y forecast estrictamente disponible por fecha.",
+      "acceptance": [
+        "Incluye exactamente las 121 unidades ADM1 versionadas y conserva parent country, boundary source/version y geometría.",
+        "SPI 1/3/6 usa solo lluvia observada hasta as_of, ventana mensual explícita y climatología pre-corte; no existe centrado con datos futuros.",
+        "SPEI usa `CSIC/SPEI/2_11` con bandas 1/3/6 meses, observed_at y licencia CC-BY-4.0 documentada; periodos posteriores a disponibilidad quedan null.",
+        "Humedad de suelo y ET usan `NASA/FLDAS/NOAH01/C/GL/M/V001`, unidades/escala verificadas, cadencia mensual y términos NASA documentados.",
+        "Déficit acumulado de lluvia y NDVI persistence/slope se calculan con ventanas contiguas y null reason si hay gaps.",
+        "Forecast usa `ECMWF/NRT_FORECAST/IFS/OPER`, creación y lead time explícitos, CC-BY-4.0, y nunca aparece antes de 2024-11-12 ni como observación.",
+        "Backfill agrupa regiones en consultas acotadas, es reanudable, muestra progreso/ETA y no versiona datos descargados.",
+        "Cada feature conserva source collection, source version, observed_at, age/lead, quality y disponibilidad temporal.",
+        "Tests offline cubren 121 ADM1, anti-lookahead, SPI, ventanas/gaps, unidades, forecast availability, batching, resume y hashes.",
+        "Smoke GEE real valida al menos un ADM1 de Kenya y uno de Somalia sin exponer secretos."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "src/mwangaza/gee/**",
+        "scripts/backfill_adm1_antecedent_signals.py",
+        "scripts/prepare_adm1_probabilistic_dataset.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "data/historical/.gitkeep",
+        ".gitignore",
+        "docs/data-sources/**",
+        "docs/probabilistic-risk.md",
+        "docs/data-provenance.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62c-adm1-antecedent-signals-*/**",
+        "progress/**"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-25T13:20:57.348Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:ddc5943ed243e60658b373a13d6fd6f26180030795186295acbe40dd877c6336",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-25T13:20:57.623Z"
+    },
+    {
+      "id": "sprint-62d-independent-drought-labels",
+      "name": "Sprint 62D - Independent Drought and Food Security Labels",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 16,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-62c-adm1-antecedent-signals"
+      ],
+      "objective": "Normalizar labels independientes geoespaciales y temporales desde FEWS NET, IPC y catálogos de eventos validados, separando drought hazard de food-security impact.",
+      "user_stories": [
+        {
+          "id": "HU62D.1",
+          "story": "Como responsable científico quiero targets externos que no se deriven del mismo score usado como feature."
+        }
+      ],
+      "tasks": [
+        "Ingerir FEWS NET assessed outcomes históricos y mapearlos a ADM1 con cobertura espacial.",
+        "Ingerir IPC API pública preservando analysis/period/phase y distinguir assessed de projected.",
+        "Definir adapters opcionales para declaraciones oficiales y EM-DAT sin inventar ausencia como negativo.",
+        "Versionar reglas de concordancia espacial/temporal y desacuerdo entre fuentes.",
+        "Producir labels separados de hazard e impact con provenance/licencia."
+      ],
+      "deliverable": "Catálogo local normalizado de labels independientes por ADM1-periodo con provenance, cobertura y desacuerdos explícitos.",
+      "acceptance": [
+        "FEWS NET assessed y projected nunca se mezclan; training usa assessed por defecto.",
+        "IPC conserva phase, analysis ID, validity period y geometría; ausencia de análisis es unknown, no fase 1.",
+        "Food insecurity no se presenta como sinónimo de sequía; hazard e impact son targets distintos.",
+        "Declaraciones oficiales/EM-DAT son adapters versionados y opcionales según acceso/licencia.",
+        "Cruce ADM1 reporta cobertura/intersección y rechaza geometrías ambiguas.",
+        "Tests usan fixtures públicas pequeñas y no dependen de red ni secretos."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "scripts/import_independent_labels.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "docs/data-sources/**",
+        "docs/probabilistic-risk.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62d-independent-drought-labels-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-62e-drought-episode-evaluation",
+      "name": "Sprint 62E - Drought Episode Evaluation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 12,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-62d-independent-drought-labels"
+      ],
+      "objective": "Agrupar periodos contiguos en episodios de sequía y evaluar forecasts sin contar una sequía prolongada como múltiples eventos independientes.",
+      "user_stories": [
+        {
+          "id": "HU62E.1",
+          "story": "Como evaluador quiero métricas por inicio, duración y recuperación del episodio, no por filas correlacionadas."
+        }
+      ],
+      "tasks": [
+        "Definir episode_id, onset, active, recovery y gap tolerance versionados.",
+        "Separar splits por episodio y tiempo global para impedir que un episodio cruce train/test.",
+        "Calcular event recall, false alarms, lead time, duration error y Brier por episodio.",
+        "Reentrenar candidatos ADM1 y comparar contra frecuencia, persistencia y climatología."
+      ],
+      "deliverable": "Evaluación reproducible por episodios con splits sin contaminación y decisión de skill defendible.",
+      "acceptance": [
+        "Periodos severos contiguos de una región forman un solo episodio salvo gap aprobado.",
+        "Ningún episode_id aparece en más de un split.",
+        "Se reportan detección de onset, lead time, falsas alarmas, duración y recuperación.",
+        "Brier por fila se conserva como diagnóstico pero no sustituye métricas por episodio.",
+        "ML solo es elegible si supera todos los baselines en métricas probabilísticas y de episodio.",
+        "Tests cubren episodios largos, gaps, censura de extremos, regiones simultáneas y split leakage."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "scripts/evaluate_drought_episodes.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "docs/probabilistic-risk.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62e-drought-episode-evaluation-*/**",
+        "progress/**"
+      ],
+      "spec_approved": false
+    },
+    {
       "id": "sprint-63-probability-calibration-skill-gate",
       "name": "Sprint 63 - Probability Calibration and Skill Gate",
       "status": "pending",
@@ -4366,7 +4530,8 @@
       "demo_critical": false,
       "dependencies": [
         "sprint-62-calibrated-risk-classifier",
-        "sprint-62b-real-historical-backfill"
+        "sprint-62b-real-historical-backfill",
+        "sprint-62e-drought-episode-evaluation"
       ],
       "objective": "Calibrar las probabilidades fuera de muestra, medir su skill y producir una decision persistida de elegibilidad por modelo, region y horizonte.",
       "user_stories": [
