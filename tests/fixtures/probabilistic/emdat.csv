@@ -1,0 +1,4 @@
+DisNo.,Disaster Type,Start Year,Start Month,Start Day,End Year,End Month,End Day,Admin Units,Location
+2008-0001,Drought,2008,1,,2009,3,,adm1-ke-24;adm1-ke-43,Northern Kenya
+2010-0002,Flood,2010,2,1,2010,2,3,adm1-ke-24,Marsabit
+2011-0003,Drought,2011,1,,2011,12,,,Country only

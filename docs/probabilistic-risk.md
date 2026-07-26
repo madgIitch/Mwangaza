@@ -106,7 +106,7 @@ Then start or resume the complete extraction:
 uv run python scripts/backfill_adm1_antecedent_signals.py --confirm-remote
 ```
 
-The default covers `2003-01-01` through the last complete dekad. Progress is measured in ADM1/dekad rows and prints an ETA. To validate a small remote slice before the long run, repeat `--region`:
+The default raw extraction covers `2002-07-01` through the last complete dekad; the first six months are warm-up and are excluded from the prepared artifact. Progress is measured in ADM1/dekad rows and prints an ETA. To validate a small remote slice before the long run, repeat `--region`:
 
 ```powershell
 uv run python scripts/backfill_adm1_antecedent_signals.py --region adm1-ke-43 --region adm1-so-hi --start 2025-01-01 --end 2025-01-31 --output data/historical/adm1-smoke --confirm-remote --force
@@ -119,6 +119,27 @@ uv run python scripts/prepare_adm1_probabilistic_dataset.py
 ```
 
 Preparation derives empirical SPI 1/3/6, cumulative rainfall deficits 1/3/6, seasonal NDVI anomaly, consecutive negative-anomaly persistence and 3/6-dekad OLS velocity. SPI and climatologies use only complete windows from the reference period ending `2017-12-31`. First and second dekads therefore use the latest prior complete month; no future part of the current month enters the feature vector. This artifact contains features only: it does not train, publish probabilities or create labels from the Mwangaza score.
+
+## Independent label catalog
+
+Sprint 62D materializes external evidence without deriving targets from the Mwangaza score. Food-security outcomes (`acute_food_insecurity_impact`) and drought evidence (`drought_hazard_event`) are separate semantics. FEWS NET and IPC assessed phases never become drought labels automatically; missing coverage is unknown and never phase 1 or a negative event.
+
+Plan or smoke the public FEWS NET adapter first:
+
+```powershell
+uv run python scripts/import_independent_labels.py --source fews --country KE --dry-run
+uv run python scripts/import_independent_labels.py --source fews --country KE --page-size 1 --page-limit 1 --output data/historical/independent-labels-smoke
+```
+
+Run the resumable IGAD download by omitting `--country` and `--page-limit`:
+
+```powershell
+uv run python scripts/import_independent_labels.py --source fews
+```
+
+IPC is fail-closed and needs an explicitly configured `IPC_API_KEY` plus the approved area endpoint. Official drought phases/declarations use `--official-input` with a reviewed JSON manifest. EM-DAT uses `--emdat-input`, `--emdat-access-date` and the applicable registered-access license. Downloaded rows, geometries, spatial-match checkpoints and final JSONL artifacts remain under ignored `data/historical/` paths.
+
+FEWS/IPC geometries are intersected with the pinned ADM1 catalog. Simple geometries use planar polygon intersection; complex provider boundaries use a deterministic fixed-budget grid intersection so full-history processing stays bounded. Each mapped label records source and ADM1 fractions, unmatched source fraction, method and rule version. Country-only FEWS units and EM-DAT events without explicit ADM1 identifiers are not propagated to every ADM1.
 
 ## Non-negotiable gates
 

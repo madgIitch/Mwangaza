@@ -1,0 +1,22 @@
+{
+  "schema_version": "official-label-manifest-v1",
+  "records": [
+    {
+      "source_record_id": "ndma-marsabit-2025-12",
+      "authority": "Kenya NDMA",
+      "jurisdiction": "Marsabit County",
+      "adm1_region_id": "adm1-ke-24",
+      "assessment_status": "official_operational_phase",
+      "issued_at": "2026-01-05T00:00:00Z",
+      "valid_from": "2025-12-01",
+      "valid_to": "2025-12-31",
+      "taxonomy": "NDMA Drought EW Phase",
+      "value": "Alert",
+      "normalized_value": "drought_alert",
+      "document_url": "https://example.test/ndma-marsabit-2025-12.pdf",
+      "document_sha256": "sha256:fixture-document",
+      "license_policy": "official public bulletin",
+      "review_status": "validated"
+    }
+  ]
+}
