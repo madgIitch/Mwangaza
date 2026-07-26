@@ -1599,3 +1599,25 @@ forecast lead, and a null `observed_at`.
   - `docs/DECISIONS.md`
   - `spec/sprint-62c-adm1-antecedent-signals-*/**`
   - `progress/**`
+
+<!-- harness:sprint-62d-independent-drought-labels -->
+## sprint-62d-independent-drought-labels · Sprint 62D - Independent Drought and Food Security Labels
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/import_independent_labels.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `data/historical/.gitkeep`
+  - `.gitignore`
+  - `docs/data-sources/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/data-provenance.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62d-independent-drought-labels-*/**`
+  - `progress/**`
+

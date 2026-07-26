@@ -4429,7 +4429,7 @@
     {
       "id": "sprint-62d-independent-drought-labels",
       "name": "Sprint 62D - Independent Drought and Food Security Labels",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 16,
@@ -4453,26 +4453,39 @@
       ],
       "deliverable": "Catálogo local normalizado de labels independientes por ADM1-periodo con provenance, cobertura y desacuerdos explícitos.",
       "acceptance": [
-        "FEWS NET assessed y projected nunca se mezclan; training usa assessed por defecto.",
-        "IPC conserva phase, analysis ID, validity period y geometría; ausencia de análisis es unknown, no fase 1.",
-        "Food insecurity no se presenta como sinónimo de sequía; hazard e impact son targets distintos.",
-        "Declaraciones oficiales/EM-DAT son adapters versionados y opcionales según acceso/licencia.",
-        "Cruce ADM1 reporta cobertura/intersección y rechaza geometrías ambiguas.",
-        "Tests usan fixtures públicas pequeñas y no dependen de red ni secretos."
+        "El schema separa `drought_hazard_event` de `acute_food_insecurity_impact`; FEWS NET/IPC Phase 3+ nunca se convierte automáticamente en sequía.",
+        "FEWS NET importa únicamente `scenario=CS` como assessed por defecto y conserva FNID, escala, fase original, variante de asistencia, fechas de publicación/validez, documento, organización y política de uso; escenarios proyectados y valores 66/88/99 quedan excluidos con motivo.",
+        "El adapter FEWS NET pagina, reintenta con backoff acotado, crea checkpoints reanudables y muestra filas/progreso/ETA sin duplicar registros tras reanudar.",
+        "IPC conserva analysis ID, tipo de análisis, `period`, fase, fechas, geometría y licencia; solo `period=C` es assessed y la ausencia de `IPC_API_KEY` falla cerrada sin filtrar el secreto.",
+        "Declaraciones/fases oficiales se importan mediante manifiesto local validado y distinguen `official_operational_phase` de `official_emergency_declaration`, conservando autoridad, jurisdicción, documento/hash, publicación, validez, taxonomía y revisión.",
+        "EM-DAT se importa desde un archivo local registrado, conserva event ID, tipo, fechas, ubicación/unidades administrativas, acceso/hash/licencia y no propaga evidencia nacional a ADM1 no enumerados.",
+        "Toda concordancia espacial usa geometrías y una regla versionada de solape; registra fracción de la fuente, fracción del ADM1, método y área no concordada, y rechaza resultados ambiguos en vez de unir por nombre.",
+        "Ausencia de análisis, país sin cobertura, geometría faltante, fuente caída o adapter deshabilitado se representa como cobertura desconocida/exclusión, nunca como etiqueta negativa o fase 1.",
+        "El artefacto JSONL y su manifiesto son deterministas y registran schema/rule versions, fuentes, cobertura temporal/espacial, incluidos/excluidos por motivo, SHA-256 y fecha de recuperación; los datos descargados permanecen fuera de Git.",
+        "Tests offline no usan red ni secretos y cubren semántica, anti-lookahead, paginación/retry/resume, auth, importadores locales, solape espacial, ambigüedad, provenance, licencias y hashes; un smoke FEWS NET público valida una muestra real antes de revisión humana."
       ],
       "scope": [
         "src/mwangaza/probabilistic/**",
         "scripts/import_independent_labels.py",
         "tests/probabilistic/**",
         "tests/fixtures/probabilistic/**",
+        "data/historical/.gitkeep",
+        ".gitignore",
         "docs/data-sources/**",
         "docs/probabilistic-risk.md",
+        "docs/data-provenance.md",
         "docs/ARCHITECTURE.md",
         "docs/DECISIONS.md",
         "spec/sprint-62d-independent-drought-labels-*/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-26T20:11:32.173Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:d850612fab107b81627f10f6819e894e0ef0f83abf387573853cf27715150758",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-26T23:13:30.046Z"
     },
     {
       "id": "sprint-62e-drought-episode-evaluation",

@@ -679,3 +679,12 @@ Contexto: se aprobó el spec `sprint-62c-adm1-antecedent-signals` (Sprint 62C - 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-62d-independent-drought-labels -->
+## 2026-07-26 · sprint-62d-independent-drought-labels aprobado
+
+Contexto: se aprobó el spec `sprint-62d-independent-drought-labels` (Sprint 62D - Independent Drought and Food Security Labels).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
