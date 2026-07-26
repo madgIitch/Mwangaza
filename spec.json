@@ -4359,7 +4359,7 @@
     {
       "id": "sprint-62c-adm1-antecedent-signals",
       "name": "Sprint 62C - ADM1 Antecedent Drought Signals",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 18,
