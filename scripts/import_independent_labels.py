@@ -96,16 +96,28 @@ def main() -> None:
 
     if "fews" in sources:
         downloader = FewsNetDownloader(client, args.output / "checkpoints")
+        fews_failures: list[str] = []
         for country in countries:
-            try:
-                rows = downloader.download_country(
-                    country,
-                    page_size=args.page_size,
-                    page_limit=args.page_limit,
-                    progress=EtaProgress(f"FEWS NET {country} download"),
-                )
-            except LabelImportError as exc:
+            rows = None
+            last_error: LabelImportError | None = None
+            for repair_pass in range(1, 6):
+                try:
+                    rows = downloader.download_country(
+                        country,
+                        page_size=args.page_size,
+                        page_limit=args.page_limit,
+                        progress=EtaProgress(f"FEWS NET {country} download"),
+                    )
+                    break
+                except LabelImportError as exc:
+                    last_error = exc
+                    if "pagination changed during download" not in str(exc) or args.page_limit is not None:
+                        break
+                    print(f"FEWS NET {country}: repair pass {repair_pass}/5 required")
+            if rows is None:
+                exc = last_error or LabelImportError("unknown FEWS NET failure")
                 exclusions.append(LabelExclusion("FEWS NET", country, "source_unavailable", str(exc)))
+                fews_failures.append(country)
                 continue
             if not rows:
                 exclusions.append(LabelExclusion("FEWS NET", country, "no_public_coverage", "unknown"))
@@ -138,7 +150,7 @@ def main() -> None:
                         LabelExclusion("FEWS NET", str(record.get("id", "")), "geometry_error", str(exc))
                     )
                 progress(index, len(rows))
-        source_statuses["fews"] = "ingested"
+        source_statuses["fews"] = "partial_unknown" if fews_failures else "ingested"
 
     if "ipc" in sources:
         payload = fetch_ipc_payload(client, args.ipc_url, api_key=os.environ.get("IPC_API_KEY"))
@@ -181,6 +193,8 @@ def main() -> None:
     print(f"Excluded: {manifest['exclusion_count']}")
     print(f"ADM1 covered: {len(manifest['regions'])}/121")
     print(f"SHA-256: {manifest['labels_sha256']}")
+    if not manifest["complete"]:
+        parser.error("artifact is partial; inspect source_unavailable exclusions and rerun")
 
 
 def _records(payload: dict[str, Any]) -> tuple[dict[str, Any], ...]:

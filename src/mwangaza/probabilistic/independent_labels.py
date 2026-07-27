@@ -345,6 +345,10 @@ def write_label_artifact(
         "regions": sorted({item.adm1_region_id for item in ordered if item.adm1_region_id}),
         "sources": sorted({item.source for item in ordered} | {item.source for item in excluded}),
         "source_statuses": dict(sorted((source_statuses or {}).items())),
+        "complete": not any(
+            status in {"partial_unknown", "source_unavailable"}
+            for status in (source_statuses or {}).values()
+        ),
         "semantics": sorted({item.label_semantics for item in ordered}),
         "valid_from": min((item.valid_from for item in ordered), default=None),
         "valid_to": max((item.valid_to for item in ordered), default=None),

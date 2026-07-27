@@ -219,3 +219,13 @@ def test_artifact_is_deterministic_and_reports_unknown_exclusions(tmp_path: Path
     assert first == second
     assert first["exclusions_by_reason"] == {"unknown_phase_value": 1}
     assert first["semantics"] == ["acute_food_insecurity_impact"]
+    assert first["complete"] is True
+
+    partial = write_label_artifact(
+        labels,
+        (exclusion,),
+        tmp_path,
+        retrieved_at="2026-07-27T00:00:00Z",
+        source_statuses={"fews": "partial_unknown"},
+    )
+    assert partial["complete"] is False
