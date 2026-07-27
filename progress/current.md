@@ -7,8 +7,8 @@ Feature: **sprint-62d-independent-drought-labels - Sprint 62D - Independent Drou
 - Importadores independientes FEWS NET, IPC, oficial y EM-DAT.
 - Targets hazard e impact separados; desconocido nunca se convierte en negativo.
 - Cruce espacial ADM1, checkpoints, resume, retry, ETA, hashes y cobertura.
-- Smoke FEWS NET real y suites completas en verde.
+- Backfill FEWS NET completo: 147.584 labels únicas, 115/121 ADM1, hash verificado y todos los checkpoints completos.
 
 ## Siguiente acción
 
-- Mostrar el Sprint 62D al usuario y esperar revisión antes de cerrarlo o comenzar 62E.
+- Esperar confirmación humana para cerrar 62D; el artefacto actual permite modelar impacto de inseguridad alimentaria, no drought hazard hasta incorporar fuentes oficiales/EM-DAT.
