@@ -688,3 +688,12 @@ Contexto: se aprobó el spec `sprint-62d-independent-drought-labels` (Sprint 62D
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-62d2-real-drought-hazard-catalog -->
+## 2026-07-27 · sprint-62d2-real-drought-hazard-catalog aprobado
+
+Contexto: se aprobó el spec `sprint-62d2-real-drought-hazard-catalog` (Sprint 62D.2 - Real Drought Hazard Catalog).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

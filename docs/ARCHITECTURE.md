@@ -1621,3 +1621,24 @@ forecast lead, and a null `observed_at`.
   - `spec/sprint-62d-independent-drought-labels-*/**`
   - `progress/**`
 
+<!-- harness:sprint-62d2-real-drought-hazard-catalog -->
+## sprint-62d2-real-drought-hazard-catalog · Sprint 62D.2 - Real Drought Hazard Catalog
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/backfill_ndma_drought_phases.py`
+  - `scripts/import_independent_labels.py`
+  - `scripts/audit_drought_hazard_episodes.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `docs/data-sources/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/data-provenance.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62d2-real-drought-hazard-catalog-*/**`
+  - `progress/**`
+
