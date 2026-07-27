@@ -1,0 +1,95 @@
+{
+  "schema_version": "mwangaza.igad-drought-authority-catalog.v1",
+  "verified_at": "2026-07-27",
+  "absence_policy": "No public adapter or verified series is unknown, never no-drought.",
+  "countries": [
+    {
+      "country_iso3": "DJI",
+      "country": "Djibouti",
+      "authority": "Secrétariat Exécutif de la Gestion des Risques et des Catastrophes (SEGRC)",
+      "official_url": "https://interieur.gouv.dj/secretariat-executif-de-la-gestion-des-risques-et-des-catastrophes/",
+      "granularity": "five regional offices; public drought phase granularity unknown",
+      "access": "public institutional page; no verified bulletin archive",
+      "temporal_coverage": "unknown",
+      "planned_method": "validated official manifest after a stable official drought series is identified",
+      "status": "unknown_no_public_series"
+    },
+    {
+      "country_iso3": "ERI",
+      "country": "Eritrea",
+      "authority": null,
+      "official_url": null,
+      "granularity": "unknown",
+      "access": "no official public drought authority archive verified",
+      "temporal_coverage": "unknown",
+      "planned_method": "authority discovery and legal/access review before any adapter",
+      "status": "unknown_authority"
+    },
+    {
+      "country_iso3": "ETH",
+      "country": "Ethiopia",
+      "authority": "Ethiopian Disaster Risk Management Commission (EDRMC)",
+      "official_url": "https://edrmc.gov.et/early-warning-response/alerts/drought",
+      "granularity": "national alerts; subnational references may occur in documents",
+      "access": "public alert listing and documents",
+      "temporal_coverage": "verified drought alerts listed for 2020, 2022-2026",
+      "planned_method": "document manifest with human-validated ADM1 and validity periods",
+      "status": "verified_adapter_planned"
+    },
+    {
+      "country_iso3": "KEN",
+      "country": "Kenya",
+      "authority": "National Drought Management Authority (NDMA)",
+      "official_url": "https://knowledgeweb.ndma.go.ke/Public/Resources/CountyBulletins.aspx?ID=11",
+      "granularity": "monthly county operational drought phase",
+      "access": "public archive and official PDFs",
+      "temporal_coverage": "2016-present in the rendered archive",
+      "planned_method": "implemented official archive index, PDF hash, conservative phase extraction, review queue",
+      "status": "adapter_implemented"
+    },
+    {
+      "country_iso3": "SDN",
+      "country": "Sudan",
+      "authority": "Sudanese Meteorological Authority",
+      "official_url": "https://tpra.gov.sd/en/joint-statement-issued-by-the-sudanese-meteorological-authority-and-the-telecommunications-and-post-regulatory-authority-tpra/",
+      "granularity": "geographically targeted weather alerts; drought phase taxonomy unknown",
+      "access": "official statement; operational alerts distributed by SMS/WhatsApp",
+      "temporal_coverage": "unknown public archive coverage",
+      "planned_method": "official manifest only when alert text, geography, and validity are auditable",
+      "status": "unknown_no_public_series"
+    },
+    {
+      "country_iso3": "SOM",
+      "country": "Somalia",
+      "authority": "Somali Disaster Management Agency (SoDMA)",
+      "official_url": "https://sodma.gov.so/about-us/",
+      "granularity": "national coordination with occasional named regions",
+      "access": "public official reports and statements; no stable monthly phase archive verified",
+      "temporal_coverage": "unknown",
+      "planned_method": "validated official-event manifest; never infer ADM1 from national statements",
+      "status": "verified_adapter_planned"
+    },
+    {
+      "country_iso3": "SSD",
+      "country": "South Sudan",
+      "authority": "Relief and Rehabilitation Commission (RRC)",
+      "official_url": "https://www.rrc.gov.ss/",
+      "granularity": "national disaster coordination; drought series granularity unknown",
+      "access": "public institutional site; no verified drought bulletin archive",
+      "temporal_coverage": "unknown",
+      "planned_method": "validated official manifest after a stable drought series is identified",
+      "status": "unknown_no_public_series"
+    },
+    {
+      "country_iso3": "UGA",
+      "country": "Uganda",
+      "authority": "Office of the Prime Minister - National Emergency Coordination and Operations Centre (NECOC)",
+      "official_url": "https://necoc.opm.go.ug/UNIEWS/",
+      "granularity": "monthly national multi-hazard bulletin with regional/district evidence",
+      "access": "public official PDFs; archive stability and completeness not yet verified",
+      "temporal_coverage": "at least selected bulletins in 2018 and 2023; complete coverage unknown",
+      "planned_method": "bulletin manifest with explicit district-to-ADM1 policy and human validation",
+      "status": "verified_adapter_planned"
+    }
+  ]
+}

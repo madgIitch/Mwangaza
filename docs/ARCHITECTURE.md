@@ -1641,4 +1641,10 @@ forecast lead, and a null `observed_at`.
   - `docs/DECISIONS.md`
   - `spec/sprint-62d2-real-drought-hazard-catalog-*/**`
   - `progress/**`
+## Catálogo de drought hazard independiente
 
+El flujo aditivo de 62D.2 tiene tres etapas separadas: backfill NDMA a un manifiesto
+oficial validado; normalización NDMA/EM-DAT al contrato de etiquetas independientes; y
+auditoría de episodios ADM1. Los artefactos fuente y los episodios no comparten schema ni
+se consumen todavía por el entrenamiento. El catálogo de autoridades IGAD hace explícita
+la cobertura desconocida antes de añadir adapters futuros.

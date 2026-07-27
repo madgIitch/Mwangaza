@@ -201,8 +201,10 @@ def test_local_official_and_emdat_importers_do_not_invent_country_adm1() -> None
         access_date="2026-07-27",
         license_policy="registered test access",
     )
-    assert {item.adm1_region_id for item in emdat} == {"adm1-ke-24", "adm1-ke-43"}
-    assert {item.source_record_id for item in emdat} == {"2008-0001"}
+    assert {item.adm1_region_id for item in emdat} == {"adm1-ke-24", "adm1-ke-43", None}
+    country_only = next(item for item in emdat if item.adm1_region_id is None)
+    assert country_only.review_status == "country_only"
+    assert country_only.metadata["spatial_status"] == "country_only"
 
 
 def test_artifact_is_deterministic_and_reports_unknown_exclusions(tmp_path: Path) -> None:

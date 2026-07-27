@@ -247,3 +247,7 @@
 - Pipeline de 121 ADM1 con CHIRPS, NDVI, SPI/SPEI, déficit, soil moisture, ET y forecast.
 - 27 tests probabilísticos, gates del harness y smoke GEE Kenya/Somalia pasan.
 - Se detiene antes de labels independientes para revisión humana entre sprints.
+# 2026-07-27T23:30:00+02:00 - #sprint-62d2-real-drought-hazard-catalog -> review_pending
+
+- Adapter NDMA oficial, EM-DAT registrado, catálogo IGAD y auditoría de episodios implementados.
+- Smoke NDMA real validado; backfill completo y CSV EM-DAT pendientes de ejecución externa.

@@ -39,3 +39,18 @@ source → transformation/QA → versioned cache → public API → accessible U
 ```
 
 Each step retains source identifier, period, unit, quality and mode. Reports must link back to the snapshot used.
+## Etiquetas independientes de hazard
+
+`data/historical/ndma-drought-phases/` conserva el índice oficial NDMA por mes, PDFs,
+URLs finales, SHA-256, manifiesto validado y cola de revisión. El contrato de extracción
+es `ndma-county-ew-phase-v1`. Los PDFs no se versionan en Git.
+
+`data/historical/drought-hazard-labels/` usa el contrato de etiquetas independientes y
+conserva en `metadata` condado, periodo, publicación, fase/tendencia originales, evidencia
+textual, versión del extractor y estado de validación. Para EM-DAT también conserva hash
+del CSV registrado, fecha de acceso, licencia, identificador de evento, país, ubicación,
+unidades administrativas originales y precisión temporal.
+
+`data/historical/drought-hazard-audit/` contiene `episodes.jsonl` y `audit.json`. El hash
+de episodios es determinista; `audited_at` solo describe la ejecución. Evidencia nacional,
+pendiente o de cobertura desconocida se informa separadamente.

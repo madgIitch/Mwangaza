@@ -1,0 +1,4 @@
+DisNo.,Disaster Type,Event Name,ISO,Country,Location,Start Year,Start Month,Start Day,End Year,End Month,End Day,Admin Units,GADM Admin Units,Declaration,Entry Date,Last Update
+2024-0001-KEN,Drought,Northern drought,KEN,"Kenya","Baringo, Turkana",2024,1,,2024,5,,"[{""adm1_code"": 1, ""adm1_name"": ""Baringo""}, {""adm1_code"": 2, ""adm1_name"": ""Turkana""}]",[],Yes,2024-02-01,2025-01-02
+2025-0002-ETH,Drought,National drought,ETH,Ethiopia,Countrywide,2025,,,2025,,,[],[],No,2025-03-01,2025-04-01
+2025-0003-FRA,Drought,Outside IGAD,FRA,France,Countrywide,2025,,,2025,,,[],[],No,2025-03-01,2025-04-01

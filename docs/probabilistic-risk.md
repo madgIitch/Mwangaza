@@ -162,3 +162,57 @@ Unavailable never means zero probability.
 - Probability bands and user-facing confidence mapping.
 - Whether an independently validated drought-event catalog becomes available later.
 - Multiclass probabilities and isotonic calibration; neither belongs to Sprints 61-65 without a new approved contract.
+## Catálogo de hazard real (Sprint 62D.2)
+
+Las fases operativas de NDMA y los eventos de EM-DAT se mantienen separados de las
+etiquetas FEWS/IPC: los primeros tienen semántica `drought_hazard_event`; los segundos
+siguen siendo `acute_food_insecurity_impact`. Ninguna de estas etiquetas entra todavía
+en entrenamiento.
+
+El backfill de NDMA recorre el archivo oficial mensual de County Bulletins de 2016 hasta
+el mes solicitado. Los índices, PDFs y checkpoints quedan bajo `data/historical/`, fuera
+de Git. Cada descarga se reanuda, muestra ETA y conserva URL y SHA-256. Para leer PDFs se
+usa `pypdf` de forma explícita:
+
+```powershell
+uv run --with pypdf python scripts/backfill_ndma_drought_phases.py --start 2016-01
+```
+
+Solo se valida una observación cuando el PDF contiene el condado y periodo esperados y
+una única fila textual `COUNTY <Normal|Alert|Alarm|Emergency|Recovery>`. El resto queda
+en `review-queue.jsonl`; no se convierte en negativo. Después se normaliza el manifiesto:
+
+```powershell
+uv run python scripts/import_independent_labels.py `
+  --source official `
+  --official-input data/historical/ndma-drought-phases/official-manifest.json `
+  --output data/historical/drought-hazard-labels
+```
+
+EM-DAT no se descarga ni autentica automáticamente. Tras descargar el Public Table con
+una cuenta registrada y guardarlo como CSV UTF-8, se incorpora junto a NDMA así:
+
+```powershell
+uv run python scripts/import_independent_labels.py `
+  --source official `
+  --official-input data/historical/ndma-drought-phases/official-manifest.json `
+  --source emdat `
+  --emdat-input C:\ruta\al\emdat-public-table.csv `
+  --emdat-access-date 2026-07-27 `
+  --output data/historical/drought-hazard-labels
+```
+
+Un evento EM-DAT sin ADM1 explícita se conserva como evidencia nacional. Un nombre ADM1
+explícito solo se acepta si coincide con el catálogo versionado; ubicaciones libres y
+unidades ADM2 no se promueven a ADM1.
+
+La auditoría agrupa únicamente `Alert`, `Alarm` y `Emergency` contiguos. `Normal` y
+`Recovery` demuestran cobertura, pero no inflan episodios. EM-DAT y NDMA nunca se mezclan:
+
+```powershell
+uv run python scripts/audit_drought_hazard_episodes.py `
+  --labels data/historical/drought-hazard-labels
+```
+
+El resultado separa episodios ADM1, evidencia nacional, observaciones no validadas,
+observaciones sin hazard activo, desacuerdos y países cuya cobertura sigue desconocida.

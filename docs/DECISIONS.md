@@ -697,3 +697,13 @@ Contexto: se aprobó el spec `sprint-62d2-real-drought-hazard-catalog` (Sprint 6
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+## 2026-07-27 - Hazard real separado de impacto y de ausencia
+
+- Una fase operativa NDMA no es una declaración legal y no se mezcla con FEWS/IPC.
+- Solo `Alert`, `Alarm` y `Emergency` forman episodios activos; `Normal` y `Recovery`
+  conservan cobertura sin crear positivos.
+- Un evento EM-DAT nacional permanece nacional. Texto libre, ADM2 o códigos sin un
+  crosswalk explícito no autorizan asignación ADM1.
+- Fuentes/taxonomías incompatibles generan series de episodios separadas. Los solapes
+  discordantes se auditan, no se resuelven por prioridad implícita.
+- La ausencia de adapter, archivo o evidencia validada es `unknown`, no un negativo.

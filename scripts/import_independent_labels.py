@@ -22,6 +22,7 @@ from mwangaza.probabilistic.independent_labels import (
     utc_now,
     write_label_artifact,
 )
+from mwangaza.probabilistic.drought_hazards import build_adm1_name_index
 from mwangaza.probabilistic.label_sources import FewsNetDownloader, JsonHttpClient, fetch_ipc_payload
 from mwangaza.probabilistic.progress import EtaProgress
 from mwangaza.regions import ADM1_LEVEL, list_regions
@@ -173,11 +174,14 @@ def main() -> None:
         labels.extend(import_official_manifest(args.official_input))
         source_statuses["official"] = "ingested"
     if "emdat" in sources and args.emdat_input and args.emdat_access_date:
+        adm1_name_index = build_adm1_name_index(regions)
         labels.extend(
             import_emdat_csv(
                 args.emdat_input,
                 access_date=args.emdat_access_date,
                 license_policy=args.emdat_license,
+                adm1_name_index=adm1_name_index,
+                allowed_iso3=frozenset(ISO2_TO_ISO3.values()),
             )
         )
         source_statuses["emdat"] = "ingested"

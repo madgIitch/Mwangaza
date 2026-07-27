@@ -179,3 +179,22 @@ Every source observation needs:
 
 An absent row, source outage, uncovered geography or unlicensed source is
 `unknown`. It is never a negative label.
+## Extensión de hazard real - 2026-07-27
+
+- NDMA Kenya: archivo oficial público de County Drought Early Warning Bulletins,
+  2016-presente. Adapter implementado con selección mensual WebForms, PDF oficial,
+  checkpoint, SHA-256 y extracción conservadora. Fuente:
+  https://knowledgeweb.ndma.go.ke/Public/Resources/CountyBulletins.aspx?ID=11
+- EM-DAT: el Public Table requiere registro; Mwangaza solo acepta el CSV que aporte el
+  usuario y no automatiza login ni redistribución. `Admin Units` y `GADM Admin Units` son
+  JSON; la evidencia nacional no se replica a ADM1. Documentación:
+  https://doc.emdat.be/docs/data-structure-and-content/emdat-public-table/ y
+  https://doc.emdat.be/docs/data-accessibility/
+- Las demás autoridades se registran en `igad-drought-authorities.json`. Tener una
+  autoridad verificada no implica que exista una serie pública utilizable. Todo hueco se
+  clasifica `unknown`, nunca `no drought`.
+
+Smoke público del 27 de julio de 2026: junio de 2026 devolvió 23 boletines; el primer PDF
+(Baringo) produjo una fase `Normal` validada y, correctamente, cero episodios de sequía
+activa. El manifiesto del smoke tuvo SHA-256
+`sha256:bca43eace2c8199c385a371a5523e8971b13fd9a8f2f4950e348f58cf8d4c785`.

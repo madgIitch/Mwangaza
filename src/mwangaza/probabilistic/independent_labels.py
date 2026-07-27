@@ -271,13 +271,34 @@ def import_official_manifest(path: Path) -> tuple[IndependentLabel, ...]:
                 license_policy=str(record["license_policy"]),
                 quality="human_validated",
                 review_status="validated",
-                metadata={"jurisdiction": record.get("jurisdiction")},
+                metadata={
+                    "jurisdiction": record.get("jurisdiction"),
+                    **(
+                        dict(record.get("metadata") or {})
+                        if isinstance(record.get("metadata"), dict)
+                        else {}
+                    ),
+                },
             )
         )
     return tuple(result)
 
 
-def import_emdat_csv(path: Path, *, access_date: str, license_policy: str) -> tuple[IndependentLabel, ...]:
+def import_emdat_csv(
+    path: Path,
+    *,
+    access_date: str,
+    license_policy: str,
+    adm1_name_index: dict[str, str] | None = None,
+    allowed_iso3: frozenset[str] | None = None,
+) -> tuple[IndependentLabel, ...]:
+    """Import a user-supplied registered public-table export without spatial invention.
+
+    EM-DAT's administrative-unit fields are JSON. Only an explicit ADM1 name that
+    matches the versioned Mwangaza catalog becomes ADM1 evidence. A row with no
+    resolvable ADM1 remains one country-level event and is never copied to regions.
+    """
+
     artifact_hash = sha256_file(path)
     result: list[IndependentLabel] = []
     with path.open(encoding="utf-8-sig", newline="") as stream:
@@ -285,14 +306,22 @@ def import_emdat_csv(path: Path, *, access_date: str, license_policy: str) -> tu
             disaster_type = _csv_value(record, "Disaster Type", "Disaster_Type")
             if disaster_type.lower() != "drought":
                 continue
+            iso3 = _csv_value(record, "ISO", "Country ISO", required=False).upper()
+            if allowed_iso3 is not None and iso3 not in allowed_iso3:
+                continue
             event_id = _csv_value(record, "DisNo.", "DisNo", "Event ID")
-            adm1_values = _csv_value(record, "Admin Units", "Admin_Units", required=False)
-            for adm1 in _explicit_adm1_ids(adm1_values):
-                start = _emdat_date(record, "Start")
-                end = _emdat_date(record, "End")
+            raw_admin = _csv_value(record, "Admin Units", "Admin_Units", required=False)
+            raw_gadm = _csv_value(record, "GADM Admin Units", "GADM_Admin_Units", required=False)
+            admin_units = _emdat_admin_units(raw_admin, raw_gadm)
+            adm1_ids = _resolve_emdat_adm1(admin_units, adm1_name_index or {})
+            start, start_precision = _emdat_date(record, "Start", end=False)
+            end, end_precision = _emdat_date(record, "End", end=True, fallback_year=start[:4])
+            targets: tuple[str | None, ...] = adm1_ids or (None,)
+            for adm1 in targets:
+                suffix = adm1 or f"country-{iso3.lower() or 'unknown'}"
                 result.append(
                     IndependentLabel(
-                        label_id=f"emdat:{event_id}:{adm1}",
+                        label_id=f"emdat:{event_id}:{suffix}",
                         source="EM-DAT",
                         source_version=EMDAT_SOURCE_VERSION,
                         source_record_id=event_id,
@@ -305,17 +334,36 @@ def import_emdat_csv(path: Path, *, access_date: str, license_policy: str) -> tu
                         original_taxonomy=disaster_type,
                         original_value="Drought",
                         normalized_value="drought_event",
-                        source_geometry_id=adm1,
+                        source_geometry_id=adm1 or iso3 or None,
                         adm1_region_id=adm1,
-                        overlap_source_fraction=1.0,
-                        overlap_adm1_fraction=1.0,
-                        mapping_method="explicit_registered_admin_unit",
-                        mapping_version="emdat-explicit-admin-v1",
+                        overlap_source_fraction=1.0 if adm1 else None,
+                        overlap_adm1_fraction=1.0 if adm1 else None,
+                        mapping_method="explicit_registered_admin_name" if adm1 else None,
+                        mapping_version="emdat-explicit-admin-v2" if adm1 else None,
                         artifact_sha256=artifact_hash,
                         license_policy=license_policy,
                         quality="registered_catalog",
-                        review_status="source_unit_explicit",
-                        metadata={"access_date": access_date, "location": record.get("Location")},
+                        review_status="source_unit_explicit" if adm1 else "country_only",
+                        metadata={
+                            "access_date": access_date,
+                            "country": record.get("Country"),
+                            "country_iso3": iso3 or None,
+                            "event_name": record.get("Event Name"),
+                            "location": record.get("Location"),
+                            "declaration": record.get("Declaration"),
+                            "entry_date": record.get("Entry Date"),
+                            "last_update": record.get("Last Update"),
+                            "start_date_precision": start_precision,
+                            "end_date_precision": end_precision,
+                            "admin_units": admin_units,
+                            "spatial_status": (
+                                "explicit_adm1"
+                                if adm1
+                                else "unresolved_subnational"
+                                if admin_units
+                                else "country_only"
+                            ),
+                        },
                     )
                 )
     return tuple(result)
@@ -383,15 +431,68 @@ def _required_date(record: dict[str, Any], key: str, *, fallback: str) -> str:
     return str(value)[:10]
 
 
-def _emdat_date(record: dict[str, str], prefix: str) -> str:
-    year = int(_csv_value(record, f"{prefix} Year", f"{prefix}_Year"))
-    month = int(_csv_value(record, f"{prefix} Month", f"{prefix}_Month", required=False) or 1)
-    day = int(_csv_value(record, f"{prefix} Day", f"{prefix}_Day", required=False) or 1)
-    return f"{year:04d}-{month:02d}-{day:02d}"
+def _emdat_date(
+    record: dict[str, str],
+    prefix: str,
+    *,
+    end: bool,
+    fallback_year: str | None = None,
+) -> tuple[str, str]:
+    year_text = _csv_value(record, f"{prefix} Year", f"{prefix}_Year", required=False)
+    year = int(year_text or fallback_year or "")
+    month_text = _csv_value(record, f"{prefix} Month", f"{prefix}_Month", required=False)
+    day_text = _csv_value(record, f"{prefix} Day", f"{prefix}_Day", required=False)
+    if month_text and day_text:
+        return f"{year:04d}-{int(month_text):02d}-{int(day_text):02d}", "day"
+    if month_text:
+        month = int(month_text)
+        if end:
+            from calendar import monthrange
+
+            day = monthrange(year, month)[1]
+        else:
+            day = 1
+        return f"{year:04d}-{month:02d}-{day:02d}", "month"
+    return f"{year:04d}-{'12-31' if end else '01-01'}", "year"
 
 
-def _explicit_adm1_ids(value: str) -> tuple[str, ...]:
-    return tuple(sorted({item.strip() for item in value.split(";") if item.strip().startswith("adm1-")}))
+def _emdat_admin_units(*values: str) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for value in values:
+        if not value.strip():
+            continue
+        try:
+            payload = json.loads(value)
+        except json.JSONDecodeError:
+            # Legacy test/export support remains explicit and never accepts a
+            # free-form location string as an ADM1 assignment.
+            for item in value.split(";"):
+                if item.strip().startswith("adm1-"):
+                    result.append({"mwangaza_adm1_id": item.strip()})
+            continue
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            raise LabelImportError("EM-DAT administrative units must be a JSON array of objects")
+        result.extend(dict(item) for item in payload)
+    return result
+
+
+def _resolve_emdat_adm1(
+    units: list[dict[str, Any]], name_index: dict[str, str]
+) -> tuple[str, ...]:
+    result: set[str] = set()
+    for unit in units:
+        explicit = str(unit.get("mwangaza_adm1_id") or "")
+        if explicit.startswith("adm1-"):
+            result.add(explicit)
+            continue
+        name = str(unit.get("adm1_name") or unit.get("name_1") or "").strip()
+        if not name:
+            # ADM2 units do not get promoted to ADM1 without an explicit parent.
+            continue
+        key = " ".join("".join(character if character.isalnum() else " " for character in name.casefold()).split())
+        if key in name_index:
+            result.add(name_index[key])
+    return tuple(sorted(result))
 
 
 def _csv_value(record: dict[str, str], *keys: str, required: bool = True) -> str:
