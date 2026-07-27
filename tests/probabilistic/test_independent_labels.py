@@ -167,6 +167,30 @@ def test_fews_downloader_retries_checkpoints_and_resumes_without_duplicates(tmp_
     assert len((tmp_path / "fews-KE-rows.jsonl").read_text().splitlines()) == 1
 
 
+def test_fews_downloader_repairs_a_completed_checkpoint_when_source_count_grows(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "fews-ET-rows.jsonl").write_text(
+        json.dumps(_fews_record(id=1)) + "\n", encoding="utf-8"
+    )
+    (tmp_path / "fews-ET-state.json").write_text(
+        json.dumps({"complete": True, "country_code": "ET", "next": "", "total": 2}),
+        encoding="utf-8",
+    )
+
+    def opener(*_args: object, **_kwargs: object) -> _Response:
+        payload = {
+            "count": 2,
+            "next": None,
+            "results": [_fews_record(id=1), _fews_record(id=2)],
+        }
+        return _Response(json.dumps(payload).encode())
+
+    rows = FewsNetDownloader(JsonHttpClient(opener=opener), tmp_path).download_country("ET")
+    assert {row["id"] for row in rows} == {1, 2}
+    assert json.loads((tmp_path / "fews-ET-state.json").read_text())["complete"] is True
+
+
 def test_local_official_and_emdat_importers_do_not_invent_country_adm1() -> None:
     official = import_official_manifest(FIXTURES / "official-labels.json")
     assert official[0].assessment_status == "official_operational_phase"

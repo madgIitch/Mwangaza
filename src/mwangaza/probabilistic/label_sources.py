@@ -70,11 +70,18 @@ class FewsNetDownloader:
         rows = _read_jsonl(rows_path)
         seen = {str(item.get("id")) for item in rows}
         state = _read_object(state_path)
-        if state.get("complete"):
+        recorded_total = int(state.get("total", len(rows)))
+        if state.get("complete") and len(rows) >= recorded_total:
             if progress:
-                progress(len(rows), int(state.get("total", len(rows))))
+                progress(len(rows), recorded_total)
             return tuple(rows)
-        next_url = str(state.get("next") or _fews_url(code, page_size))
+        # Offset pagination can move while FEWS publishes new rows. A completed
+        # checkpoint whose final count grew is repaired by rescanning from page
+        # one; stable source ids make that pass append only genuinely missing rows.
+        repairing = bool(state.get("complete") and len(rows) < recorded_total)
+        next_url = str(
+            _fews_url(code, page_size) if repairing else state.get("next") or _fews_url(code, page_size)
+        )
         pages = 0
         while next_url and (page_limit is None or pages < page_limit):
             payload = self.client.get(next_url)
@@ -94,12 +101,20 @@ class FewsNetDownloader:
             next_value = payload.get("next")
             next_url = str(next_value) if next_value else ""
             pages += 1
+            complete = not next_url and len(rows) >= total
+            resume_url = "" if complete else next_url or _fews_url(code, page_size)
             _write_object(
                 state_path,
-                {"country_code": code, "next": next_url, "total": total, "complete": not next_url},
+                {"country_code": code, "next": resume_url, "total": total, "complete": complete},
             )
             if progress:
                 progress(len(rows), total)
+        final_state = _read_object(state_path)
+        if page_limit is None and not final_state.get("complete"):
+            raise LabelImportError(
+                f"FEWS NET pagination changed during download for {code}; rerun to repair "
+                f"({len(rows)}/{final_state.get('total', '?')} stable ids)"
+            )
         return tuple(rows)
 
     def geometry(self, fnid: str) -> tuple[dict[str, Any], dict[str, Any]]:
