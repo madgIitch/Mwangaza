@@ -198,3 +198,8 @@ Smoke público del 27 de julio de 2026: junio de 2026 devolvió 23 boletines; el
 (Baringo) produjo una fase `Normal` validada y, correctamente, cero episodios de sequía
 activa. El manifiesto del smoke tuvo SHA-256
 `sha256:bca43eace2c8199c385a371a5523e8971b13fd9a8f2f4950e348f58cf8d4c785`.
+
+Incidencia verificada durante el backfill: junio de 2020 contiene dos filas idénticas
+para el mismo PDF de Taita/Taveta (`8a9e38f1-466c-4635-b8c2-e29b1ed61304`). Se conserva
+una sola observación. El adapter solo aplica esta deduplicación cuando todos los campos
+normalizados coinciden; un UUID con metadatos distintos sigue siendo un error.

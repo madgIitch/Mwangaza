@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from mwangaza.probabilistic.drought_hazards import (
     audit_drought_hazard_episodes,
     extract_ndma_phase,
@@ -11,6 +13,7 @@ from mwangaza.probabilistic.drought_hazards import (
     parse_ndma_document_link,
 )
 from mwangaza.probabilistic.independent_labels import import_emdat_csv
+from mwangaza.probabilistic.independent_labels import LabelImportError
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "probabilistic"
 
@@ -25,6 +28,17 @@ def test_ndma_archive_and_document_contract_are_parsed_from_official_html() -> N
     assert parse_ndma_document_link(
         (FIXTURES / "ndma-detail.html").read_text(encoding="utf-8")
     ).endswith("document=be161a20-6e9f-4149-86b6-7bdfde92d9ad")
+
+
+def test_ndma_archive_deduplicates_identical_rows_but_rejects_conflicts() -> None:
+    archive = (FIXTURES / "ndma-archive.html").read_text(encoding="utf-8")
+    row = archive[archive.index('<tr class="dxgvDataRow_Material">') : archive.index("</tr>") + 5]
+    duplicated = archive.replace(row, row + row)
+    assert len(parse_ndma_archive_html(duplicated)) == 1
+
+    conflict = row.replace("Baringo</td>", "Turkana</td>", 1)
+    with pytest.raises(LabelImportError, match="conflicting rows"):
+        parse_ndma_archive_html(archive.replace(row, row + conflict))
 
 
 def test_ndma_extraction_accepts_one_exact_county_phase_and_queues_ambiguity() -> None:

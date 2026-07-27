@@ -99,9 +99,14 @@ def parse_ndma_archive_html(
                 published_at=published.group(1) if published else "",
             )
         )
-    unique = {item.document_id: item for item in result}
-    if len(unique) != len(result):
-        raise LabelImportError("NDMA period response contains duplicate document ids")
+    unique: dict[str, NdmaBulletin] = {}
+    for item in result:
+        previous = unique.get(item.document_id)
+        if previous is not None and previous != item:
+            raise LabelImportError(
+                f"NDMA period response contains conflicting rows for {item.document_id}"
+            )
+        unique[item.document_id] = item
     return tuple(sorted(unique.values(), key=lambda item: (item.county.casefold(), item.document_id)))
 
 
