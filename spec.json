@@ -4429,7 +4429,7 @@
     {
       "id": "sprint-62d-independent-drought-labels",
       "name": "Sprint 62D - Independent Drought and Food Security Labels",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 16,
