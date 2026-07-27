@@ -356,6 +356,12 @@ def sha256_bytes(value: bytes) -> str:
     return f"sha256:{hashlib.sha256(value).hexdigest()}"
 
 
+def is_complete_pdf(value: bytes) -> bool:
+    """Reject HTML/error bodies and prematurely truncated PDF downloads."""
+
+    return value.startswith(b"%PDF") and b"%%EOF" in value[-65536:]
+
+
 def canonical_json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 

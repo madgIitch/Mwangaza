@@ -199,6 +199,12 @@ Smoke público del 27 de julio de 2026: junio de 2026 devolvió 23 boletines; el
 activa. El manifiesto del smoke tuvo SHA-256
 `sha256:bca43eace2c8199c385a371a5523e8971b13fd9a8f2f4950e348f58cf8d4c785`.
 
+El PDF oficial de Laikipia de octubre de 2016 se sirve truncado (sin marcador
+terminal `%%EOF`) incluso tras descargarlo de nuevo. El backfill valida la
+integridad antes de extraer texto, realiza dos descargas de reparación y, si la
+fuente sigue sirviendo un documento incompleto, conserva su hash en la cola
+`review_required` y continúa con el resto del archivo.
+
 Incidencia verificada durante el backfill: junio de 2020 contiene dos filas idénticas
 para el mismo PDF de Taita/Taveta (`8a9e38f1-466c-4635-b8c2-e29b1ed61304`). Se conserva
 una sola observación. El adapter solo aplica esta deduplicación cuando todos los campos

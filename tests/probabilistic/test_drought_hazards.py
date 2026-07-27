@@ -7,6 +7,7 @@ import pytest
 from mwangaza.probabilistic.drought_hazards import (
     audit_drought_hazard_episodes,
     extract_ndma_phase,
+    is_complete_pdf,
     ndma_official_record,
     ndma_period_postback_index,
     parse_ndma_archive_html,
@@ -39,6 +40,12 @@ def test_ndma_archive_deduplicates_identical_rows_but_rejects_conflicts() -> Non
     conflict = row.replace("Baringo</td>", "Turkana</td>", 1)
     with pytest.raises(LabelImportError, match="conflicting rows"):
         parse_ndma_archive_html(archive.replace(row, row + conflict))
+
+
+def test_pdf_integrity_requires_header_and_terminal_eof() -> None:
+    assert is_complete_pdf(b"%PDF-1.7\nbody\n%%EOF\n") is True
+    assert is_complete_pdf(b"%PDF-1.7\ntruncated") is False
+    assert is_complete_pdf(b"<html>temporary error</html>%%EOF") is False
 
 
 def test_ndma_extraction_accepts_one_exact_county_phase_and_queues_ambiguity() -> None:

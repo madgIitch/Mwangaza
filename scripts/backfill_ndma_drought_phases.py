@@ -27,6 +27,7 @@ from mwangaza.probabilistic.drought_hazards import (
     build_adm1_name_index,
     canonical_json,
     extract_ndma_phase,
+    is_complete_pdf,
     match_adm1_name,
     ndma_official_record,
     ndma_period_postback_index,
@@ -164,6 +165,7 @@ def main() -> None:
 
     try:
         from pypdf import PdfReader
+        from pypdf.errors import PdfReadError
     except ImportError as exc:
         raise SystemExit(
             "pypdf is required for conservative PDF extraction. Run with: "
@@ -183,18 +185,56 @@ def main() -> None:
     for number, bulletin in enumerate(selected, 1):
         pdf_path = document_dir / f"{bulletin.document_id}.pdf"
         url_path = document_dir / f"{bulletin.document_id}.url"
-        if pdf_path.exists() and url_path.exists():
+        cached = pdf_path.exists() and url_path.exists()
+        if cached:
             pdf_data = pdf_path.read_bytes()
             document_url = url_path.read_text(encoding="utf-8").strip()
         else:
-            detail_data, _ = client.get(bulletin.detail_url)
-            document_link = parse_ndma_document_link(detail_data.decode("utf-8", "replace"))
-            pdf_data, document_url = client.get(document_link)
-            if not pdf_data.startswith(b"%PDF"):
-                raise LabelImportError(f"NDMA document is not a PDF: {bulletin.document_id}")
+            pdf_data, document_url = _download_document(client, bulletin)
+
+        text: str | None = None
+        pdf_error = ""
+        for repair_pass in range(1, 4):
+            if is_complete_pdf(pdf_data):
+                try:
+                    text = "\n".join(
+                        page.extract_text() or ""
+                        for page in PdfReader(io.BytesIO(pdf_data)).pages
+                    )
+                except (PdfReadError, OSError, ValueError) as exc:
+                    pdf_error = f"{type(exc).__name__}: {exc}"
+                else:
+                    _atomic_bytes(pdf_path, pdf_data)
+                    _atomic_text(url_path, document_url + "\n")
+                    break
+            else:
+                pdf_error = "missing PDF header or terminal %%EOF marker"
+            if repair_pass < 3:
+                print(
+                    f"NDMA {bulletin.document_id}: PDF repair pass {repair_pass}/2 "
+                    f"({pdf_error})"
+                )
+                pdf_data, document_url = _download_document(client, bulletin)
+
+        if text is None:
             _atomic_bytes(pdf_path, pdf_data)
             _atomic_text(url_path, document_url + "\n")
-        text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(pdf_data)).pages)
+            review.append(
+                {
+                    "document_id": bulletin.document_id,
+                    "county": bulletin.county,
+                    "period": bulletin.period,
+                    "detail_url": bulletin.detail_url,
+                    "document_url": document_url,
+                    "document_sha256": sha256_bytes(pdf_data),
+                    "reason": "invalid_pdf_after_retries",
+                    "detail": pdf_error,
+                    "validation_status": "review_required",
+                    "extraction_version": "pdf-integrity-v1",
+                }
+            )
+            document_progress(number, len(selected))
+            continue
         extraction = extract_ndma_phase(
             text,
             expected_county=bulletin.county,
@@ -267,6 +307,14 @@ def _form_fields(value: str) -> dict[str, str]:
     parser = _InputParser()
     parser.feed(value)
     return parser.fields
+
+
+def _download_document(
+    client: NdmaHttpClient, bulletin: NdmaBulletin
+) -> tuple[bytes, str]:
+    detail_data, _ = client.get(bulletin.detail_url)
+    document_link = parse_ndma_document_link(detail_data.decode("utf-8", "replace"))
+    return client.get(document_link)
 
 
 def _periods(start: str, end: str) -> tuple[tuple[int, int], ...]:
