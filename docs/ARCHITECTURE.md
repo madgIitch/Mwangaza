@@ -1772,6 +1772,7 @@ inmediatamente anterior.
 
 El artefacto separa selección por fold, predicciones OOF, métricas, bootstrap clusterizado
 y veredicto. `robust_skill` requiere mejora puntual, IC95 completamente bajo cero, victoria
-en al menos dos de tres folds y ECE <= 0,15. Un resultado `inconclusive` nunca habilita
-serving: puede conservarse como candidato shadow, mientras `phase_survival` sigue siendo
-la ruta pública.
+en al menos dos de tres folds y ECE <= 0,15. Un resultado `inconclusive` nunca se trata
+como validado u operacional. El hazard congelado puede exponerse como una segunda
+estimación experimental a 30 días únicamente si aparece junto a `phase_survival`, conserva
+el IC95 y declara `operational_use=false`; la referencia permanece independiente.

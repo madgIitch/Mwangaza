@@ -48,7 +48,7 @@
       "Una alerta con calidad critica no puede publicarse como concluyente.",
       "Toda cifra visible conserva fuente, periodo, unidad y version de transformacion.",
       "Una probabilidad predictiva describe la evolucion futura del indicador de riesgo de Mwangaza, no la probabilidad de sequia oficial, crisis humanitaria, perdidas agricolas o personas afectadas.",
-      "Mwangaza no publica una probabilidad cuando el modelo no demuestra skill fuera de muestra frente a los baselines aprobados o cuando la calidad, calibracion, cobertura regional, drift u horizonte bloquean su uso."
+      "Mwangaza no publica una probabilidad ML como validada u operacional cuando el modelo no demuestra skill robusto fuera de muestra frente a los baselines aprobados. Una prediccion ML inconclusa solo puede exponerse como experimental, no operacional y junto a su referencia historica, conservando incertidumbre, calidad, cobertura, drift y horizonte."
     ],
     "security_invariants": [
       "Ninguna credencial de Google Earth Engine se incluye en Git, imagen Docker, logs o respuestas.",
@@ -4794,15 +4794,16 @@
     {
       "id": "sprint-64-risk-probability-api-drivers",
       "name": "Sprint 64 - Drought Continuation API and Drivers",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,
       "demo_critical": false,
       "dependencies": [
-        "sprint-63-probability-calibration-skill-gate"
+        "sprint-63-probability-calibration-skill-gate",
+        "sprint-63b-ml-sanity-audit"
       ],
-      "objective": "Materializar y exponer la probabilidad de que una sequia oficialmente activa siga activa, conservando el metodo hibrido, su evidencia y sus limites sin entrenar bajo demanda.",
+      "objective": "Materializar y exponer a 30 dias la prediccion hazard ML experimental junto a la referencia phase_survival, y mantener phase_survival como unica estimacion a 60/90/180 dias, conservando evidencia, incertidumbre y limites sin entrenar bajo demanda.",
       "user_stories": [
         {
           "id": "HU64.1",
@@ -4815,30 +4816,35 @@
       ],
       "tasks": [
         "Definir contrato versionado DroughtContinuationProbability con estados available, unavailable y not_applicable.",
-        "Materializar inferencias desde snapshots y artefactos previamente aprobados.",
+        "Congelar offline el hazard logistico discreto de 63B sobre datos elegibles pre-2024, sin retuning ni reapertura del holdout.",
+        "Materializar a 30 dias tanto la prediccion ML experimental como la referencia phase_survival desde snapshots y artefactos verificados.",
         "Exponer GET /api/v1/drought-continuation-probabilities con filtros acotados por region y horizonte.",
-        "Calcular hasta tres drivers no causales para ML y evidencia descriptiva para baselines.",
+        "Calcular hasta tres drivers asociativos para ML y evidencia descriptiva para el baseline.",
         "Sanear metadata y bloquear paths, secretos, artefactos no aprobados y entrenamiento bajo request.",
         "Anadir fixtures demo con routing hibrido explicito y contract tests."
       ],
-      "deliverable": "Endpoint publico de solo lectura para continuidad del mismo episodio con ML experimental a 30 dias, baseline en horizontes largos, fallback y abstencion trazables.",
+      "deliverable": "Endpoint publico de solo lectura para continuidad del mismo episodio: prediccion ML experimental y referencia historica simultaneas a 30 dias, baseline en horizontes largos, fallback y abstencion trazables.",
       "acceptance": [
-        "`GET /api/v1/drought-continuation-probabilities` acepta `region_id`, `as_of` y `horizon_days=30|60|90|180`, devuelve payload versionado y no inicia GEE, entrenamiento, calibracion ni escritura.",
-        "El contrato solo aplica cuando `current_drought_status=active`; en otro caso devuelve `not_applicable` y nunca interpreta ausencia de etiqueta como recuperacion.",
-        "Un resultado available incluye region_id, as_of, horizon_days, target=`same_episode_continues`, probability en `[0,1]`, current_phase, estimator_kind, artifact metadata, validation, quality y experimental.",
-        "A 30 dias se usa ML solo si el gate de 63 lo permite; su fallo activa un baseline identificado. A 60/90/180 dias `estimator_kind=baseline` y el payload nunca los denomina prediccion ML.",
-        "Unavailable omite probability, conserva reason codes y usa el copy canonico; fallback siempre expone `fallback_reason` y nunca inventa un porcentaje.",
-        "El contrato afirma probabilidad estimada de que el mismo episodio oficialmente activo continue; no afirma onset, impacto humano, perdida agricola ni duracion exacta.",
-        "Los drivers ML se ordenan por magnitud absoluta, declaran direccion/metodo y usan lenguaje asociativo; los baselines exponen fase y elapsed days como evidencia descriptiva, no como drivers causales.",
-        "La API solo lee snapshots y artefactos cuyos hashes coinciden con la decision aprobada de 63; mismatch, corrupcion o region sin soporte produce unavailable.",
-        "Paginacion, orden, cache headers, errores 400/404 y OpenAPI siguen los patrones v1 existentes; payloads no filtran paths locales, secretos ni datos personales.",
-        "Contract, API y security tests cubren active/not_applicable/unavailable, cuatro horizontes, routing ML/baseline, fallback, drivers, hashes y prueba negativa de entrenamiento/GEE."
+        "`GET /api/v1/drought-continuation-probabilities` acepta `region_id`, `as_of` y `horizon_days=30|60|90|180`, devuelve payload versionado y no inicia GEE, entrenamiento, calibración ni escritura.",
+        "El contrato solo aplica cuando `current_drought_status=active`; en otro caso devuelve `not_applicable` y nunca interpreta ausencia de etiqueta como recuperación.",
+        "Un resultado available incluye identidad, target `same_episode_continues`, fase, metadata, validation, quality y estimaciones tipadas con probability en `[0,1]`.",
+        "A 30 días incluye simultáneamente `experimental_ml_prediction` del hazard congelado y `historical_reference` de `phase_survival`; nunca sustituye silenciosamente una por otra.",
+        "ML conserva `validation_status=inconclusive`, `experimental=true`, `operational_use=false`, BSS, ECE, IC95 y folds de 63B; no afirma superioridad robusta ni validación operacional.",
+        "A 60/90/180 días solo existe `historical_reference` y nunca se denomina predicción ML.",
+        "Si hazard no es utilizable, ML queda unavailable con reason codes mientras la referencia válida puede seguir disponible; nunca se inventa un porcentaje.",
+        "El contrato limita el claim a continuidad del mismo episodio y los drivers ML son asociativos; fase/elapsed del baseline son evidencia descriptiva.",
+        "El fit final es CLI offline reproducible, usa configuración congelada de 63B, excluye 2024+, no retunea y serializa hashes/versiones; la API no entrena.",
+        "La API verifica hashes de 63B; corrupción o falta de soporte invalida ML independientemente de la referencia.",
+        "Paginación, orden, cache, errores y OpenAPI siguen patrones v1 y no filtran paths, secretos ni datos personales.",
+        "Tests cubren comparación dual, cuatro horizontes, degradación independiente, drivers, hashes y ausencia de entrenamiento/GEE."
       ],
       "scope": [
         "src/mwangaza/probabilistic/**",
         "src/mwangaza/contracts/**",
         "src/mwangaza/api/**",
         "src/mwangaza/services/**",
+        "scripts/materialize_drought_continuation.py",
+        "config/probabilistic/**",
         "tests/probabilistic/**",
         "tests/contracts/**",
         "tests/api/**",
@@ -4853,7 +4859,10 @@
         "spec/sprint-64-risk-probability-api-drivers-*/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": false,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-28T16:42:34.791Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes."
     },
     {
       "id": "sprint-65-probability-ui-integration",
@@ -4868,7 +4877,7 @@
         "sprint-59-reports-center-completion",
         "sprint-64-risk-probability-api-drivers"
       ],
-      "objective": "Integrar una lectura compacta de continuidad de sequia activa en Region Explorer y reportes, haciendo visible si procede de ML experimental, baseline o abstencion.",
+      "objective": "Integrar una comparacion compacta entre prediccion ML experimental y referencia historica a 30 dias, mas baselines a 60/90/180 dias, haciendo visibles incertidumbre, limites y abstencion.",
       "user_stories": [
         {
           "id": "HU65.1",
@@ -4881,24 +4890,25 @@
       ],
       "tasks": [
         "Anadir un unico modulo Drought continuation al inspector de Region Explorer.",
-        "Mostrar 30/60/90/180 dias, probabilidad, fase actual, metodo, calidad, skill y evidencia.",
-        "Distinguir visual y textualmente ML experimental, baseline y fallback sin jerarquias engañosas.",
+        "Mostrar a 30 dias la prediccion ML experimental y la referencia historica juntas, con fase, calidad, skill, IC y evidencia.",
+        "Mostrar 60/90/180 dias exclusivamente como referencia historica y distinguir unavailable sin jerarquias engañosas.",
         "Soportar not_applicable, unavailable y metadata incompleta sin numeros sustitutos.",
         "Incorporar la estimacion disponible y su metodo/disclaimer a reportes materializados.",
         "Preservar low-bandwidth, idiomas, accesibilidad, demo offline y ausencia de GEE desde navegador."
       ],
-      "deliverable": "Modulo compacto de continuidad en Region y Reports con horizontes, routing ML/baseline, evidencia, fallback y abstencion equivalentes en UI normal y low-bandwidth.",
+      "deliverable": "Modulo compacto de continuidad en Region y Reports con comparacion ML experimental/baseline a 30 dias, referencias en horizontes largos y abstencion equivalente en UI normal y low-bandwidth.",
       "acceptance": [
         "Region Explorer incorpora un solo modulo `Drought continuation` dentro del workspace existente y solo lo activa cuando existe una fase oficial activa; no crea otra ruta ni un velocimetro dominante.",
-        "El usuario puede elegir 30, 60, 90 y 180 dias y ve probability, periodo objetivo, fase actual, estimator kind, calidad, skill y hasta tres drivers/evidencias cuando estan disponibles.",
-        "A 30 dias la insignia dice `Experimental ML` solo si la API selecciona ML; a 60/90/180 dice `Historical baseline` y nunca `AI prediction`.",
+        "El usuario puede elegir 30, 60, 90 y 180 dias y ve periodo objetivo, fase actual, metodo, calidad, skill y hasta tres drivers/evidencias cuando estan disponibles.",
+        "A 30 dias se muestran juntas, sin fusionarlas, `Experimental ML prediction` y `Historical reference`; la primera indica `Inconclusive validation` y `Not for operational use`.",
+        "A 60/90/180 dias solo se muestra `Historical reference` y nunca `AI prediction`.",
         "El copy dice que se estima si el mismo episodio activo continuara; no promete inicio de sequia, duracion exacta, impacto humano ni certeza operativa.",
-        "Fallback muestra el baseline y explica por que ML no se uso. Unavailable y not applicable ocupan el mismo lugar visual y nunca muestran 0%.",
+        "Si ML no esta disponible, su espacio explica el motivo mientras la referencia puede seguir visible; unavailable y not applicable nunca muestran 0%.",
         "Drivers ML se presentan como asociaciones, mientras fase y tiempo transcurrido de baselines se presentan como evidencia descriptiva; ambos conservan metodo y periodo.",
-        "Reports incorpora probability, as_of, horizonte, fase, estimator kind, artifact/skill, calidad y disclaimer; unavailable se documenta como abstencion.",
+        "Reports incorpora ambas estimaciones de 30 dias con as_of, fase, artifact/skill, IC, calidad y disclaimer; en horizontes largos incorpora solo la referencia y unavailable se documenta como abstencion.",
         "Navegador y generacion de reportes no entrenan, calibran ni consultan GEE; consumen exclusivamente API/snapshots materializados.",
-        "Low-bandwidth conserva horizonte, probabilidad o abstencion, fase, metodo, skill, calidad, evidencia y disclaimer en texto/tabla; no traduce IDs, versiones ni reason codes.",
-        "Tests frontend/reports cubren ML, baseline, fallback, unavailable, not applicable, cuatro horizontes, lenguaje no causal, low-bandwidth, demo offline y ausencia de entrenamiento/GEE."
+        "Low-bandwidth conserva la comparacion dual a 30 dias y la referencia o abstencion en horizontes largos, con fase, metodo, skill, calidad, evidencia y disclaimer en texto/tabla; no traduce IDs, versiones ni reason codes.",
+        "Tests frontend/reports cubren comparacion ML/referencia, ML unavailable con referencia disponible, not applicable, cuatro horizontes, lenguaje no causal, low-bandwidth, demo offline y ausencia de entrenamiento/GEE."
       ],
       "scope": [
         "frontend/**",

@@ -795,6 +795,13 @@ en los siguientes 30 días condicionado a que el episodio está activo.
 
 El hazard reduce el Brier ponderado por episodio de 0,241388 a 0,203102 (15,86%), gana dos
 de tres folds y mantiene ECE 0,108691. Sin embargo, el límite superior del IC95 del delta
-es +0,002149. La decisión es `inconclusive`, no `no_skill` ni `robust_skill`: ML no se
-publica en 64/65, `phase_survival` continúa como baseline y el hazard solo puede ejecutarse
-en shadow hasta obtener una cohorte temporal nueva que cierre el intervalo bajo cero.
+es +0,002149. La decisión científica es `inconclusive`, no `no_skill` ni `robust_skill`.
+
+## 2026-07-28 · El hazard inconcluso se integra como predicción ML experimental
+
+No se prevé obtener una cohorte temporal nueva para una confirmación independiente. Para
+no convertir la ausencia de validación futura en una afirmación falsa, 64/65 expondrán a
+30 días dos estimaciones simultáneas: `experimental_ml_prediction` del hazard congelado y
+`historical_reference` de `phase_survival`. ML conserva `validation_status=inconclusive`,
+`experimental=true`, `operational_use=false`, métricas e IC95; nunca se afirma que sea
+robusto, validado u operacional. A 60/90/180 días solo se muestra la referencia histórica.

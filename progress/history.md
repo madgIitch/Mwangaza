@@ -279,3 +279,10 @@
 - El hazard mejora Brier un 15,86% y gana 2/3 folds, pero el IC95 cruza cero por +0,002149.
 - Veredicto `inconclusive`: candidato shadow, no elegible para serving.
 - Run hash `sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.
+
+## 2026-07-28T19:15:00+02:00 - #sprint-63b-ml-sanity-audit -> done
+
+- 63B aceptado y cerrado formalmente en `60a4497`.
+- Se decide integrar el hazard como predicción ML experimental, no operacional y
+  simultánea a la referencia histórica, sin alterar el veredicto inconcluso.
+- Specs 64–65 adaptados; 64 queda `spec_ready` para revisión antes de implementar.

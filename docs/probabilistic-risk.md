@@ -17,19 +17,19 @@ coverage remains unknown and never becomes recovery.
 - One binary target: `same_episode_continues`.
 - Dekadal feature rows aligned to validated operational phase coverage.
 - Four horizons: 30, 60, 90 and 180 days.
-- HGB+Platt may compete only at 30 days.
+- A frozen discrete-time logistic hazard may be exposed only as experimental ML at 30 days.
 - `phase_survival` is the approved baseline and the only route at 60/90/180 days.
 - Nested temporal evaluation with separate base-fit, calibration and evaluation episodes.
 - Core metrics: Brier score, Brier Skill Score, log loss, calibration bins and ECE.
 - One read-only endpoint, one compact Region module and report integration.
 - Up to three non-causal drivers.
-- Strict abstention whenever validated skill or data quality is insufficient.
+- At 30 days the experimental ML prediction is shown beside, never instead of, the historical reference; quality failures abstain independently.
 
 ## Delivery sequence
 
 1. Sprints 61-62C materialize leakage-safe history and antecedent signals.
 2. Sprints 62D-62F build independent drought episodes and evaluate continuation.
-3. Sprint 63 calibrates the 30-day ML candidate and freezes hybrid routing.
+3. Sprints 63-63B calibrate and audit the 30-day ML candidates; the hazard signal is frozen as experimental and inconclusive.
 4. Sprint 64 materializes continuation estimates, drivers and the read-only API.
 5. Sprint 65 integrates ML, baseline, fallback and abstention into Region and Reports.
 
@@ -142,7 +142,12 @@ FEWS/IPC geometries are intersected with the pinned ADM1 catalog. Simple geometr
 
 ## Non-negotiable gates
 
-No percentage is published when any approved gate fails, including insufficient history or positive cases, blocked current quality, non-positive skill against climatology, unacceptable calibration, material drift, unsupported horizon, regional under-representation, corrupt artifacts or version/hash mismatch.
+No probability is presented as validated or operational when robust skill fails. The
+30-day hazard may be exposed only as `experimental_ml_prediction`, with
+`validation_status=inconclusive`, `operational_use=false`, its IC95 and the simultaneous
+`historical_reference`. Insufficient history, blocked quality, non-positive point skill,
+unacceptable calibration, material drift, unsupported horizon, regional
+under-representation, corruption or hash mismatch make that ML estimate unavailable.
 
 The public unavailable state is:
 
@@ -306,8 +311,9 @@ episodio 0,241388. HGB raw empeoró a 0,251157; Platt anual empeoró a 0,365766;
 mejoró ligeramente a 0,237062 (BSS +1,79%), pero solo ganó uno de tres folds y su IC95 del
 delta cruzó cero. El hazard logístico discreto obtuvo 0,203102 (BSS +15,86%), ECE 0,108691
 y ganó dos de tres folds; su IC95 del delta fue [-0,083941, +0,002149]. Por tanto, es
-`inconclusive`: hay una señal útil y el planteamiento del target sí importa, pero todavía
-no existe evidencia suficiente para servirlo como ML. El baseline sigue siendo la única
-ruta publicable y el hazard queda como candidato shadow para validación futura realmente
-no vista. Run hash:
+`inconclusive`: hay una señal útil y el planteamiento del target sí importa, pero no existe
+evidencia para denominarlo validado u operacional. Como no habrá una nueva cohorte de
+episodios, la decisión de producto es mostrar a 30 días la predicción hazard como ML
+experimental junto a `phase_survival`, con el IC95 y el estado inconcluso visibles. Nunca
+se sustituye silenciosamente la referencia ni se afirma superioridad robusta. Run hash:
 `sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.
