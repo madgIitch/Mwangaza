@@ -8,6 +8,11 @@ from datetime import UTC, datetime
 from html import escape
 from typing import Any
 
+from mwangaza.services.drought_continuation import (
+    DroughtContinuationServiceError,
+    load_continuation_snapshot,
+)
+
 
 @dataclass(frozen=True)
 class ReportMetric:
@@ -16,6 +21,23 @@ class ReportMetric:
     unit: str
     detail: str
     severity: str
+
+
+@dataclass(frozen=True)
+class ReportContinuationEstimate:
+    region_id: str
+    as_of: str
+    horizon_days: int
+    phase: str
+    kind: str
+    status: str
+    probability: float | None
+    model: str
+    validation_status: str
+    quality_status: str
+    artifact_version: str
+    skill_score: float | None = None
+    interval_95: tuple[float, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -32,6 +54,7 @@ class ExecutiveReportContext:
     sources: tuple[str, ...]
     versions: tuple[str, ...]
     limitations: tuple[str, ...]
+    continuation: tuple[ReportContinuationEstimate, ...] = ()
     dashboard_url: str = ""
     qr_matrix: tuple[str, ...] = ()
 
@@ -117,6 +140,7 @@ def build_executive_report_context(
     )
     version_values = _unique(_metric_versions(metrics))
     url = _safe_url(dashboard_url or "")
+    continuation = _continuation_for_region(selected_region)
     return ExecutiveReportContext(
         region_id=selected_region,
         region_label=str(getattr(profile, "label", "") or getattr(data, "selected_region", "") or selected_region.upper()),
@@ -133,7 +157,9 @@ def build_executive_report_context(
             "This report is a decision-support prototype, not an official alert.",
             "`potentially_exposed` is potential exposure, not measured impact.",
             "Observed, cached and demo/synthetic data must be interpreted separately.",
+            "Drought continuation estimates describe the same active episode; they do not predict onset, exact duration or human impact.",
         ),
+        continuation=continuation,
         dashboard_url=url,
         qr_matrix=_qr_matrix(url) if url else (),
     )
@@ -162,6 +188,7 @@ def render_executive_report_html(context: ExecutiveReportContext) -> str:
     sources = "".join(f"<li>{escape(item)}</li>" for item in context.sources)
     versions = "".join(f"<li>{escape(item)}</li>" for item in context.versions)
     limitations = "".join(f"<li>{escape(item)}</li>" for item in context.limitations)
+    continuation = _render_continuation_html(context.continuation)
     qr = _render_qr(context)
     return f"""<!doctype html>
 <html lang="en">
@@ -201,6 +228,7 @@ def render_executive_report_html(context: ExecutiveReportContext) -> str:
   </table>
   <h2>Recommended Actions</h2>
   <ul>{recommendations}</ul>
+  {continuation}
   <h2>Sources and Versions</h2>
   <ul>{sources}{versions}</ul>
   <h2>Limitations</h2>
@@ -218,6 +246,7 @@ def render_executive_report_pdf(context: ExecutiveReportContext) -> bytes:
         f"Quality: {context.quality}", "", "Snapshot indicators",
         *(f"{metric.label}: {metric.value} {metric.unit} - {metric.severity}" for metric in context.metrics),
         "", "Recommended actions", *(f"- {item}" for item in context.recommendations),
+        "", "Drought continuation", *_continuation_pdf_lines(context.continuation),
         "", "Sources and versions", *(f"- {item}" for item in (*context.sources, *context.versions)),
         "", "Limitations", *(f"- {item}" for item in context.limitations),
     ]
@@ -235,6 +264,115 @@ def _profile_for_region(data: Any, region_id: str) -> Any:
         if getattr(profile, "region_id", "") == region_id:
             return profile
     return getattr(data, "region_profiles", (None,))[0] if getattr(data, "region_profiles", ()) else data
+
+
+def _continuation_for_region(region_id: str) -> tuple[ReportContinuationEstimate, ...]:
+    try:
+        snapshot = load_continuation_snapshot()
+    except (DroughtContinuationServiceError, OSError, ValueError):
+        return ()
+    prefix = _continuation_region_prefix(region_id)
+    rows: list[ReportContinuationEstimate] = []
+    for item in snapshot.items:
+        if item.status == "not_applicable" or not (
+            item.region_id == region_id or (prefix and item.region_id.startswith(prefix))
+        ):
+            continue
+        for estimate in item.estimates:
+            interval = estimate.validation.get("bootstrap_delta_brier_ci95")
+            interval_95 = (
+                (float(interval[0]), float(interval[1]))
+                if isinstance(interval, list) and len(interval) == 2
+                else None
+            )
+            rows.append(
+                ReportContinuationEstimate(
+                    region_id=item.region_id,
+                    as_of=item.as_of,
+                    horizon_days=item.horizon_days,
+                    phase=item.current_phase,
+                    kind=estimate.kind,
+                    status=estimate.status,
+                    probability=estimate.probability,
+                    model=estimate.model,
+                    validation_status=str(estimate.validation.get("status") or "unknown"),
+                    quality_status=str(estimate.quality.get("status") or "unknown"),
+                    artifact_version=str(
+                        estimate.artifact.get("schema_version") or "historical-reference"
+                    ),
+                    skill_score=(
+                        float(estimate.validation["episode_weighted_brier_skill_score"])
+                        if isinstance(
+                            estimate.validation.get("episode_weighted_brier_skill_score"),
+                            (int, float),
+                        )
+                        else None
+                    ),
+                    interval_95=interval_95,
+                )
+            )
+    return tuple(sorted(rows, key=lambda row: (row.region_id, row.horizon_days, row.kind)))
+
+
+def _continuation_region_prefix(region_id: str) -> str:
+    iso2 = {
+        "dji": "dj", "eri": "er", "eth": "et", "ken": "ke",
+        "sdn": "sd", "som": "so", "ssd": "ss", "uga": "ug",
+    }.get(region_id)
+    return f"adm1-{iso2}-" if iso2 else ""
+
+
+def _render_continuation_html(rows: tuple[ReportContinuationEstimate, ...]) -> str:
+    if not rows:
+        return "<h2>Drought Continuation</h2><p class=\"note\">No applicable materialized continuation estimate is available.</p>"
+    body = "".join(
+        "<tr><td>{region}</td><td>{as_of}</td><td>{phase}</td><td>{horizon} days</td><td>{kind}</td><td>{probability}</td><td>{method}</td><td>{evidence}</td></tr>".format(
+            region=escape(row.region_id),
+            as_of=escape(row.as_of[:10]),
+            phase=escape(row.phase),
+            horizon=row.horizon_days,
+            kind=escape(_continuation_kind_label(row.kind)),
+            probability=escape(_report_probability(row)),
+            method=escape(row.model),
+            evidence=escape(_continuation_evidence(row)),
+        )
+        for row in rows
+    )
+    return (
+        "<h2>Drought Continuation</h2>"
+        "<p class=\"note\">Probability that the same officially active episode continues. Experimental ML: Not for operational use.</p>"
+        "<table><thead><tr><th>Region</th><th>As of</th><th>Phase</th><th>Horizon</th><th>Estimate</th><th>Probability</th><th>Method</th><th>Evidence</th></tr></thead>"
+        f"<tbody>{body}</tbody></table>"
+    )
+
+
+def _continuation_pdf_lines(rows: tuple[ReportContinuationEstimate, ...]) -> tuple[str, ...]:
+    if not rows:
+        return ("No applicable materialized continuation estimate is available.",)
+    return (
+        "Same active episode only; experimental ML is inconclusive and not for operational use.",
+        *(
+            f"{row.region_id} | {row.as_of[:10]} | {row.phase} | {row.horizon_days} days | {_continuation_kind_label(row.kind)} | {_report_probability(row)} | {row.model} | {_continuation_evidence(row)}"
+            for row in rows
+        ),
+    )
+
+
+def _continuation_kind_label(kind: str) -> str:
+    return "Experimental ML prediction" if kind == "experimental_ml_prediction" else "Historical reference"
+
+
+def _report_probability(row: ReportContinuationEstimate) -> str:
+    return f"{row.probability * 100:.1f}%" if row.status == "available" and row.probability is not None else "Unavailable"
+
+
+def _continuation_evidence(row: ReportContinuationEstimate) -> str:
+    parts = [row.validation_status, row.quality_status, row.artifact_version]
+    if row.skill_score is not None:
+        parts.append(f"BSS {row.skill_score * 100:+.1f}%")
+    if row.interval_95 is not None:
+        parts.append(f"IC95 [{row.interval_95[0]:.4f}, {row.interval_95[1]:.4f}]")
+    return " / ".join(parts)
 
 
 def _map_region_for(data: Any, region_id: str) -> Any:
@@ -396,6 +534,7 @@ def _slug(value: str) -> str:
 
 __all__ = [
     "ExecutiveReportContext",
+    "ReportContinuationEstimate",
     "ReportMetric",
     "build_executive_report_context",
     "build_report_records",

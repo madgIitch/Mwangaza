@@ -191,6 +191,14 @@ Must state that Mwangaza is a decision-support prototype and estimates should be
 
 ## Implemented Now
 
+- Sprint 65 adds one compact `Drought continuation` block to the selected-ADM1 inspector.
+  It compares `Experimental ML prediction` with `Historical reference` at 30 days and
+  exposes only the historical reference at 60, 90 and 180 days.
+- The block follows the exact ADM1 selection and never inherits a country or neighbouring
+  unit probability. `not_applicable` and `unavailable` remain textual abstentions, never 0%.
+- Validation, quality, Brier skill, IC95 and up to three non-causal associations remain
+  visible without promoting the experimental estimate to operational guidance.
+- Low-bandwidth mode preserves the same distinction in a text/table representation.
 - The public API exposes complete region profiles and processed temporal cuts for both explicit demo and live/cache data.
 - Region Explorer consumes explicit composite contributions, deterministic pilot rankings, live trends and seasonally comparable history.
 - Country, pilot view and period controls operate on already-loaded payloads; `View all alerts` preserves region, period and active status.

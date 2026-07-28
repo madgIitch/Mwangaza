@@ -84,6 +84,44 @@ class ExecutiveReportTests(unittest.TestCase):
 
         live.assert_not_called()
 
+    def test_kenya_report_includes_dual_30_day_and_baseline_long_horizons(self) -> None:
+        with patch.dict("os.environ", {"MWANGAZA_MODE": "demo"}):
+            context = build_executive_report_context(
+                load_dashboard_shell_data("demo"), region_id="ken"
+            )
+
+        rows_30 = [row for row in context.continuation if row.horizon_days == 30]
+        rows_long = [row for row in context.continuation if row.horizon_days > 30]
+        self.assertEqual(
+            {row.kind for row in rows_30},
+            {"experimental_ml_prediction", "historical_reference"},
+        )
+        self.assertEqual({row.kind for row in rows_long}, {"historical_reference"})
+        ml = next(row for row in rows_30 if row.kind == "experimental_ml_prediction")
+        self.assertEqual(ml.validation_status, "inconclusive")
+        self.assertIsNotNone(ml.interval_95)
+        self.assertAlmostEqual(ml.skill_score or 0, 0.15860666146248892)
+
+        html = render_executive_report_html(context)
+        self.assertIn("Experimental ML prediction", html)
+        self.assertIn("Historical reference", html)
+        self.assertIn("Not for operational use", html)
+        self.assertIn("IC95", html)
+        self.assertNotIn("AI prediction", html)
+
+    def test_report_abstains_when_continuation_snapshot_is_unavailable(self) -> None:
+        with patch(
+            "mwangaza.reports.load_continuation_snapshot",
+            side_effect=OSError("snapshot unavailable"),
+        ):
+            context = build_executive_report_context(load_dashboard_shell_data("demo"))
+
+        self.assertEqual(context.continuation, ())
+        self.assertIn(
+            "No applicable materialized continuation estimate is available.",
+            render_executive_report_html(context),
+        )
+
     def test_dashboard_reports_panel_exposes_filename_and_optional_qr_status(self) -> None:
         with patch.dict("os.environ", {"MWANGAZA_DASHBOARD_URL": "https://example.org/mwangaza"}):
             html = build_dashboard_shell_html(load_dashboard_shell_data("demo"))

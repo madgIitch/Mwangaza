@@ -151,12 +151,64 @@ export interface DashboardData {
   reportFilename: string;
   exportFilenames: { csv: string; json: string };
   reports?: ReportRecord[];
+  droughtContinuation?: DroughtContinuationResponse;
   forecastDiagnostics: {
     available: boolean;
     message: string;
     modelVersion: string;
     confidence: string;
   };
+}
+
+export type ContinuationEstimateKind = "experimental_ml_prediction" | "historical_reference";
+
+export interface ContinuationDriver {
+  feature: string;
+  direction: string;
+  contribution?: number;
+  method: string;
+  causal: false;
+  statement: string;
+}
+
+export interface ContinuationEstimate {
+  kind: ContinuationEstimateKind;
+  status: "available" | "unavailable";
+  probability?: number;
+  model: string;
+  estimator_kind: "ml" | "baseline";
+  experimental: boolean;
+  operational_use: boolean;
+  reason_codes: string[];
+  drivers: ContinuationDriver[];
+  evidence: Record<string, unknown>;
+  quality: Record<string, unknown> & { status?: string };
+  validation: Record<string, unknown> & { status?: string };
+  artifact: Record<string, unknown>;
+}
+
+export interface DroughtContinuationItem {
+  schema_version: string;
+  region_id: string;
+  as_of: string;
+  horizon_days: 30 | 60 | 90 | 180;
+  target: "same_episode_continues";
+  current_drought_status: "active" | "inactive" | "unknown";
+  current_phase: string;
+  current_trend: string;
+  elapsed_days: number | null;
+  status: "available" | "unavailable" | "not_applicable";
+  reason_codes: string[];
+  estimates: ContinuationEstimate[];
+}
+
+export interface DroughtContinuationResponse {
+  schema_version: "mwangaza.api.v1";
+  availability: "available" | "unavailable";
+  generated_at: string;
+  items: DroughtContinuationItem[];
+  total: number;
+  snapshot_hash?: string;
 }
 
 export interface ReportRecord {

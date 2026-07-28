@@ -139,6 +139,12 @@ Current implementation shows `Executive PDF` as a template placeholder.
 
 ## Implemented Now
 
+- Executive HTML/PDF reports now read the same materialized continuation snapshot as the
+  public API. Kenya reports include active ADM1 estimates with `as_of`, phase, horizon,
+  method, quality, validation, BSS and IC95.
+- Reports keep both 30-day estimates separate, use only `Historical reference` at longer
+  horizons and state that experimental ML is not for operational use. Snapshot failure
+  produces an explicit abstention without blocking the rest of the report.
 - The Northern Kenya demo exposes a stable simulated report reference keyed by the selected `unit_id`.
 - `/reports` route renders Reports Center as an independent screen.
 - Search, region, report type and status filters operate on local report rows.

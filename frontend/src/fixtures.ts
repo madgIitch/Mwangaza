@@ -1,4 +1,5 @@
-import type { DashboardData, GeoJsonGeometry, RiskContribution } from "./types";
+import continuationFixture from "../../demo_data/drought-continuation-probabilities.json";
+import type { DashboardData, DroughtContinuationResponse, GeoJsonGeometry, RiskContribution } from "./types";
 
 const uiGeometryByRegion: Record<string, GeoJsonGeometry> = {
   ken: { type: "Polygon", coordinates: [[[34.2, -4.4], [41.3, -4.4], [41.3, 4.8], [34.2, 4.8], [34.2, -4.4]]] },
@@ -86,6 +87,7 @@ export const demoDashboard: DashboardData = {
     csv: "mwangaza-visible-snapshot-som-2026-07-15.csv",
     json: "mwangaza-visible-snapshot-som-2026-07-15.json"
   },
+  droughtContinuation: continuationFixture as unknown as DroughtContinuationResponse,
   forecastDiagnostics: {
     available: false,
     message: "Forecasts are not available yet",
@@ -126,6 +128,22 @@ demoDashboard.profiles = demoDashboard.regions.map((region) => ({
     : region.id === "ken"
       ? [{ id: "northern-kenya-pilot", name: "Northern Kenya Pilot Area", adminLevel: "pilot_area", score: 61, level: "warning", quality: "ok", rank: 1 }]
       : [],
+  administrativeUnits: region.id === "ken" ? [
+    {
+      regionId: "adm1-ke-43", boundaryId: "demo-ke-43", boundaryIso: "KE-43", name: "Turkana",
+      parentId: "ken", adminLevel: "ADM1", score: 84, level: "critical", quality: "ok",
+      periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", sourceMode: "demo",
+      geometrySource: "geoBoundaries gbOpen", ndvi: -0.42, rainfallMm: 18, lstC: 31.2,
+      contributions: demoContributions(84), rank: 1
+    },
+    {
+      regionId: "adm1-ke-01", boundaryId: "demo-ke-01", boundaryIso: "KE-01", name: "Baringo",
+      parentId: "ken", adminLevel: "ADM1", score: 54, level: "watch", quality: "ok",
+      periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", sourceMode: "demo",
+      geometrySource: "geoBoundaries gbOpen", ndvi: -0.18, rainfallMm: 31, lstC: 28.4,
+      contributions: demoContributions(54), rank: 2
+    }
+  ] : undefined,
   contributions: demoContributions(region.score),
   trends: [
     {

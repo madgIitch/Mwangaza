@@ -4,8 +4,9 @@ import { activateAdminConfig, loadAboutStatus, loadAdminConfig, loadApiDashboard
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
+import { DroughtContinuation } from "./components/DroughtContinuation";
 import { LandingPage } from "./pages/LandingPage";
-import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
+import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, DroughtContinuationResponse, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -1189,7 +1190,7 @@ function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
         </section>
         <RecentExports report={selectedReport} />
         </div>
-        <ReportPreview report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
+        <ReportPreview continuation={data.droughtContinuation} report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
         <aside className="reports-inspector">
           <SelectedReportPanel report={selectedReport} metrics={selectedMetrics} risk={selectedRisk} />
           <ReportSidePanels />
@@ -1260,7 +1261,7 @@ function RecentExports({ report }: { report?: ReportRow }): JSX.Element {
   );
 }
 
-function ReportPreview({ report, metrics, recommendations }: { report?: ReportRow; metrics: Metric[]; recommendations: string[] }): JSX.Element {
+function ReportPreview({ continuation, report, metrics, recommendations }: { continuation?: DroughtContinuationResponse; report?: ReportRow; metrics: Metric[]; recommendations: string[] }): JSX.Element {
   return (
     <section className="report-preview-panel" id={report ? `preview-${report.id}` : undefined}>
       <div className="section-heading">
@@ -1281,6 +1282,7 @@ function ReportPreview({ report, metrics, recommendations }: { report?: ReportRo
           <h3>Recommended early actions</h3>
           <ul>{recommendations.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
+        <ReportContinuationPreview response={continuation} regionId={report?.regionId} />
       </article>
       <div className="viewer-controls" aria-label="Report preview controls">
         {report ? <a download href={`/api/v1/reports/${encodeURIComponent(report.id)}/download?format=pdf`}>Open generated PDF</a> : null}
@@ -1288,6 +1290,34 @@ function ReportPreview({ report, metrics, recommendations }: { report?: ReportRo
       </div>
     </section>
   );
+}
+
+function ReportContinuationPreview({ response, regionId }: { response?: DroughtContinuationResponse; regionId?: string }): JSX.Element {
+  const prefix = continuationCountryPrefix(regionId ?? "");
+  const items = (response?.items ?? []).filter((item) => item.status !== "not_applicable" && (item.region_id === regionId || (prefix && item.region_id.startsWith(prefix))));
+  if (!items.length) return <section><h3>Drought continuation</h3><p>No applicable materialized continuation estimate is available.</p></section>;
+  return (
+    <section className="report-continuation-preview">
+      <h3>Drought continuation</h3>
+      <p>Probability that the same officially active episode continues. Experimental ML is inconclusive and not for operational use.</p>
+      <table>
+        <thead><tr><th>ADM1 / horizon</th><th>Estimate</th><th>Probability</th><th>Method / quality</th></tr></thead>
+        <tbody>{items.flatMap((item) => item.estimates.map((estimate) => (
+          <tr key={`${item.region_id}-${item.horizon_days}-${estimate.kind}`}>
+            <td><code>{item.region_id}</code><br />{item.horizon_days} days · {item.as_of.slice(0, 10)} · <code>{item.current_phase}</code></td>
+            <td>{estimate.kind === "experimental_ml_prediction" ? "Experimental ML prediction" : "Historical reference"}</td>
+            <td>{estimate.status === "available" && estimate.probability !== undefined ? `${(estimate.probability * 100).toFixed(1)}%` : "Unavailable"}</td>
+            <td><code>{estimate.model}</code><br />{String(estimate.validation.status ?? "unknown")} · {String(estimate.quality.status ?? "unknown")}</td>
+          </tr>
+        )))}</tbody>
+      </table>
+    </section>
+  );
+}
+
+function continuationCountryPrefix(regionId: string): string {
+  const iso2: Record<string, string> = { dji: "dj", eri: "er", eth: "et", ken: "ke", sdn: "sd", som: "so", ssd: "ss", uga: "ug" };
+  return iso2[regionId] ? `adm1-${iso2[regionId]}-` : "";
 }
 
 function ReportSidePanels(): JSX.Element {
@@ -1485,6 +1515,7 @@ function RegionExplorer({
               <div><dt>Period</dt><dd>{selectedRegion.period}</dd></div>
             </dl>
           )}
+          <DroughtContinuation response={data.droughtContinuation} regionId={selectedAdministrativeUnit?.regionId} />
           <section className="inspector-action">
             <span>{primaryAlert ? "Highest-priority active alert" : selectedAdministrativeUnit ? "Country guidance for this area" : "Recommended next step"}</span>
             <strong>{primaryAlert?.action ?? effectiveProfile.recommendations[0] ?? "Review the current evidence before operational action."}</strong>
@@ -2527,6 +2558,7 @@ function LowBandwidthView({
             </tbody>
           </table>
         </section>
+        <DroughtContinuation response={data.droughtContinuation} regionId={selectedUnit?.regionId} variant="lite" />
         <details>
           <summary>Subnational ranking ({administrativeUnits.length})</summary>
           <table>

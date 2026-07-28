@@ -5,6 +5,7 @@ import type {
   AdminConfigResponse,
   AdminConfiguration,
   DashboardData,
+  DroughtContinuationResponse,
   Metric,
   PublicAlertsResponse,
   PublicForecastsResponse,
@@ -177,14 +178,16 @@ export async function loadApiDashboardDetails(base: DashboardData): Promise<Dash
 
 async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<DashboardData> {
   apiLog("details load start", { baseMode: base.dataMode, selectedRegionId: base.selectedRegionId });
-  const [alertsResult, forecastsResult, reportsResult] = await Promise.allSettled([
+  const [alertsResult, forecastsResult, reportsResult, continuationResult] = await Promise.allSettled([
     getJson<PublicAlertsResponse>("/api/v1/alerts?limit=20"),
     getJson<PublicForecastsResponse>("/api/v1/forecasts"),
-    getJson<PublicReportsResponse>("/api/v1/reports?limit=100")
+    getJson<PublicReportsResponse>("/api/v1/reports?limit=100"),
+    getJson<DroughtContinuationResponse>("/api/v1/drought-continuation-probabilities?limit=100")
   ]);
   apiLog("details load settled", {
     alerts: alertsResult.status,
     forecasts: forecastsResult.status,
+    continuation: continuationResult.status,
     alertsError: alertsResult.status === "rejected" ? errorMessage(alertsResult.reason) : undefined,
     forecastsError: forecastsResult.status === "rejected" ? errorMessage(forecastsResult.reason) : undefined
   });
@@ -196,6 +199,9 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     periodEnd: item.period_end, templateId: item.template_id, language: item.language, author: item.author,
     snapshotId: item.snapshot_id, formats: item.formats, error: item.error
   })) : base.reports;
+  const droughtContinuation = continuationResult.status === "fulfilled"
+    ? continuationResult.value
+    : base.droughtContinuation;
   const profiles = mergeAlertsIntoProfiles(base.profiles, alerts, base.selectedRegionId);
   apiLog("details normalized", { alerts: alerts.length, forecastAvailable: forecasts.available, profiles: profiles.length });
   return {
@@ -205,6 +211,7 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     recommendations: profiles[0]?.recommendations ?? base.recommendations,
     profiles,
     reports,
+    droughtContinuation,
     forecastDiagnostics: forecasts
   };
 }
@@ -322,7 +329,21 @@ function profilesFromSnapshot(
 ): RegionProfile[] {
   const apiProfiles = snapshot.snapshot.region_profiles ?? [];
   if (apiProfiles.length) {
-    return profilesFromApi(apiProfiles);
+    const profiles = profilesFromApi(apiProfiles);
+    if (dataMode !== "demo") {
+      return profiles;
+    }
+    return profiles.map((profile) => {
+      const fixture = demoDashboard.profiles.find((candidate) => candidate.id === profile.id);
+      return {
+        ...profile,
+        administrativeUnits: profile.administrativeUnits?.length
+          ? profile.administrativeUnits
+          : fixture?.administrativeUnits,
+        pilotRows: profile.pilotRows?.length ? profile.pilotRows : fixture?.pilotRows,
+        pilotUnits: profile.pilotUnits.length ? profile.pilotUnits : (fixture?.pilotUnits ?? [])
+      };
+    });
   }
   if (dataMode === "demo") {
     return demoDashboard.profiles;
