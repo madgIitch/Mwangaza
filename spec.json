@@ -4859,10 +4859,13 @@
         "spec/sprint-64-risk-probability-api-drivers-*/**",
         "progress/**"
       ],
-      "spec_approved": false,
+      "spec_approved": true,
       "manual_spec_ready": true,
       "manual_spec_ready_at": "2026-07-28T16:42:34.791Z",
-      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes."
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:d7a69563e0f3f084a22807a892c75a2a7e87c5b253f7a78bee35b935b29c6feb",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-28T16:44:26.534Z"
     },
     {
       "id": "sprint-65-probability-ui-integration",

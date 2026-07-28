@@ -1776,3 +1776,31 @@ en al menos dos de tres folds y ECE <= 0,15. Un resultado `inconclusive` nunca s
 como validado u operacional. El hazard congelado puede exponerse como una segunda
 estimación experimental a 30 días únicamente si aparece junto a `phase_survival`, conserva
 el IC95 y declara `operational_use=false`; la referencia permanece independiente.
+
+<!-- harness:sprint-64-risk-probability-api-drivers -->
+## sprint-64-risk-probability-api-drivers · Sprint 64 - Drought Continuation API and Drivers
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `src/mwangaza/contracts/**`
+  - `src/mwangaza/api/**`
+  - `src/mwangaza/services/**`
+  - `scripts/materialize_drought_continuation.py`
+  - `config/probabilistic/**`
+  - `tests/probabilistic/**`
+  - `tests/contracts/**`
+  - `tests/api/**`
+  - `tests/security/**`
+  - `tests/fixtures/probabilistic/**`
+  - `demo_data/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/contracts.md`
+  - `docs/public-api.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-64-risk-probability-api-drivers-*/**`
+  - `progress/**`
+

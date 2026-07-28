@@ -805,3 +805,12 @@ no convertir la ausencia de validación futura en una afirmación falsa, 64/65 e
 `historical_reference` de `phase_survival`. ML conserva `validation_status=inconclusive`,
 `experimental=true`, `operational_use=false`, métricas e IC95; nunca se afirma que sea
 robusto, validado u operacional. A 60/90/180 días solo se muestra la referencia histórica.
+
+<!-- harness:sprint-64-risk-probability-api-drivers -->
+## 2026-07-28 · sprint-64-risk-probability-api-drivers aprobado
+
+Contexto: se aprobó el spec `sprint-64-risk-probability-api-drivers` (Sprint 64 - Drought Continuation API and Drivers).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
