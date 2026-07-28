@@ -1698,3 +1698,15 @@ forman parte del manifiesto reproducible.
   - `spec/sprint-62f-drought-continuation-survival-*/**`
   - `progress/**`
 
+## Evaluación causal de continuidad y recuperación
+
+El módulo `probabilistic.survival` deriva episodios estrictos a partir del catálogo
+auditado: una observación activa solo continúa el episodio cuando empieza como máximo
+un día después de la anterior. Esto impide que una fase Normal/Recovery o un hueco de
+cobertura quede oculto por la tolerancia de agrupación del catálogo general.
+
+El pipeline materializa un risk set auditable con features, targets, censura e hashes
+de entrada. Los episodios terminados antes de 2021 entrenan; los iniciados entre 2021 y
+2023 validan; los iniciados desde 2024 forman el holdout. Los que cruzan un límite se
+purgan. El guard del CLI exige el hash de la validación congelada y rechaza una segunda
+apertura del manifiesto de holdout.

@@ -251,3 +251,10 @@
 
 - Adapter NDMA oficial, EM-DAT registrado, catálogo IGAD y auditoría de episodios implementados.
 - Smoke NDMA real validado; backfill completo y CSV EM-DAT pendientes de ejecución externa.
+
+## 2026-07-28T14:40:00+02:00 - #sprint-62f-drought-continuation-survival -> review_pending
+
+- Evaluación de continuidad a 30/60/90/180 días sobre 192 episodios estrictos.
+- Holdout 2024+ abierto una sola vez tras congelar código y validación.
+- HGB mejora IBS y recuperación global, pero falla el gate al degradar 180 días.
+- Serving permanece deshabilitado; 248 tests y verificaciones enfocadas pasan.

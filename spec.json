@@ -4604,7 +4604,7 @@
     {
       "id": "sprint-62f-drought-continuation-survival",
       "name": "Sprint 62F - Drought Continuation and Survival",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 14,

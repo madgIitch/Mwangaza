@@ -241,3 +241,29 @@ logística obtuvo Brier/F1 de 0,118637/0,680 a 10 días, 0,126405/0,659 a 20 y
 0,088478/0,720 y 0,129962/0,646. Ambos ML quedaron rechazados; serving sigue
 deshabilitado. Run hash:
 `sha256:552e25e16d6000dbd2b5b2da79a83c252d209550bed1b8377cea1a455cbdfc03`.
+
+## Probabilidad de continuidad de sequía (Sprint 62F)
+
+62F responde a la pregunta operativa principal: dada una sequía oficialmente activa en
+una fecha `as_of`, ¿qué probabilidad hay de que el mismo episodio siga activo dentro de
+30, 60, 90 o 180 días? El risk set solo contiene fechas cubiertas por una fase NDMA
+validada. Una fase Normal/Recovery o un mes sin observación separa episodios; los huecos
+no se convierten en recuperación ni en negativos.
+
+```powershell
+uv run python scripts/evaluate_drought_survival.py `
+  --evaluated-at 2026-07-28T00:00:00Z
+```
+
+La validación usa episodios 2021-2023 y deja 2024+ sellado. Tras congelar código y el
+hash de validación, el holdout solo puede abrirse una vez con
+`--unlock-final-holdout --frozen-validation-run-hash <hash>`. Las probabilidades por
+muestra se proyectan a una curva no creciente y se comparan con always-active,
+supervivencia empírica por tiempo transcurrido y supervivencia por fase.
+
+En validación, `phase_survival` ganó con Brier integrado 0,179043; logistic regression
+y HGB obtuvieron 0,220786 y 0,240212. En el holdout de 29 episodios, HGB mejoró el Brier
+integrado del mejor baseline (0,265225 frente a 0,296562) y el MAE de recuperación
+(94,9 frente a 133,3 días), pero empeoró el horizonte de 180 días (0,305341 frente a
+0,206369). El gate completo lo rechaza y serving permanece deshabilitado. No se ajusta
+el modelo después de conocer este holdout.

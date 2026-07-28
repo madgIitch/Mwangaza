@@ -736,3 +736,15 @@ Contexto: se aprobó el spec `sprint-62f-drought-continuation-survival` (Sprint 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-07-28 · 62F mantiene abstención pese a señal útil a corto plazo
+
+La probabilidad principal pasa a ser la continuidad del mismo episodio activo a
+30/60/90/180 días. Los episodios de supervivencia se cortan ante Normal, Recovery o un
+hueco desconocido y los targets censurados no se imputan como negativos.
+
+El HGB del código congelado mejoró en el holdout tanto el Brier integrado como el error
+de recuperación frente al baseline empírico, pero empeoró a 180 días. Como el gate exige
+no degradar ningún horizonte, queda rechazado para serving. El holdout 2024+ no se usa
+para retocar 62F; cualquier cambio de features, modelo o gate requiere un nuevo spec y
+un nuevo conjunto temporal verdaderamente no visto.
