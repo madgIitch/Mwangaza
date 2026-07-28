@@ -1,0 +1,19 @@
+{
+  "schema_version": "mwangaza.drought-continuation-gate-config.v1",
+  "validation_run_hash": "sha256:26f1d6fd74a2873949fd2af2d42cedae3d4b7be2f84a8245316857b341c223cb",
+  "gate": {
+    "evaluation_years": [2021, 2022, 2023],
+    "holdout_cutoff": "2024-01-01",
+    "ml_horizon_days": 30,
+    "baseline_horizons_days": [60, 90, 180],
+    "min_known_targets": 100,
+    "min_positive_targets": 20,
+    "min_negative_targets": 20,
+    "min_evaluation_episodes": 5,
+    "max_ece": 0.15,
+    "min_phase_targets": 20,
+    "min_phase_episodes": 5,
+    "seed": 2026,
+    "holdout_evidence_hash": "sha256:8d0b592d380a77323329f2bc941819bc51fb305ae8e6ed631584d34e7f6ba955"
+  }
+}

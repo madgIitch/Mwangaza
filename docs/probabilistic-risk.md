@@ -6,33 +6,32 @@ Mwangaza will evolve the existing experimental deterministic forecast through Sp
 
 The primary target is:
 
-`P(Mwangaza risk level is orange or red at horizon h | information available at as_of)`
+`P(the same officially observed drought episode remains active at horizon h | active at as_of)`
 
-It is not the probability of an officially declared drought, humanitarian crisis, agricultural loss or affected population. Historical labels are derived from versioned Mwangaza risk levels, not an independent ground-truth event catalog.
+It is not onset probability, exact duration, humanitarian impact, agricultural loss or
+affected population. Targets come from validated operational drought phases; missing
+coverage remains unknown and never becomes recovery.
 
 ## Minimum product
 
-- One binary target: `risk_level_at_or_above_orange`.
-- Primary cadence: dekadal (10-day periods).
-- Three validated horizons: 10, 20 and 30 days.
-- Two ML candidates: logistic regression and histogram gradient boosting.
-- Baselines: persistence, seasonal climatology and historical frequency.
-- Walk-forward validation using global date cuts and a horizon gap.
-- Sigmoid calibration using out-of-sample predictions.
-- Core metrics: Brier score, Brier Skill Score, log loss, recall and precision.
+- One binary target: `same_episode_continues`.
+- Dekadal feature rows aligned to validated operational phase coverage.
+- Four horizons: 30, 60, 90 and 180 days.
+- HGB+Platt may compete only at 30 days.
+- `phase_survival` is the approved baseline and the only route at 60/90/180 days.
+- Nested temporal evaluation with separate base-fit, calibration and evaluation episodes.
+- Core metrics: Brier score, Brier Skill Score, log loss, calibration bins and ECE.
 - One read-only endpoint, one compact Region module and report integration.
 - Up to three non-causal drivers.
 - Strict abstention whenever validated skill or data quality is insufficient.
 
 ## Delivery sequence
 
-1. Sprint 61 materializes a leakage-safe, versioned training dataset.
-2. Sprint 62 trains candidates and compares them with approved baselines.
-3. Sprint 63 calibrates probabilities and makes eligibility decisions.
-4. Sprint 64 materializes predictions, drivers and the public API.
-5. Sprint 65 integrates eligible results and abstentions into Region and Reports.
-
-Each sprint depends on the previous one. Sprint 61 is implemented and awaiting review; Sprints 62-65 remain `pending` and `spec_approved: false` until their SDD interview resolves the open design decisions.
+1. Sprints 61-62C materialize leakage-safe history and antecedent signals.
+2. Sprints 62D-62F build independent drought episodes and evaluate continuation.
+3. Sprint 63 calibrates the 30-day ML candidate and freezes hybrid routing.
+4. Sprint 64 materializes continuation estimates, drivers and the read-only API.
+5. Sprint 65 integrates ML, baseline, fallback and abstention into Region and Reports.
 
 ## Sprint 61 implementation
 
@@ -267,3 +266,23 @@ integrado del mejor baseline (0,265225 frente a 0,296562) y el MAE de recuperaci
 (94,9 frente a 133,3 días), pero empeoró el horizonte de 180 días (0,305341 frente a
 0,206369). El gate completo lo rechaza y serving permanece deshabilitado. No se ajusta
 el modelo después de conocer este holdout.
+
+## Calibración y routing híbrido (Sprint 63)
+
+La calibración se ejecuta sin leer predicciones del holdout 2024+. Para cada año de
+evaluación 2021-2023, HGB se ajusta antes del año de calibración, Platt usa únicamente
+el año inmediatamente anterior y la evaluación usa episodios completos del año
+siguiente. Los episodios de frontera y targets censurados se excluyen.
+
+```powershell
+uv run python scripts/calibrate_drought_continuation.py `
+  --evaluated-at 2026-07-28T00:00:00Z
+```
+
+La corrida real generó 2.955 filas pre-holdout y 255 predicciones OOF. A 30 días,
+`phase_survival` obtuvo Brier 0,195348 y ECE 0,098291; HGB sin calibrar obtuvo Brier
+0,197150 y BSS -0,009222; HGB+Platt obtuvo Brier 0,249860, BSS -0,279051 y ECE
+0,197380. El gate rechaza ML por skill no positivo, degradación tras calibrar y ECE por
+encima de 0,15. Los cuatro horizontes quedan en `phase_survival`; no se serializa ningún
+modelo ML. Run hash:
+`sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39`.

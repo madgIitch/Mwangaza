@@ -264,3 +264,10 @@
 - 62F aceptado y cerrado formalmente.
 - 63-65 reorientados a continuidad de sequía con routing ML/baseline por horizonte.
 - El holdout consumido queda excluido de fitting, calibración y selección posteriores.
+
+## 2026-07-28T16:20:00+02:00 - #sprint-63-probability-calibration-skill-gate -> review_pending
+
+- Calibración temporal anidada ejecutada sin filas 2024+.
+- HGB y HGB+Platt no superan `phase_survival` a 30 días.
+- Routing 30/60/90/180 queda en baseline con razones reproducibles.
+- Run hash `sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39`.

@@ -4666,7 +4666,7 @@
     {
       "id": "sprint-63-probability-calibration-skill-gate",
       "name": "Sprint 63 - Continuation Calibration and Hybrid Skill Gate",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,

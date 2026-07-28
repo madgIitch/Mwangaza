@@ -1730,3 +1730,14 @@ apertura del manifiesto de holdout.
   - `spec/sprint-63-probability-calibration-skill-gate-*/**`
   - `progress/**`
 
+## Calibración temporal y decisión híbrida
+
+`probabilistic.continuation_calibration` crea folds anidados por episodios completos.
+El fit base, Platt y la evaluación ocupan intervalos temporales consecutivos y
+disjuntos. Un sentinel rechaza cualquier fila o episodio desde 2024; el hash del
+holdout de 62F se conserva como evidencia, pero sus datos no se abren.
+
+La salida separa métricas OOF, probabilidades por fase, routing global/regional y el
+manifiesto. El bundle HGB+Platt solo se escribe cuando supera el gate global. Si falla,
+30 días degrada a `phase_survival`; 60/90/180 siempre usan ese baseline. Los consumidores
+posteriores deben verificar hashes y no pueden entrenar bajo request.
