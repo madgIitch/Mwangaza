@@ -4730,7 +4730,7 @@
     {
       "id": "sprint-63b-ml-sanity-audit",
       "name": "Sprint 63B - Drought Continuation ML Sanity Audit",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 6,

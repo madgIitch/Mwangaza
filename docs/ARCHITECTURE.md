@@ -1761,3 +1761,17 @@ posteriores deben verificar hashes y no pueden entrenar bajo request.
   - `spec/sprint-63b-ml-sanity-audit-*/**`
   - `progress/**`
 
+## Auditoría ML causal y ponderada por episodio
+
+`probabilistic.ml_sanity_audit` es una ruta offline exclusivamente pre-2024 y de horizonte
+30 días. Construye pipelines `DictVectorizer -> SimpleImputer(add_indicator=True) ->
+StandardScaler -> estimator`, aplica a cada fila un peso inverso al número de filas de su
+episodio y selecciona HGB/hazard únicamente mediante OOF temporal anterior al outer fold.
+La calibración pooled solo consume predicciones OOF históricas; la anual consume el año
+inmediatamente anterior.
+
+El artefacto separa selección por fold, predicciones OOF, métricas, bootstrap clusterizado
+y veredicto. `robust_skill` requiere mejora puntual, IC95 completamente bajo cero, victoria
+en al menos dos de tres folds y ECE <= 0,15. Un resultado `inconclusive` nunca habilita
+serving: puede conservarse como candidato shadow, mientras `phase_survival` sigue siendo
+la ruta pública.

@@ -1,20 +1,18 @@
 # Sesión actual
 
-Feature: **sprint-63-probability-calibration-skill-gate - Sprint 63 - Continuation Calibration and Hybrid Skill Gate** — estado: `review_pending`, spec aprobada.
+Feature: **sprint-63b-ml-sanity-audit — Sprint 63B - Drought Continuation ML Sanity Audit** — estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- 2.955 filas causales pre-2024; ninguna fila del holdout usada.
-- Tres folds anidados con 255 predicciones OOF de evaluación.
-- `phase_survival`: Brier 0,195348 y ECE 0,098291.
-- HGB: Brier 0,197150 y BSS -0,009222.
-- HGB+Platt: Brier 0,249860, BSS -0,279051 y ECE 0,197380.
-- ML falla por skill no positivo, calibración perjudicial y ECE superior a 0,15.
-- Routing final: `phase_survival` a 30/60/90/180 días; no se genera bundle ML.
-- Run hash: `sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39`.
-- 66 tests probabilísticos, 248 tests del repositorio, compilación y Ruff pasan.
+- 2.955 filas causales pre-2024; 255 predicciones OOF y 29 episodios de evaluación.
+- `phase_survival`: Brier ponderado por episodio 0,241388.
+- HGB raw: 0,251157 (`no_skill`); Platt anual: 0,365766 (`no_skill`).
+- Platt pooled: 0,237062, BSS +1,79% (`inconclusive`).
+- Hazard logístico discreto: 0,203102, BSS +15,86%, ECE 0,108691 y 2/3 folds mejores.
+- IC95 hazard-baseline: [-0,083941, +0,002149], por lo que no supera el gate robusto.
+- Run hash: `sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.
 
 ## Siguiente acción
 
-- Mostrar el resultado para revisión humana y cerrar formalmente 63 si se acepta.
-- Sprint 64 debe exponer el baseline con su método, no afirmar que procede de ML.
+- Mostrar el resultado para revisión humana.
+- Si se acepta, cerrar 63B y aprobar 64 con baseline público; hazard permanece shadow.

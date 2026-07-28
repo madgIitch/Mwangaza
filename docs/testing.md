@@ -22,3 +22,9 @@ Sprint 63 adds offline tests for nested temporal calibration, strict episode sep
 the pre-2024 sentinel, Platt fitting, Brier/BSS/ECE gates, phase-baseline support,
 regional fallback, deterministic run hashes and corrupt model artifacts. The focused
 suite is `uv run pytest tests/probabilistic/test_continuation_calibration.py -q`.
+
+Sprint 63B añade pruebas de ponderación igual por episodio, indicadores de missingness,
+selección HGB y hazard sin leakage temporal, Platt anual/pooled, bootstrap clusterizado,
+sentinel 2024 y reproducibilidad. La suite enfocada es
+`uv run pytest tests/probabilistic/test_ml_sanity_audit.py -q`; la regresión probabilística
+completa es `uv run pytest tests/probabilistic -q`.

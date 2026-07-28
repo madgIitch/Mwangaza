@@ -271,3 +271,11 @@
 - HGB y HGB+Platt no superan `phase_survival` a 30 días.
 - Routing 30/60/90/180 queda en baseline con razones reproducibles.
 - Run hash `sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39`.
+
+## 2026-07-28T18:30:00+02:00 - #sprint-63b-ml-sanity-audit -> review_pending
+
+- Auditoría limitada a continuidad a 30 días, sin tocar el holdout 2024+.
+- Pesos iguales por episodio, missing indicators, tuning temporal, dos Platt y hazard.
+- El hazard mejora Brier un 15,86% y gana 2/3 folds, pero el IC95 cruza cero por +0,002149.
+- Veredicto `inconclusive`: candidato shadow, no elegible para serving.
+- Run hash `sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.

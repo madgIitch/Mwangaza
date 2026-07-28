@@ -785,3 +785,16 @@ Contexto: se aprobó el spec `sprint-63b-ml-sanity-audit` (Sprint 63B - Drought 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-07-28 · 63B detecta señal de hazard, pero no la promueve
+
+La auditoría corrige cuatro riesgos metodológicos: episodios largos dominando el fit,
+ausencia tratada sin indicador, HGB sin selección temporal y calibración Platt anual
+inestable. También prueba el objetivo más natural para continuidad: hazard de recuperación
+en los siguientes 30 días condicionado a que el episodio está activo.
+
+El hazard reduce el Brier ponderado por episodio de 0,241388 a 0,203102 (15,86%), gana dos
+de tres folds y mantiene ECE 0,108691. Sin embargo, el límite superior del IC95 del delta
+es +0,002149. La decisión es `inconclusive`, no `no_skill` ni `robust_skill`: ML no se
+publica en 64/65, `phase_survival` continúa como baseline y el hazard solo puede ejecutarse
+en shadow hasta obtener una cohorte temporal nueva que cierre el intervalo bajo cero.

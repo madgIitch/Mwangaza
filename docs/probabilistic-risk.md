@@ -286,3 +286,28 @@ La corrida real generó 2.955 filas pre-holdout y 255 predicciones OOF. A 30 dí
 encima de 0,15. Los cuatro horizontes quedan en `phase_survival`; no se serializa ningún
 modelo ML. Run hash:
 `sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39`.
+
+## Auditoría de planteamiento ML a 30 días (Sprint 63B)
+
+63B comprueba si el resultado anterior era consecuencia de una implementación demasiado
+básica. La comparación da a cada episodio peso total uno, añade indicadores explícitos de
+datos ausentes, selecciona una rejilla HGB congelada solo con folds temporales internos y
+compara HGB raw, Platt anual, Platt sobre OOF histórico y un hazard logístico discreto. El
+bootstrap remuestrea episodios completos 2.000 veces. No se usan filas ni episodios desde
+2024 y el único target es `same_episode_continues` a 30 días.
+
+```powershell
+uv run python scripts/audit_drought_continuation_ml.py `
+  --evaluated-at 2026-07-28T00:00:00Z
+```
+
+Sobre 255 predicciones OOF de 29 episodios, `phase_survival` obtuvo Brier ponderado por
+episodio 0,241388. HGB raw empeoró a 0,251157; Platt anual empeoró a 0,365766; Platt pooled
+mejoró ligeramente a 0,237062 (BSS +1,79%), pero solo ganó uno de tres folds y su IC95 del
+delta cruzó cero. El hazard logístico discreto obtuvo 0,203102 (BSS +15,86%), ECE 0,108691
+y ganó dos de tres folds; su IC95 del delta fue [-0,083941, +0,002149]. Por tanto, es
+`inconclusive`: hay una señal útil y el planteamiento del target sí importa, pero todavía
+no existe evidencia suficiente para servirlo como ML. El baseline sigue siendo la única
+ruta publicable y el hazard queda como candidato shadow para validación futura realmente
+no vista. Run hash:
+`sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.
