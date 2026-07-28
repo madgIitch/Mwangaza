@@ -760,3 +760,12 @@ La API y la interfaz deben mostrar el estimador utilizado, fallback, calidad y
 abstención. La ausencia de una fase activa es `not_applicable`, no una probabilidad cero.
 El holdout 2024+ abierto en 62F es evidencia inmutable y no puede alimentar nuevos
 ajustes; una futura promoción de ML en horizontes largos requiere datos no vistos.
+
+<!-- harness:sprint-63-probability-calibration-skill-gate -->
+## 2026-07-28 · sprint-63-probability-calibration-skill-gate aprobado
+
+Contexto: se aprobó el spec `sprint-63-probability-calibration-skill-gate` (Sprint 63 - Continuation Calibration and Hybrid Skill Gate).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

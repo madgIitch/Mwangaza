@@ -4666,7 +4666,7 @@
     {
       "id": "sprint-63-probability-calibration-skill-gate",
       "name": "Sprint 63 - Continuation Calibration and Hybrid Skill Gate",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,
@@ -4695,25 +4695,23 @@
       ],
       "deliverable": "Artefacto hibrido versionado para continuidad del mismo episodio: HGB calibrado y condicionado por gate a 30 dias, phase_survival a 60/90/180 y abstencion segura.",
       "acceptance": [
-        "El unico target es `same_episode_continues` condicionado a que exista una fase oficial activa en `as_of`; onset, orange/red e impacto humano quedan fuera de alcance.",
-        "HGB solo es candidato ML a 30 dias. Los horizontes 60, 90 y 180 se enrutan a `phase_survival`, elegido con validacion antes de abrir el holdout, y nunca se presentan como ML.",
-        "La calibracion de 30 dias es sigmoid/Platt y usa predicciones walk-forward OOF separadas tanto del fit base como de la evaluacion del calibrador.",
-        "El holdout 2024+ abierto en 62F no se usa para fitting, calibracion, seleccion de features, thresholds ni gates; sus hashes se conservan solo como evidencia inmutable.",
-        "Por horizonte se persisten Brier, baseline Brier, BSS, log loss, calibration bins, soporte, censura y error de recuperacion con sus denominadores.",
-        "La ruta `ml_experimental` exige BSS positivo frente al baseline del mismo horizonte, calibracion evaluable, soporte minimo y calidad actual valida; si falla, 30 dias degrada explicitamente a baseline o unavailable.",
-        "Cada decision produce `estimator_kind=ml|baseline|none`, `experimental`, artefacto elegido y reason codes ordenados; la misma entrada genera exactamente la misma decision.",
-        "Los diagnosticos globales no ocultan falta de representacion regional; una region sin soporte suficiente queda unavailable aunque exista un artefacto global.",
-        "No se incorporan nuevas fuentes, modelos de supervivencia, isotonic, multiclase ni ajuste automatico de thresholds en este sprint.",
-        "Tests cubren separacion temporal, bloqueo del holdout, calibracion, BSS, routing por horizonte, fallback, censura, regiones insuficientes y hashes reproducibles."
+        "El pipeline consume exclusivamente el risk set causal de episodios estrictos de 62F y el target `same_episode_continues`; onset, orange/red, impactos y targets censurados quedan fuera de fit y métricas.",
+        "La evaluación genera folds 2021/2022/2023 por episodios completos: cada fold ajusta HGB antes del año de calibración, ajusta Platt solo con el año inmediatamente anterior y evalúa solo el año siguiente; episodios de frontera se purgan y ningún `episode_id` cruza particiones dentro del fold.",
+        "Ningún archivo de predicciones o labels del holdout 2024+ se lee. Solo se admite el hash congelado `sha256:8d0b592d380a77323329f2bc941819bc51fb305ae8e6ed631584d34e7f6ba955` como evidencia, y un sentinel test hace fallar cualquier intento de usar fechas desde 2024 para fitting, calibración o gates.",
+        "HGB+Platt solo puede producir la ruta `ml_experimental` a 30 días. Los horizontes 60/90/180 usan `phase_survival`, elegido en validación de 62F, y nunca quedan identificados como ML; 30 días también usa ese baseline cuando falla su gate.",
+        "Para HGB sin calibrar, HGB+Platt y `phase_survival` se persisten Brier, BSS frente al baseline, log loss, cinco calibration bins fijos, ECE ponderado, filas conocidas, positivos, negativos, episodios y diagnóstico regional, con denominadores explícitos.",
+        "El gate global de ML exige al menos 100 targets conocidos, 20 positivos, 20 negativos y 5 episodios de evaluación, BSS estrictamente positivo, Brier calibrado no peor que HGB sin calibrar, ECE menor o igual a 0,15 e inputs/hashes válidos. Cualquier fallo genera reason codes estables y activa fallback.",
+        "Una región solo usa ML si sus predicciones OOF de 30 días contienen al menos un positivo y un negativo conocidos; en otro caso usa `phase_survival`. El baseline requiere al menos 20 targets conocidos y 5 episodios en el bucket de fase; si no, la ruta es unavailable.",
+        "La decisión canónica por horizonte conserva `target`, `candidate`, `estimator_kind`, `experimental`, `fallback_reason`, métricas, soporte, versiones y hashes. El artefacto serializado de HGB+Platt solo se referencia cuando el gate global pasa; timestamp y paths absolutos no entran en el run hash.",
+        "`scripts/calibrate_drought_continuation.py` es offline, muestra ETA, escribe config, OOF, routing, modelo y manifiesto de forma atómica bajo `data/models/drought-continuation/`; dos ejecuciones con los mismos inputs/config producen el mismo run hash.",
+        "Tests cubren causalidad, folds anidados, censura, ausencia del holdout, calibración, métricas, thresholds, routing global/regional, fallback, artefactos corruptos, hashes y reproducibilidad; los gates del repo pasan."
       ],
       "scope": [
         "src/mwangaza/probabilistic/**",
+        "scripts/calibrate_drought_continuation.py",
         "tests/probabilistic/**",
         "tests/fixtures/probabilistic/**",
         "config/probabilistic/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
         "docs/probabilistic-risk.md",
         "docs/testing.md",
         "docs/ARCHITECTURE.md",
@@ -4721,7 +4719,13 @@
         "spec/sprint-63-probability-calibration-skill-gate-*/**",
         "progress/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-28T13:59:56.749Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:3a3b44dce63322fab96ee4da12ab4a2636d3dba70fdae30b59e4c9a7fbd81945",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-28T13:59:56.884Z"
     },
     {
       "id": "sprint-64-risk-probability-api-drivers",

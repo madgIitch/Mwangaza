@@ -1710,3 +1710,23 @@ de entrada. Los episodios terminados antes de 2021 entrenan; los iniciados entre
 2023 validan; los iniciados desde 2024 forman el holdout. Los que cruzan un límite se
 purgan. El guard del CLI exige el hash de la validación congelada y rechaza una segunda
 apertura del manifiesto de holdout.
+
+<!-- harness:sprint-63-probability-calibration-skill-gate -->
+## sprint-63-probability-calibration-skill-gate · Sprint 63 - Continuation Calibration and Hybrid Skill Gate
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/calibrate_drought_continuation.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `config/probabilistic/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/testing.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-63-probability-calibration-skill-gate-*/**`
+  - `progress/**`
+
