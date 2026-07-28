@@ -6,6 +6,7 @@ import pytest
 
 from mwangaza.probabilistic.drought_hazards import (
     audit_drought_hazard_episodes,
+    download_ndma_document,
     extract_ndma_phase,
     is_complete_pdf,
     ndma_official_record,
@@ -46,6 +47,25 @@ def test_pdf_integrity_requires_header_and_terminal_eof() -> None:
     assert is_complete_pdf(b"%PDF-1.7\nbody\n%%EOF\n") is True
     assert is_complete_pdf(b"%PDF-1.7\ntruncated") is False
     assert is_complete_pdf(b"<html>temporary error</html>%%EOF") is False
+
+
+def test_ndma_missing_document_returns_reviewable_download() -> None:
+    bulletin = parse_ndma_archive_html(
+        (FIXTURES / "ndma-archive.html").read_text(encoding="utf-8")
+    )[0]
+
+    class MissingDocumentClient:
+        def get(self, url: str) -> tuple[bytes, str]:
+            if url == bulletin.detail_url:
+                detail = (FIXTURES / "ndma-detail.html").read_bytes()
+                return detail, url
+            raise LabelImportError(f"NDMA request failed after 4 attempts: {url}")
+
+    result = download_ndma_document(MissingDocumentClient().get, bulletin)
+
+    assert result.data is None
+    assert result.url.endswith("document=be161a20-6e9f-4149-86b6-7bdfde92d9ad")
+    assert result.error and "failed after 4 attempts" in result.error
 
 
 def test_ndma_extraction_accepts_one_exact_county_phase_and_queues_ambiguity() -> None:

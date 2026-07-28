@@ -9,8 +9,9 @@ Feature: **sprint-62d2-real-drought-hazard-catalog - Sprint 62D.2 - Real Drought
 - Catálogo progresivo de autoridades de los ocho países IGAD.
 - Auditoría de episodios ADM1 por país y fuente compatible.
 - Smoke público NDMA: 23 boletines indexados, Baringo Normal validado, cero episodios activos.
-- Suite probabilística: 42 tests; compilación y Ruff correctos.
+- Suite probabilística: 43 tests; compilación y Ruff correctos.
 - Los PDF NDMA truncados se reintentan y se ponen en revisión sin detener el backfill.
+- Los enlaces NDMA que persisten en el índice pero devuelven 404 también se ponen en revisión y el tratamiento continúa.
 
 ## Siguiente acción
 

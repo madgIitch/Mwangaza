@@ -10,7 +10,7 @@
 
 Verificación:
 
-- `uv run pytest tests/probabilistic -q`: 42 passed.
+- `uv run pytest tests/probabilistic -q`: 43 passed.
 - `uv run python -m compileall -q src tests scripts`: passed.
 - `uv run ruff check ...`: passed.
 - Smoke NDMA junio 2026: 23 indexados, 1 procesado, 1 fase Normal validada, 0 pendientes.
@@ -30,3 +30,10 @@ El documento oficial de Laikipia de octubre de 2016 carece de `%%EOF` en
 descargas repetidas. El backfill ahora comprueba cabecera y cierre del PDF,
 intenta dos descargas de reparación y, si el documento sigue incompleto, lo
 registra como `invalid_pdf_after_retries` para revisión y continúa.
+
+### Enlace NDMA sin documento
+
+El índice oficial conserva el boletín de Tharaka-Nithi de agosto de 2022, pero
+su enlace de documento devuelve HTTP 404. El backfill conserva identificador y
+URL como `document_unavailable_after_retries`, lo registra para revisión y
+continúa sin fabricar una fase ni abortar el lote.

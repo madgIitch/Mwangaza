@@ -8,7 +8,7 @@ from calendar import monthrange
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 from urllib.parse import urljoin
 
 from mwangaza.probabilistic.independent_labels import IndependentLabel, LabelImportError
@@ -37,6 +37,13 @@ class NdmaBulletin:
     @property
     def period(self) -> str:
         return f"{self.year:04d}-{self.month:02d}"
+
+
+@dataclass(frozen=True)
+class NdmaDocumentDownload:
+    data: bytes | None
+    url: str
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -360,6 +367,23 @@ def is_complete_pdf(value: bytes) -> bool:
     """Reject HTML/error bodies and prematurely truncated PDF downloads."""
 
     return value.startswith(b"%PDF") and b"%%EOF" in value[-65536:]
+
+
+def download_ndma_document(
+    get: Callable[[str], tuple[bytes, str]], bulletin: NdmaBulletin
+) -> NdmaDocumentDownload:
+    """Resolve an indexed NDMA document without aborting on a stale source link."""
+
+    try:
+        detail_data, _ = get(bulletin.detail_url)
+        document_link = parse_ndma_document_link(detail_data.decode("utf-8", "replace"))
+    except LabelImportError as exc:
+        return NdmaDocumentDownload(None, bulletin.detail_url, str(exc))
+    try:
+        data, final_url = get(document_link)
+    except LabelImportError as exc:
+        return NdmaDocumentDownload(None, document_link, str(exc))
+    return NdmaDocumentDownload(data, final_url)
 
 
 def canonical_json(value: object) -> str:

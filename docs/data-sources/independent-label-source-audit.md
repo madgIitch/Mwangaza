@@ -209,3 +209,9 @@ Incidencia verificada durante el backfill: junio de 2020 contiene dos filas idé
 para el mismo PDF de Taita/Taveta (`8a9e38f1-466c-4635-b8c2-e29b1ed61304`). Se conserva
 una sola observación. El adapter solo aplica esta deduplicación cuando todos los campos
 normalizados coinciden; un UUID con metadatos distintos sigue siendo un error.
+
+Incidencia verificada el 28 de julio de 2026: el enlace oficial del boletín de
+Tharaka-Nithi de agosto de 2022 (`c759391a-f98f-4650-8639-ebd24b4f6ceb`)
+devuelve HTTP 404 tras los reintentos. El índice y la URL se conservan como
+`document_unavailable_after_retries` en `review_required`; la ausencia del PDF
+no se interpreta como una fase negativa y no detiene el resto del backfill.

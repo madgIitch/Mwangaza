@@ -26,13 +26,13 @@ from mwangaza.probabilistic.drought_hazards import (
     NdmaBulletin,
     build_adm1_name_index,
     canonical_json,
+    download_ndma_document,
     extract_ndma_phase,
     is_complete_pdf,
     match_adm1_name,
     ndma_official_record,
     ndma_period_postback_index,
     parse_ndma_archive_html,
-    parse_ndma_document_link,
     sha256_bytes,
 )
 from mwangaza.probabilistic.independent_labels import LabelImportError, sha256_file
@@ -190,7 +190,21 @@ def main() -> None:
             pdf_data = pdf_path.read_bytes()
             document_url = url_path.read_text(encoding="utf-8").strip()
         else:
-            pdf_data, document_url = _download_document(client, bulletin)
+            download = download_ndma_document(client.get, bulletin)
+            if download.data is None:
+                _atomic_text(url_path, download.url + "\n")
+                review.append(
+                    _document_review(
+                        bulletin,
+                        document_url=download.url,
+                        reason="document_unavailable_after_retries",
+                        detail=download.error or "NDMA document is unavailable",
+                    )
+                )
+                document_progress(number, len(selected))
+                continue
+            pdf_data = download.data
+            document_url = download.url
 
         text: str | None = None
         pdf_error = ""
@@ -214,7 +228,12 @@ def main() -> None:
                     f"NDMA {bulletin.document_id}: PDF repair pass {repair_pass}/2 "
                     f"({pdf_error})"
                 )
-                pdf_data, document_url = _download_document(client, bulletin)
+                download = download_ndma_document(client.get, bulletin)
+                if download.data is None:
+                    pdf_error = f"{pdf_error}; repair download failed: {download.error}"
+                    break
+                pdf_data = download.data
+                document_url = download.url
 
         if text is None:
             _atomic_bytes(pdf_path, pdf_data)
@@ -309,12 +328,25 @@ def _form_fields(value: str) -> dict[str, str]:
     return parser.fields
 
 
-def _download_document(
-    client: NdmaHttpClient, bulletin: NdmaBulletin
-) -> tuple[bytes, str]:
-    detail_data, _ = client.get(bulletin.detail_url)
-    document_link = parse_ndma_document_link(detail_data.decode("utf-8", "replace"))
-    return client.get(document_link)
+def _document_review(
+    bulletin: NdmaBulletin,
+    *,
+    document_url: str,
+    reason: str,
+    detail: str,
+) -> dict[str, Any]:
+    return {
+        "document_id": bulletin.document_id,
+        "county": bulletin.county,
+        "period": bulletin.period,
+        "detail_url": bulletin.detail_url,
+        "document_url": document_url,
+        "document_sha256": None,
+        "reason": reason,
+        "detail": detail,
+        "validation_status": "review_required",
+        "extraction_version": "document-availability-v1",
+    }
 
 
 def _periods(start: str, end: str) -> tuple[tuple[int, int], ...]:
