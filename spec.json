@@ -4794,7 +4794,7 @@
     {
       "id": "sprint-64-risk-probability-api-drivers",
       "name": "Sprint 64 - Drought Continuation API and Drivers",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,
