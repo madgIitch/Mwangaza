@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadApiDashboard } from "../../frontend/src/api";
+import { compatibleDroughtContinuation, loadApiDashboard, loadApiDashboardSnapshot } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
 import { demoDashboard } from "../../frontend/src/fixtures";
 
@@ -398,6 +398,26 @@ describe("React PWA dashboard", () => {
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
   });
 
+  it("includes materialized continuation evidence in a Kenya report preview", () => {
+    window.history.pushState({}, "", "/reports");
+    const reportData = {
+      ...demoDashboard,
+      reports: [{
+        id: "RPT-KEN-CONT", generatedAt: "2026-07-15T00:00:00+00:00", updatedAt: "2026-07-15T00:00:00+00:00",
+        expiresAt: null, status: "ready" as const, regionId: "ken", region: "Kenya",
+        periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", templateId: "executive-v1",
+        language: "en", author: "Mwangaza automated report", snapshotId: "snapshot-demo",
+        formats: ["pdf"] as Array<"pdf" | "csv" | "json">, error: null
+      }]
+    };
+    render(<App initialData={reportData} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Drought continuation" })).toBeInTheDocument();
+    expect(screen.getAllByText("adm1-ke-43").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Experimental ML is inconclusive and not for operational use/)).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "78.0%" })).toBeInTheDocument();
+  });
+
   it("renders about as a standalone methodology and project information screen", () => {
     window.history.pushState({}, "", "/about");
 
@@ -510,6 +530,24 @@ describe("React PWA dashboard", () => {
     expect(screen.getAllByRole("cell", { name: "76" })).toHaveLength(2);
   });
 
+  it("binds the continuation module to the exact selected ADM1 in both region modes", () => {
+    window.history.pushState({}, "", "/region");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    const { unmount } = render(<App initialData={demoDashboard} skipApiLoad />);
+    fireEvent.change(screen.getByLabelText("Country", { selector: "select" }), { target: { value: "ken" } });
+    fireEvent.change(screen.getByLabelText("Subregion / District"), { target: { value: "adm1-ke-43" } });
+
+    expect(screen.getByRole("region", { name: "Drought continuation" })).toHaveTextContent("78.0%");
+    expect(screen.getByRole("region", { name: "Drought continuation" })).toHaveTextContent("86.2%");
+    unmount();
+
+    render(<App initialData={demoDashboard} initialLowBandwidth skipApiLoad />);
+    fireEvent.change(screen.getByLabelText("Country", { selector: "select" }), { target: { value: "ken" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Administrative area" }), { target: { value: "adm1-ke-01" } });
+    expect(screen.getByRole("region", { name: "Drought continuation" })).toHaveTextContent("No active official drought episode");
+    expect(screen.getByRole("region", { name: "Drought continuation" })).not.toHaveTextContent("0.0%");
+  });
+
   it("switches i18n labels", () => {
     render(<App initialData={demoDashboard} initialLanguage="sw" skipApiLoad />);
 
@@ -589,6 +627,9 @@ describe("React PWA dashboard", () => {
           }]
         });
       }
+      if (url.startsWith("/api/v1/drought-continuation-probabilities")) {
+        return jsonResponse({ ...demoDashboard.droughtContinuation, is_demo: false });
+      }
       return jsonResponse({
         schema_version: "mwangaza.api.v1",
         available: false,
@@ -603,6 +644,7 @@ describe("React PWA dashboard", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/snapshots/latest", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/alerts?limit=20", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/reports?limit=100", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/forecasts", expect.any(Object));
     expect(data.message).toBe("Loaded from /api/v1/**");
     expect(data.alerts[0].title).toBe("API alert");
@@ -610,6 +652,37 @@ describe("React PWA dashboard", () => {
     expect(data.metrics[0].detail).toBe("Google Earth Engine live query");
     expect(data.regions[0]).toMatchObject({ id: "som", score: 81, level: "critical" });
     expect(data.regions[1]).toMatchObject({ id: "ken", score: 52, level: "watch" });
+    expect(data.droughtContinuation?.is_demo).toBe(false);
+  });
+
+  it("fails closed when dashboard and continuation evidence use different modes", () => {
+    const demoContinuation = demoDashboard.droughtContinuation;
+    expect(compatibleDroughtContinuation("live", demoContinuation)).toBeUndefined();
+    expect(compatibleDroughtContinuation("cache", demoContinuation)).toBeUndefined();
+    expect(compatibleDroughtContinuation("demo", demoContinuation)).toBe(demoContinuation);
+    expect(compatibleDroughtContinuation("live", { ...demoContinuation!, is_demo: false })).toHaveProperty("is_demo", false);
+  });
+
+  it("keeps selectable continuation ADM1 fixtures when the demo API profile is national-only", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
+      schema_version: "mwangaza.api.v1",
+      data_mode: "demo",
+      snapshot: {
+        region_id: "ken",
+        region_label: "Kenya",
+        period: "2026-07-15",
+        rows: [],
+        region_profiles: [{
+          id: "ken", name: "Kenya", status: "available", metrics: [], pilot_units: [],
+          administrative_units: [], trends: [], historical_rows: [], recommendations: [], contributions: []
+        }],
+        source_metadata: { source: "Demo fixture" }
+      }
+    })));
+
+    const data = await loadApiDashboardSnapshot();
+    const kenya = data.profiles.find((profile) => profile.id === "ken");
+    expect(kenya?.administrativeUnits?.map((unit) => unit.regionId)).toEqual(["adm1-ke-43", "adm1-ke-01"]);
   });
 
   it("has an installable manifest shape", () => {

@@ -1,18 +1,21 @@
 # Sesión actual
 
-Feature: **sprint-64-risk-probability-api-drivers — Sprint 64 - Drought Continuation API and Drivers** — estado: `review_pending`.
+Feature: **sprint-65-probability-ui-integration — Sprint 65 - Drought Continuation UI Integration** — estado: `review_pending`.
 
 ## Resultado
 
-- Bundle hazard congelado con C=0.1 y 2.772 filas pre-2024 de 23 regiones.
-- Run hash reproducible: `sha256:44c6ae469551ffdac0e11a73c9e47d3c4279dc0f1888bade434d4deca25b3070`.
-- Snapshot: 92 resultados; 2 regiones activas con ML+referencia y 21 Normal como `not_applicable`.
-- Endpoint GET dual a 30 días; baseline exclusivo a 60/90/180.
-- ML siempre `inconclusive`, experimental y no operacional.
-- Corrupción del modelo bloquea solo ML y no filtra paths.
-- 126 tests de probabilístico/contratos/API/seguridad y gates oficiales pasan.
+- Region Explorer incorpora un módulo compacto ligado por ID exacto a la ADM1 seleccionada.
+- A 30 días compara ML experimental y referencia histórica; a 60/90/180 solo muestra la referencia.
+- Estados `unavailable` y `not_applicable` abstienen sin mostrar 0%.
+- BSS, IC95, calidad y asociaciones no causales permanecen visibles.
+- Low-bandwidth conserva la misma semántica mediante tabla.
+- Reports HTML/PDF incorpora las estimaciones activas desde el snapshot materializado.
+- Demo offline incluye Turkana activo y Baringo inactivo para revisar ambos estados.
+- 59 tests frontend, 41 tests UI/reportes, lint, typecheck y build pasan.
+- Dashboard y continuidad deben compartir modo: cualquier mezcla demo/real falla cerrada.
+- Smoke GEE real Kenya: 47 ADM1 en perfil, 121/121 ADM1 IGAD concluyentes, `not_demo=true`.
 
 ## Siguiente acción
 
-- Mostrar endpoint y resultado real para revisión humana.
-- Cerrar 64 si se acepta; no comenzar 65 antes de esa revisión.
+- Revisión humana en `/region`: seleccionar Kenya → Turkana.
+- Cerrar 65 solo tras aceptación; no comenzar el siguiente sprint antes de esa revisión.

@@ -294,3 +294,18 @@
 - Endpoint dual, contrato, drivers, hashes y degradación independiente implementados.
 - Run hash `sha256:44c6ae469551ffdac0e11a73c9e47d3c4279dc0f1888bade434d4deca25b3070`.
 - 126 tests + 6 subtests y gates oficiales pasan.
+
+## 2026-07-28T20:10:00+02:00 - #sprint-64-risk-probability-api-drivers -> done
+
+- Sprint 64 aceptado por el usuario y cerrado formalmente en `9278e56`.
+- Se autoriza iniciar la integración visual del Sprint 65.
+
+## 2026-07-28T20:20:00+02:00 - #sprint-65-probability-ui-integration -> review_pending
+
+- Region Explorer integra continuidad por ADM1 con comparación dual a 30 días.
+- Horizontes 60/90/180 conservan exclusivamente `phase_survival`.
+- Low-bandwidth, demo offline y abstención mantienen el mismo contrato.
+- Reports HTML/PDF incorpora evidencia materializada y degrada sin bloquear el informe.
+- 59 tests frontend y 41 tests UI/reportes pasan; build y lint limpios.
+- Añadido gate explícito que impide unir un dashboard demo con probabilidades reales o viceversa.
+- Smoke remoto GEE para Kenya pasa con 47 ADM1 del país y 121/121 ADM1 IGAD concluyentes.

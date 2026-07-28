@@ -340,3 +340,22 @@ a 30 días; los horizontes largos conservan solo la referencia. Run hash:
 La API consume únicamente `snapshot.json` y su manifiesto. Un mismatch o corrupción del
 bundle invalida ML sin ocultar el baseline. Para usar otro snapshot materializado se
 configura `MWANGAZA_DROUGHT_CONTINUATION_SNAPSHOT`; demo usa el fixture versionado.
+
+## Integración visual y reportes (Sprint 65)
+
+Region Explorer consume el endpoint materializado sin entrenar ni consultar GEE. El
+módulo se vincula por ID exacto a la ADM1 seleccionada: a 30 días compara la predicción
+hazard experimental con `phase_survival`; a 60/90/180 muestra solo la referencia. El
+estado inconcluso, la prohibición de uso operacional, BSS, IC95, calidad y asociaciones
+no causales permanecen visibles. Una fase inactiva o evidencia insuficiente no muestra
+0%, sino `not_applicable` o `unavailable`.
+
+Los reportes HTML/PDF leen el mismo snapshot verificado y aplican la misma semántica.
+Un fallo del artefacto de continuidad degrada solo esa sección y no bloquea los
+indicadores, recomendaciones ni exportación del informe.
+
+La UI bloquea la mezcla de modos: un dashboard `live` o `cache` solo admite un snapshot
+de continuidad `is_demo=false`, mientras `demo` exige `is_demo=true`. La vista real une
+el mapa ADM1 calculado desde GEE con el snapshot de continuidad materializado a partir de
+las series GEE/CHIRPS/MODIS/FLDAS y las fases oficiales; ninguna petición del navegador
+consulta GEE directamente.
