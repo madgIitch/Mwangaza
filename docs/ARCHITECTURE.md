@@ -1815,3 +1815,25 @@ bloquear ML por región sin afectar la referencia `phase_survival`.
 el manifiesto y el SHA-256 del bundle. Solo después construye contratos tipados. La API
 lee esa vista inmutable: a 30 días devuelve las dos estimaciones y a 60/90/180 solo el
 baseline. Ningún request importa datos históricos, ajusta modelos, escribe o llama GEE.
+
+<!-- harness:sprint-65-probability-ui-integration -->
+## sprint-65-probability-ui-integration · Sprint 65 - Drought Continuation UI Integration
+
+
+
+### Scope aprobado
+
+  - `frontend/**`
+  - `tests/frontend/**`
+  - `src/mwangaza/services/dashboard_shell.py`
+  - `src/mwangaza/reports/**`
+  - `tests/ui/**`
+  - `tests/reports/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/region-interface.md`
+  - `docs/reports-interface.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-65-probability-ui-integration-*/**`
+  - `progress/**`
+

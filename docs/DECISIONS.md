@@ -822,3 +822,12 @@ El snapshot real contiene dos regiones oficialmente activas con comparación dua
 regiones Normal como `not_applicable`. La API no selecciona un ganador: presenta ML como
 experimental/inconcluso/no operacional y `phase_survival` como referencia histórica.
 La corrupción del bundle degrada solo ML; ambos porcentajes conservan lineage separado.
+
+<!-- harness:sprint-65-probability-ui-integration -->
+## 2026-07-28 · sprint-65-probability-ui-integration aprobado
+
+Contexto: se aprobó el spec `sprint-65-probability-ui-integration` (Sprint 65 - Drought Continuation UI Integration).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
