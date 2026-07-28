@@ -776,3 +776,12 @@ El gate predefinido se ejecutó sobre 255 predicciones OOF pre-2024. HGB quedó 
 por detrás de `phase_survival` y Platt empeoró Brier y ECE. No se rebajan umbrales ni se
 consulta de nuevo el holdout: la decisión canónica enruta 30/60/90/180 días a
 `phase_survival` y no genera un artefacto ML publicable.
+
+<!-- harness:sprint-63b-ml-sanity-audit -->
+## 2026-07-28 · sprint-63b-ml-sanity-audit aprobado
+
+Contexto: se aprobó el spec `sprint-63b-ml-sanity-audit` (Sprint 63B - Drought Continuation ML Sanity Audit).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

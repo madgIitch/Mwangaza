@@ -1741,3 +1741,23 @@ La salida separa métricas OOF, probabilidades por fase, routing global/regional
 manifiesto. El bundle HGB+Platt solo se escribe cuando supera el gate global. Si falla,
 30 días degrada a `phase_survival`; 60/90/180 siempre usan ese baseline. Los consumidores
 posteriores deben verificar hashes y no pueden entrenar bajo request.
+
+<!-- harness:sprint-63b-ml-sanity-audit -->
+## sprint-63b-ml-sanity-audit · Sprint 63B - Drought Continuation ML Sanity Audit
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/audit_drought_continuation_ml.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `config/probabilistic/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/testing.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-63b-ml-sanity-audit-*/**`
+  - `progress/**`
+

@@ -4728,6 +4728,70 @@
       "approved_at": "2026-07-28T13:59:56.884Z"
     },
     {
+      "id": "sprint-63b-ml-sanity-audit",
+      "name": "Sprint 63B - Drought Continuation ML Sanity Audit",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 6,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-63-probability-calibration-skill-gate"
+      ],
+      "objective": "Determinar si el rechazo de ML se debe a falta de skill o a una implementacion demasiado basica, auditando ponderacion por episodio, missingness, tuning temporal, calibracion y un hazard logistico exclusivamente a 30 dias.",
+      "user_stories": [
+        {
+          "id": "HU63B.1",
+          "story": "Como responsable cientifico quiero saber si ML falla realmente o si la evaluacion actual favorece episodios largos y una calibracion inestable."
+        },
+        {
+          "id": "HU63B.2",
+          "story": "Como responsable de producto quiero una decision con incertidumbre antes de integrar o descartar ML."
+        }
+      ],
+      "tasks": [
+        "Ponderar fit y metricas para que cada episodio tenga peso total uno.",
+        "Anadir indicadores de missingness sin nuevas fuentes.",
+        "Seleccionar una pequena rejilla HGB solo mediante folds temporales internos.",
+        "Comparar probabilidades raw, Platt anual y Platt sobre OOF historico agrupado.",
+        "Calcular bootstrap clusterizado por episodio e intervalos de confianza.",
+        "Evaluar solo continuidad a 30 dias y un modelo logistico de hazard discreto."
+      ],
+      "deliverable": "Auditoria reproducible pre-2024 con comparacion ponderada por episodio, intervalos de confianza y veredicto robust_skill, inconclusive o no_skill por candidato.",
+      "acceptance": [
+        "La auditoría usa exclusivamente `same_episode_continues` a 30 días y rechaza cualquier fila o episodio desde 2024; no descarga ni incorpora fuentes nuevas.",
+        "En fit y métricas cada `episode_id` aporta peso total uno, independientemente de su número de filas conocidas; se reportan también métricas sin ponderar solo como diagnóstico.",
+        "Los pipelines auditados añaden indicadores binarios de missingness después de vectorizar y antes del estimador; el manifiesto registra cuántas columnas indicadoras se crean.",
+        "La rejilla HGB contiene como máximo ocho configuraciones congeladas y se selecciona dentro de cada outer fold usando solo folds walk-forward anteriores al periodo de calibración; ninguna fila de evaluación decide hiperparámetros.",
+        "Se comparan HGB raw, Platt con el año inmediatamente anterior y Platt pooled ajustado solo sobre predicciones OOF históricas anteriores a cada outer evaluation; cada estrategia conserva soporte y razones cuando no es evaluable.",
+        "Se evalúa un `discrete_time_logistic_hazard` que modela recuperación en los siguientes 30 días condicionado a episodio activo e incluye elapsed days/fase/tendencia, features causales e indicadores de missingness.",
+        "El bootstrap usa 2000 remuestreos deterministas de `episode_id`, conserva todas las filas del episodio y produce IC95 del delta de Brier ponderado frente a `phase_survival` para cada candidato.",
+        "Un candidato es `robust_skill` solo si mejora Brier ponderado, el límite superior del IC95 del delta es menor que cero, mejora en al menos dos de tres outer folds y ECE es menor o igual a 0,15; mejora puntual sin esas pruebas es `inconclusive`.",
+        "El CLI muestra ETA y escribe config, selección por fold, OOF, métricas, bootstrap, veredicto y manifiesto atómicos con hashes y run hash determinista bajo `data/models/drought-continuation-ml-audit/`.",
+        "Tests cubren pesos por episodio, missing indicators, tuning sin leakage, calibración anual/pooled, hazard logístico, bootstrap clusterizado, IC/veredicto, sentinel 2024 y reproducibilidad; pasan los gates del repo."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "scripts/audit_drought_continuation_ml.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "config/probabilistic/**",
+        "docs/probabilistic-risk.md",
+        "docs/testing.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-63b-ml-sanity-audit-*/**",
+        "progress/**"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-28T15:53:09.774Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:4cd908ec47909e457130fd23514a6d16cce59896948fe6cfcda6279274dcc6da",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-28T15:53:09.976Z"
+    },
+    {
       "id": "sprint-64-risk-probability-api-drivers",
       "name": "Sprint 64 - Drought Continuation API and Drivers",
       "status": "pending",
