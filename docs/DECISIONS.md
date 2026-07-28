@@ -60,6 +60,17 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-07-28 - Skill por episodio antes de calibración o serving
+
+- Los periodos sin etiqueta oficial son `unknown`, no negativos.
+- Persistencia, climatología, frecuencia histórica, regresión logística y HGB
+  se puntúan sobre exactamente las mismas filas OOF conocidas.
+- Un ML solo es elegible si mejora estrictamente Brier y event F1 frente al
+  baseline con menor Brier, sin aumentar falsas alarmas y con soporte mínimo.
+- Onset se omite para episodios left-censored; duración y recovery se omiten
+  para right-censored.
+- 62E no publica probabilidades: su salida es evidencia para el gate de 63.
+
 <!-- harness:sprint-2-gee-authentication -->
 ## 2026-07-14 · sprint-2-gee-authentication aprobado
 

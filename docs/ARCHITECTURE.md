@@ -55,6 +55,7 @@ Objetivo no negociable:
   - `docs/**`
   - `spec/**`
   - `progress/**`
+
   - `src/mwangaza/**`
   - `tests/**`
   - `app.py`
@@ -1666,3 +1667,16 @@ la cobertura desconocida antes de añadir adapters futuros.
   - `spec/sprint-62e-drought-episode-evaluation-*/**`
   - `progress/**`
 
+## Evaluación independiente por episodios ADM1
+
+62E mantiene separados features, etiquetas oficiales, episodios reales,
+predicciones OOF y métricas. Las etiquetas mensuales se alinean con el día
+objetivo de cada forecast de 10/20/30 días; un periodo sin observación oficial
+permanece `unknown`. Los folds usan cortes globales anuales y asignan episodios
+completos por año de onset, incluyendo su posible continuación al año siguiente,
+para impedir que un `episode_id` aparezca en train y test.
+
+Las probabilidades con umbral fijo 0,5 forman episodios predichos mediante el
+mismo gap de 32 días. El matching por solapamiento es uno-a-uno. Los artefactos
+OOF y de episodios predichos se escriben por separado del resumen, y sus hashes
+forman parte del manifiesto reproducible.

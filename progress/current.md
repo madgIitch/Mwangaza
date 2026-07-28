@@ -1,21 +1,20 @@
 # Sesión actual
 
-Feature: **sprint-62d2-real-drought-hazard-catalog - Sprint 62D.2 - Real Drought Hazard Catalog** — estado: `review_pending`, spec aprobada.
+Feature: **sprint-62e-drought-episode-evaluation - Sprint 62E - Drought Episode Evaluation** — estado: `review_pending`, spec aprobada.
 
 ## Resultado
 
-- Backfill NDMA 2016-presente reanudable, con ETA, PDF/hash y cola de revisión.
-- EM-DAT registrado conserva eventos ADM1 y nacionales sin expansión espacial.
-- Catálogo progresivo de autoridades de los ocho países IGAD.
-- Auditoría de episodios ADM1 por país y fuente compatible.
-- Smoke público NDMA: 23 boletines indexados, Baringo Normal validado, cero episodios activos.
-- Suite probabilística: 43 tests; compilación y Ruff correctos.
-- Los PDF NDMA truncados se reintentan y se ponen en revisión sin detener el backfill.
-- Los enlaces NDMA que persisten en el índice pero devuelven 404 también se ponen en revisión y el tratamiento continúa.
-- Backfill real completo: 2.794 indexados, 2.269 validados, 525 en revisión; SHA-256 oficial `sha256:f76f883ad2d620d29c1aae80c6ed08ffe45d6988eaa4fa4e60b96a644b549edc`.
-- Auditoría NDMA: 1.076 observaciones hazard activas, 152 episodios, 23 ADM1 de Kenya; SHA-256 `sha256:4d11d5463b522ac727f814ed19a0bf7ffe36d3f32b85e301804c79c035e77b04`.
+- Targets reales: Alert/Alarm/Emergency activos; Normal/Recovery inactivos; huecos unknown.
+- 102.608 filas ADM1 inspeccionadas y 20.364 filas con target oficial alineado.
+- 24 folds globales entre los horizontes de 10, 20 y 30 días, sin `episode_id` compartido entre train/test.
+- 98 de los 152 episodios quedan fuera de muestra; los anteriores forman historial de entrenamiento.
+- Persistencia vence en Brier y F1 a los dos ML para los tres horizontes.
+- Regresión logística se aproxima a persistencia a 30 días pero aumenta falsas alarmas (87 frente a 78).
+- Logistic regression e HGB: `rejected`; no se habilita serving.
+- Run hash: `sha256:552e25e16d6000dbd2b5b2da79a83c252d209550bed1b8377cea1a455cbdfc03`.
+- Suite probabilística: 49 tests; compilación y Ruff correctos.
 
 ## Siguiente acción
 
-- Revisar y aceptar el resultado NDMA; después cerrar con `node .harness/spec.mjs done sprint-62d2-real-drought-hazard-catalog`.
-- Aportar el CSV registrado de EM-DAT cuando se quiera ampliar la cobertura real más allá de Kenya.
+- Mostrar el resultado para revisión humana y cerrar formalmente 62E si se acepta.
+- Después preparar Sprint 63 (calibración y skill gate) manteniendo la abstención actual.

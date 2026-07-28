@@ -216,3 +216,28 @@ uv run python scripts/audit_drought_hazard_episodes.py `
 
 El resultado separa episodios ADM1, evidencia nacional, observaciones no validadas,
 observaciones sin hazard activo, desacuerdos y países cuya cobertura sigue desconocida.
+
+## Evaluación por episodios reales (Sprint 62E)
+
+La evaluación consume las 102.608 filas ADM1 de antecedentes, las etiquetas
+NDMA validadas y los episodios auditados. Solo Alert/Alarm/Emergency son target
+activo; Normal/Recovery son inactivos y cualquier hueco de cobertura es unknown.
+Los splits walk-forward globales conservan cada episodio completo en un solo fold.
+
+```powershell
+uv run python scripts/evaluate_drought_episodes.py
+```
+
+El CLI alinea targets y entrena persistencia, climatología estacional, frecuencia
+histórica, regresión logística e histogram gradient boosting para 10, 20 y 30
+días. Escribe `oof-predictions.jsonl`, `predicted-episodes.jsonl`,
+`evaluation.json` y `manifest.json` bajo
+`data/historical/drought-episode-evaluation/`, con ETA y hashes de entradas/salidas.
+
+La corrida real del 28 de julio de 2026 alineó 20.364 filas conocidas y evaluó
+98 episodios fuera de muestra. Persistencia ganó los tres horizontes. Regresión
+logística obtuvo Brier/F1 de 0,118637/0,680 a 10 días, 0,126405/0,659 a 20 y
+0,136091/0,645 a 30, frente a persistencia 0,045710/0,740,
+0,088478/0,720 y 0,129962/0,646. Ambos ML quedaron rechazados; serving sigue
+deshabilitado. Run hash:
+`sha256:552e25e16d6000dbd2b5b2da79a83c252d209550bed1b8377cea1a455cbdfc03`.

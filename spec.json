@@ -4548,7 +4548,7 @@
     {
       "id": "sprint-62e-drought-episode-evaluation",
       "name": "Sprint 62E - Drought Episode Evaluation",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 12,
