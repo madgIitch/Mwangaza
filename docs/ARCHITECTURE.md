@@ -1680,3 +1680,21 @@ Las probabilidades con umbral fijo 0,5 forman episodios predichos mediante el
 mismo gap de 32 días. El matching por solapamiento es uno-a-uno. Los artefactos
 OOF y de episodios predichos se escriben por separado del resumen, y sus hashes
 forman parte del manifiesto reproducible.
+
+<!-- harness:sprint-62f-drought-continuation-survival -->
+## sprint-62f-drought-continuation-survival · Sprint 62F - Drought Continuation and Survival
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/evaluate_drought_survival.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62f-drought-continuation-survival-*/**`
+  - `progress/**`
+

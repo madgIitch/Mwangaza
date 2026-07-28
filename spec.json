@@ -4602,6 +4602,68 @@
       "approved_at": "2026-07-28T03:18:13.167Z"
     },
     {
+      "id": "sprint-62f-drought-continuation-survival",
+      "name": "Sprint 62F - Drought Continuation and Survival",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "estimated_hours": 14,
+      "demo_critical": false,
+      "dependencies": [
+        "sprint-62e-drought-episode-evaluation"
+      ],
+      "objective": "Estimar la probabilidad de que un episodio de sequía ya activo continúe a 30, 60, 90 y 180 días, junto con tiempo de recuperación, usando únicamente información disponible en cada as_of.",
+      "user_stories": [
+        {
+          "id": "HU62F.1",
+          "story": "Como responsable operativo quiero saber la probabilidad de que una sequía activa siga activa y cuánto puede tardar en recuperarse."
+        },
+        {
+          "id": "HU62F.2",
+          "story": "Como responsable científico quiero comprobar esa probabilidad en episodios nunca usados para ajustar el modelo."
+        }
+      ],
+      "tasks": [
+        "Construir el risk set dentro de episodios activos con elapsed_days, fase, tendencia y antecedentes causales.",
+        "Crear targets de continuidad del mismo episodio a 30, 60, 90 y 180 días con censura explícita.",
+        "Comparar always-active, supervivencia empírica, supervivencia por fase, logistic regression e HGB.",
+        "Separar train, validación 2021-2023 y holdout 2024-2026 por episodios completos.",
+        "Generar curvas monótonas, métricas de probabilidad y diagnóstico de recuperación.",
+        "Ejecutar ablation de familias de señales antes de solicitar nuevas fuentes."
+      ],
+      "deliverable": "Evaluación reproducible de continuidad y recuperación por episodio, con holdout sellado y decisión de skill previa a calibración/serving.",
+      "acceptance": [
+        "El risk set contiene solo `as_of` dentro de episodios `drought_hazard_event` validados y conserva episodio, región, fecha, elapsed days, fase, tendencia, features e input hashes.",
+        "Para 30/60/90/180 días, `same_episode_continues=1` exige que la fecha objetivo pertenezca al mismo episodio; vale 0 solo con Normal/Recovery validada tras su fin y antes o en la fecha objetivo; el resto es unknown/censored.",
+        "Ninguna señal ni fase actual con `available_at`/`issued_at` posterior a `as_of` entra en features; los targets futuros nunca entran como predictor.",
+        "Train usa episodios terminados antes de 2021; validación usa episodios con onset 2021-2023; episodios que cruzan el corte se purgan. El holdout usa onset 2024-2026 y permanece bloqueado salvo `--unlock-final-holdout`.",
+        "Los candidatos always-active, supervivencia empírica condicionada por elapsed days, supervivencia por fase, logistic regression e HGB producen probabilidades sobre las mismas muestras conocidas y ningún `episode_id` aparece en dos splits.",
+        "Las probabilidades 30/60/90/180 de cada muestra/candidato son monótonas no crecientes; cualquier ajuste monótono se aplica solo a predicciones y queda versionado.",
+        "Se reportan Brier y log loss por horizonte, Brier integrado, calibration bins, recall de continuidad, precisión de recuperación, error de recuperación y denominadores/censura.",
+        "ML solo queda `continuation_skill_eligible` si mejora estrictamente el Brier integrado del mejor baseline, no empeora ningún horizonte y reduce el error de recuperación con soporte mínimo de cinco episodios; en otro caso se abstiene con razón estructurada.",
+        "Un ablation por familias (`rainfall_drought`, `vegetation`, `soil_water`, `atmospheric_demand`, `season_region`) usa únicamente validación y registra delta de Brier integrado; no se añade ninguna fuente nueva en este sprint.",
+        "El CLI muestra ETA, escribe artefactos atómicos y hashes deterministas, impide abrir accidentalmente el holdout y los tests cubren causalidad, targets, censura, fronteras, monotonicidad, leakage, gates, ablation y reproducibilidad."
+      ],
+      "scope": [
+        "src/mwangaza/probabilistic/**",
+        "scripts/evaluate_drought_survival.py",
+        "tests/probabilistic/**",
+        "tests/fixtures/probabilistic/**",
+        "docs/probabilistic-risk.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/sprint-62f-drought-continuation-survival-*/**",
+        "progress/**"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-28T12:20:07.732Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:960ac3f36f4e0c50128b7b3fb64cc4faae6cd487f9d60aa3fa1fc5604a1e6a8d",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-28T12:20:07.896Z"
+    },
+    {
       "id": "sprint-63-probability-calibration-skill-gate",
       "name": "Sprint 63 - Probability Calibration and Skill Gate",
       "status": "pending",

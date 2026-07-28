@@ -727,3 +727,12 @@ Contexto: se aprobó el spec `sprint-62e-drought-episode-evaluation` (Sprint 62E
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-62f-drought-continuation-survival -->
+## 2026-07-28 · sprint-62f-drought-continuation-survival aprobado
+
+Contexto: se aprobó el spec `sprint-62f-drought-continuation-survival` (Sprint 62F - Drought Continuation and Survival).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
