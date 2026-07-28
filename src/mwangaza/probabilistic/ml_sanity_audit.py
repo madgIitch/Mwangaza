@@ -478,6 +478,12 @@ def predict_hazard_continuation(estimator: Pipeline, rows: Sequence[SurvivalRow]
     ]
 
 
+def hazard_feature_record(row: SurvivalRow) -> dict[str, float | str | None]:
+    """Return the frozen discrete-hazard feature record used by fit and inference."""
+
+    return _hazard_features(row)
+
+
 def fit_weighted_platt(
     probabilities: Iterable[float],
     targets: Iterable[int],
@@ -860,6 +866,7 @@ __all__ = [
     "fit_hgb",
     "fit_weighted_platt",
     "hgb_grid_from_sequence",
+    "hazard_feature_record",
     "mapping_episode_weighted_brier",
     "missing_indicator_count",
     "phase_survival_predictions",

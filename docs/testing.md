@@ -28,3 +28,9 @@ selección HGB y hazard sin leakage temporal, Platt anual/pooled, bootstrap clus
 sentinel 2024 y reproducibilidad. La suite enfocada es
 `uv run pytest tests/probabilistic/test_ml_sanity_audit.py -q`; la regresión probabilística
 completa es `uv run pytest tests/probabilistic -q`.
+
+Sprint 64 añade pruebas de bundle congelado pre-2024, contrato dual, cuatro horizontes,
+`not_applicable`, soporte/missingness/drift, drivers no causales, hashes corruptos con
+baseline conservado, filtros/cache/OpenAPI y ausencia de fit/GEE bajo request. La suite
+enfocada combina `test_continuation_serving.py`, `test_drought_continuation_contract.py`,
+`test_drought_continuation_api.py` y `test_drought_continuation_security.py`.

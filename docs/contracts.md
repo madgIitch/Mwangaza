@@ -87,3 +87,23 @@ The Alerts Center consumes only API/cache payloads, including in low-bandwidth m
 - `GET /api/v1/reports/<id>` returns record, audit events and an explicitly labelled HTML preview.
 - `GET /api/v1/reports/<id>/download?format=pdf|csv|json` returns a non-empty attachment for ready reports.
 - Scheduling, template mutation, sharing and distribution have no public mutation contract and remain `pending_contract`.
+
+# Drought continuation probabilities (Sprint 64)
+
+`DroughtContinuationProbability` uses schema
+`mwangaza.drought-continuation-probability.v1` and target
+`same_episode_continues`. A known inactive official phase is `not_applicable`; unknown
+coverage is never converted to recovery or 0%.
+
+At 30 days an active result contains two independent estimates:
+
+- `experimental_ml_prediction`: frozen discrete-time logistic hazard, always
+  `experimental=true`, `operational_use=false` and
+  `validation.status=inconclusive`, with Brier/BSS/ECE, fold support and bootstrap IC95;
+- `historical_reference`: `phase_survival`, with phase, elapsed days and explicit
+  historical support.
+
+They are not averaged and neither silently replaces the other. At 60, 90 and 180 days
+only `historical_reference` is permitted. An unavailable ML estimate has no probability
+but does not invalidate an independently valid reference. ML drivers are limited to three,
+carry direction and method, and declare `causal=false`.

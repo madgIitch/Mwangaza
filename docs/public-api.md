@@ -40,3 +40,15 @@ materialized region/period context. They never initiate a browser-side or
 download-time Earth Engine query. Downloads set a deterministic safe filename,
 the correct MIME type and `Content-Disposition: attachment`; CSV/JSON omit UI
 geometry by default and preserve missing values as null/empty contract values.
+
+## Drought continuation
+
+`GET /api/v1/drought-continuation-probabilities` is read-only and accepts `region_id`,
+`as_of`, `horizon_days=30|60|90|180`, `limit` and `offset`. It reads a previously
+materialized, hash-verified snapshot and never trains, writes or initializes GEE.
+
+At 30 days, active regions expose an `experimental_ml_prediction` next to a
+`historical_reference`. The ML estimate is explicitly inconclusive and non-operational.
+At longer horizons only the historical reference is returned. If the model artifact is
+missing or corrupt, only ML becomes unavailable; a valid reference remains visible.
+Responses are cacheable for 60 seconds and never include local artifact paths or filenames.

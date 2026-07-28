@@ -1,0 +1,24 @@
+{
+  "schema_version": "mwangaza.drought-continuation-serving-config.v1",
+  "hazard": {
+    "c": 0.1,
+    "horizon_days": 30,
+    "holdout_cutoff": "2024-01-01",
+    "max_missing_fraction": 0.45,
+    "max_out_of_range_fraction": 0.5,
+    "min_region_train_rows": 1,
+    "seed": 2026
+  },
+  "evidence": {
+    "audit_run_hash": "sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666",
+    "routing_run_hash": "sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39",
+    "validation_status": "inconclusive",
+    "episode_weighted_brier": 0.20310233811144818,
+    "episode_weighted_brier_skill_score": 0.15860666146248892,
+    "episode_weighted_ece": 0.1086913943939178,
+    "bootstrap_delta_brier_lower_95": -0.08394137092155586,
+    "bootstrap_delta_brier_upper_95": 0.002148684985913163,
+    "improved_outer_folds": 2,
+    "outer_fold_count": 3
+  }
+}

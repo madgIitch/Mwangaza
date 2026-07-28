@@ -814,3 +814,11 @@ Contexto: se aprobó el spec `sprint-64-risk-probability-api-drivers` (Sprint 64
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-07-28 · 64 congela ML y referencia como estimaciones independientes
+
+El hazard final usa `C=0.1`, sin búsqueda posterior, y 2.772 filas elegibles pre-2024.
+El snapshot real contiene dos regiones oficialmente activas con comparación dual y 21
+regiones Normal como `not_applicable`. La API no selecciona un ganador: presenta ML como
+experimental/inconcluso/no operacional y `phase_survival` como referencia histórica.
+La corrupción del bundle degrada solo ML; ambos porcentajes conservan lineage separado.

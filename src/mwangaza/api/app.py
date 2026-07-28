@@ -8,6 +8,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -20,13 +21,48 @@ from mwangaza.admin import (
 )
 from mwangaza.audit import AuditRepository
 from mwangaza.config import public_config_status
-from mwangaza.exports import build_visible_export, export_visible_csv, export_visible_json, safe_export_filename
+from mwangaza.exports import (
+    build_visible_export,
+    export_visible_csv,
+    export_visible_json,
+    safe_export_filename,
+)
 from mwangaza.gee.auth import check_gee_auth
-from mwangaza.observability import METRICS, bind_run_id, current_run_id, emit, readiness_status, reset_run_id, resolve_run_id
-from mwangaza.security import RATE_LIMITER, SECURITY_HEADERS, SecurityRequestError, validate_body_contract, validate_request_target
+from mwangaza.observability import (
+    METRICS,
+    bind_run_id,
+    current_run_id,
+    emit,
+    readiness_status,
+    reset_run_id,
+    resolve_run_id,
+)
+from mwangaza.security import (
+    RATE_LIMITER,
+    SECURITY_HEADERS,
+    SecurityRequestError,
+    validate_body_contract,
+    validate_request_target,
+)
 from mwangaza.regions import list_regions
-from mwangaza.reports import build_executive_report_context, build_report_records, render_executive_report_html, render_executive_report_pdf, safe_report_filename
-from mwangaza.services.dashboard_shell import load_alert_history, load_dashboard_shell_data, load_materialized_dashboard_shell_data
+from mwangaza.reports import (
+    build_executive_report_context,
+    build_report_records,
+    render_executive_report_html,
+    render_executive_report_pdf,
+    safe_report_filename,
+)
+from mwangaza.services.dashboard_shell import (
+    load_alert_history,
+    load_dashboard_shell_data,
+    load_materialized_dashboard_shell_data,
+)
+from mwangaza.services.drought_continuation import (
+    DroughtContinuationServiceError,
+    continuation_response,
+    load_continuation_snapshot,
+    unavailable_response,
+)
 
 API_SCHEMA_VERSION = "mwangaza.api.v1"
 APP_VERSION = "1.0.0"
@@ -79,16 +115,23 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
     if path == "/health":
         payload = foundation_status().as_dict() | public_config_status()
         if _is_demo_mode():
-            payload["gee"] = {"status": "not_initialized", "message": "Disabled in explicit demo mode"}
+            payload["gee"] = {
+                "status": "not_initialized",
+                "message": "Disabled in explicit demo mode",
+            }
             payload.update(_demo_metadata())
         else:
             payload["gee"] = check_gee_auth().to_public_dict()
         payload["observability"] = {"run_id": current_run_id(), "status": "ok"}
         gee_payload = payload["gee"]
-        gee_status = gee_payload.get("status", "unknown") if isinstance(gee_payload, dict) else "unknown"
+        gee_status = (
+            gee_payload.get("status", "unknown") if isinstance(gee_payload, dict) else "unknown"
+        )
         _log("health checked", gee_status=gee_status)
         await _send_json(send, payload, HTTPStatus.OK)
-        _log("request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started))
+        _log(
+            "request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started)
+        )
         return
     if path == "/ready":
         readiness = readiness_status()
@@ -98,13 +141,21 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
         return
     if path == "/openapi.json":
         await _send_json(send, _openapi(), HTTPStatus.OK)
-        _log("request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started))
+        _log(
+            "request end", path=path, status=HTTPStatus.OK, elapsed_ms=_elapsed_ms(request_started)
+        )
         return
     if path.startswith("/api/v1/"):
         try:
             body = await _read_body(receive)
             validate_body_contract(path, body, _header(scope.get("headers", []), "content-type"))
-            payload, status, cache_seconds = _route_v1(path, scope.get("query_string", b""), scope.get("headers", []), body, method=str(scope.get("method", "GET")))
+            payload, status, cache_seconds = _route_v1(
+                path,
+                scope.get("query_string", b""),
+                scope.get("headers", []),
+                body,
+                method=str(scope.get("method", "GET")),
+            )
             if _is_demo_mode() and isinstance(payload, dict):
                 payload.update(_demo_metadata())
             if isinstance(payload, RawResponse):
@@ -116,22 +167,56 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
                 path=path,
                 status=status,
                 elapsed_ms=_elapsed_ms(request_started),
-                summary=_payload_summary(path, payload) if isinstance(payload, dict) else f"download={payload.filename}",
+                summary=_payload_summary(path, payload)
+                if isinstance(payload, dict)
+                else f"download={payload.filename}",
             )
         except SecurityRequestError:
             raise
         except AdminValidationError as exc:
             METRICS.record_error()
-            await _send_json(send, {"error": {"code": "admin_validation_failed", "message": "Configuration is invalid", "details": exc.errors}}, HTTPStatus.BAD_REQUEST)
-            _log("request error", path=path, status=HTTPStatus.BAD_REQUEST, error="admin_validation_failed", elapsed_ms=_elapsed_ms(request_started))
+            await _send_json(
+                send,
+                {
+                    "error": {
+                        "code": "admin_validation_failed",
+                        "message": "Configuration is invalid",
+                        "details": exc.errors,
+                    }
+                },
+                HTTPStatus.BAD_REQUEST,
+            )
+            _log(
+                "request error",
+                path=path,
+                status=HTTPStatus.BAD_REQUEST,
+                error="admin_validation_failed",
+                elapsed_ms=_elapsed_ms(request_started),
+            )
         except ValueError as exc:
             METRICS.record_error()
             await _send_json(send, _error("invalid_request", str(exc)), HTTPStatus.BAD_REQUEST)
-            _log("request error", path=path, status=HTTPStatus.BAD_REQUEST, error=str(exc), elapsed_ms=_elapsed_ms(request_started))
+            _log(
+                "request error",
+                path=path,
+                status=HTTPStatus.BAD_REQUEST,
+                error=str(exc),
+                elapsed_ms=_elapsed_ms(request_started),
+            )
         except Exception:
             METRICS.record_error()
-            await _send_json(send, _error("internal_error", "Request could not be served"), HTTPStatus.INTERNAL_SERVER_ERROR)
-            _log("request error", path=path, status=HTTPStatus.INTERNAL_SERVER_ERROR, error="internal_error", elapsed_ms=_elapsed_ms(request_started))
+            await _send_json(
+                send,
+                _error("internal_error", "Request could not be served"),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+            _log(
+                "request error",
+                path=path,
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                error="internal_error",
+                elapsed_ms=_elapsed_ms(request_started),
+            )
         return
     else:
         await _send_json(
@@ -139,7 +224,12 @@ async def _handle_http(scope: dict[str, Any], receive: Any, send: Any) -> None:
             _error("not_found", "Use /health or /api/v1 endpoints."),
             HTTPStatus.NOT_FOUND,
         )
-        _log("request end", path=path, status=HTTPStatus.NOT_FOUND, elapsed_ms=_elapsed_ms(request_started))
+        _log(
+            "request end",
+            path=path,
+            status=HTTPStatus.NOT_FOUND,
+            elapsed_ms=_elapsed_ms(request_started),
+        )
         return
 
 
@@ -175,47 +265,112 @@ def _route_v1(
             region_id=export.region_id,
             period=export.period,
             row_count=len(export.rows),
-            source=export.source_metadata.get("data_source", export.source_metadata.get("source", "unknown")),
+            source=export.source_metadata.get(
+                "data_source", export.source_metadata.get("source", "unknown")
+            ),
         )
-        return {
-            "schema_version": API_SCHEMA_VERSION,
-            "data_mode": data.data_status.mode,
-            "snapshot": {
-                "region_id": export.region_id,
-                "region_label": export.region_label,
-                "period": export.period,
-                "rows": export.rows,
-                "regional_risk": _regional_risk(data),
-                "region_profiles": _region_profiles(data),
-                "periods": _dashboard_periods(data),
-                "source_metadata": export.source_metadata,
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "data_mode": data.data_status.mode,
+                "snapshot": {
+                    "region_id": export.region_id,
+                    "region_label": export.region_label,
+                    "period": export.period,
+                    "rows": export.rows,
+                    "regional_risk": _regional_risk(data),
+                    "region_profiles": _region_profiles(data),
+                    "periods": _dashboard_periods(data),
+                    "source_metadata": export.source_metadata,
+                },
             },
-        }, HTTPStatus.OK, 60
+            HTTPStatus.OK,
+            60,
+        )
+    if path == "/api/v1/drought-continuation-probabilities":
+        if method.upper() != "GET":
+            raise ValueError("drought continuation endpoint is read-only")
+        limit, offset = _pagination(query)
+        region_id = _single_query(query, "region_id", "").strip()
+        if region_id and (
+            len(region_id) > 80
+            or any(not (character.isalnum() or character in "-_") for character in region_id)
+        ):
+            raise ValueError("region_id is invalid")
+        as_of = _single_query(query, "as_of", "").strip()
+        if as_of:
+            try:
+                datetime.fromisoformat(as_of.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError("as_of must be an ISO date or timestamp") from exc
+        horizon_value = _single_query(query, "horizon_days", "").strip()
+        horizon_days = None
+        if horizon_value:
+            try:
+                horizon_days = int(horizon_value)
+            except ValueError as exc:
+                raise ValueError("horizon_days must be an integer") from exc
+            if horizon_days not in {30, 60, 90, 180}:
+                raise ValueError("horizon_days must be 30, 60, 90 or 180")
+        try:
+            snapshot = load_continuation_snapshot()
+            response = continuation_response(
+                snapshot,
+                region_id=region_id or None,
+                as_of=as_of or None,
+                horizon_days=horizon_days,
+                limit=limit,
+                offset=offset,
+            )
+        except DroughtContinuationServiceError:
+            response = unavailable_response("snapshot_unavailable", limit=limit, offset=offset)
+        return {"schema_version": API_SCHEMA_VERSION} | response, HTTPStatus.OK, 60
     if path == "/api/v1/about/status":
         data = _load_api_dashboard_data()
         export = build_visible_export(data, max_rows=1)
-        return {
-            "schema_version": API_SCHEMA_VERSION,
-            "app_version": APP_VERSION,
-            "methodology_version": METHODOLOGY_VERSION,
-            "data_mode": data.data_status.mode,
-            "snapshot_id": export.source_metadata.get("snapshot_id"),
-            "snapshot_updated_at": export.source_metadata.get("generated_at")
-            or export.source_metadata.get("reference_date")
-            or export.period,
-            "documentation_status": "current",
-            "documentation_updated_at": "2026-07-23",
-            "license": {"name": "MIT", "path": "/LICENSE"},
-            "repository": {"label": "Mwangaza source repository", "url": os.environ.get("MWANGAZA_PUBLIC_REPOSITORY_URL")},
-            "contact": {"label": "Project contact", "url": os.environ.get("MWANGAZA_PUBLIC_CONTACT_URL")},
-            "refresh": {"kind": "metadata_only", "gee_triggered": False, "writes_performed": False},
-        }, HTTPStatus.OK, 60
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "app_version": APP_VERSION,
+                "methodology_version": METHODOLOGY_VERSION,
+                "data_mode": data.data_status.mode,
+                "snapshot_id": export.source_metadata.get("snapshot_id"),
+                "snapshot_updated_at": export.source_metadata.get("generated_at")
+                or export.source_metadata.get("reference_date")
+                or export.period,
+                "documentation_status": "current",
+                "documentation_updated_at": "2026-07-23",
+                "license": {"name": "MIT", "path": "/LICENSE"},
+                "repository": {
+                    "label": "Mwangaza source repository",
+                    "url": os.environ.get("MWANGAZA_PUBLIC_REPOSITORY_URL"),
+                },
+                "contact": {
+                    "label": "Project contact",
+                    "url": os.environ.get("MWANGAZA_PUBLIC_CONTACT_URL"),
+                },
+                "refresh": {
+                    "kind": "metadata_only",
+                    "gee_triggered": False,
+                    "writes_performed": False,
+                },
+            },
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/reports":
         data = _load_api_dashboard_data()
         records = _filter_reports(list(build_report_records(data)), query)
         limit, offset = _pagination(query)
         if method.upper() == "POST":
-            request = _json_body(body) if body else {name: _single_query(query, name, "") for name in ("region_id", "period", "template_id", "language")}
+            request = (
+                _json_body(body)
+                if body
+                else {
+                    name: _single_query(query, name, "")
+                    for name in ("region_id", "period", "template_id", "language")
+                }
+            )
             region_id = str(request.get("region_id", "")).lower()
             template_id = str(request.get("template_id", "executive-v1") or "executive-v1")
             language = str(request.get("language", "en") or "en").lower()
@@ -224,13 +379,23 @@ def _route_v1(
                 raise ValueError("template_id must be executive-v1")
             if language not in {"en", "sw", "so", "es"}:
                 raise ValueError("language is invalid")
-            record = next((item for item in records if not region_id or item.region_id == region_id), None)
+            record = next(
+                (item for item in records if not region_id or item.region_id == region_id), None
+            )
             if record is None:
                 raise ValueError("region_id is invalid or unavailable")
-            if period and period not in {record.period_start, record.period_end, f"{record.period_start[:10]} to {record.period_end[:10]}"}:
+            if period and period not in {
+                record.period_start,
+                record.period_end,
+                f"{record.period_start[:10]} to {record.period_end[:10]}",
+            }:
                 raise ValueError("period does not match the materialized snapshot")
             _record_report_audit("report_generated", record, format_name="record")
-            return {"schema_version": API_SCHEMA_VERSION, "report": record.to_dict()}, HTTPStatus.CREATED, None
+            return (
+                {"schema_version": API_SCHEMA_VERSION, "report": record.to_dict()},
+                HTTPStatus.CREATED,
+                None,
+            )
         items = [record.to_dict() for record in records]
         response = _listed(items, limit, offset)
         response["summary"] = {
@@ -247,38 +412,80 @@ def _route_v1(
         if record is None:
             return _error("not_found", "Report does not exist"), HTTPStatus.NOT_FOUND, 30
         if record.status in {"queued", "generating"}:
-            return _error("report_not_ready", "Report generation is still in progress"), HTTPStatus.CONFLICT, None
+            return (
+                _error("report_not_ready", "Report generation is still in progress"),
+                HTTPStatus.CONFLICT,
+                None,
+            )
         if record.status == "failed":
-            return _error("report_failed", "Report generation failed"), HTTPStatus.UNPROCESSABLE_ENTITY, None
+            return (
+                _error("report_failed", "Report generation failed"),
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                None,
+            )
         if record.status == "expired":
             return _error("report_expired", "Report has expired"), HTTPStatus.GONE, None
         export_format = _single_query(query, "format", "pdf").lower()
         if export_format not in record.formats:
             raise ValueError("format must be pdf, csv or json")
-        context = build_executive_report_context(data, region_id=record.region_id, dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL"))
-        export = build_visible_export(data, region_id=record.region_id, max_rows=MAX_LIMIT, include_geometry=False)
+        context = build_executive_report_context(
+            data, region_id=record.region_id, dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL")
+        )
+        export = build_visible_export(
+            data, region_id=record.region_id, max_rows=MAX_LIMIT, include_geometry=False
+        )
         if export_format == "pdf":
-            payload = RawResponse(render_executive_report_pdf(context), "application/pdf", safe_report_filename(context))
+            payload = RawResponse(
+                render_executive_report_pdf(context),
+                "application/pdf",
+                safe_report_filename(context),
+            )
         elif export_format == "csv":
-            payload = RawResponse(export_visible_csv(export).encode("utf-8"), "text/csv; charset=utf-8", safe_export_filename(export, "csv"))
+            payload = RawResponse(
+                export_visible_csv(export).encode("utf-8"),
+                "text/csv; charset=utf-8",
+                safe_export_filename(export, "csv"),
+            )
         else:
-            payload = RawResponse(export_visible_json(export).encode("utf-8"), "application/json", safe_export_filename(export, "json"))
+            payload = RawResponse(
+                export_visible_json(export).encode("utf-8"),
+                "application/json",
+                safe_export_filename(export, "json"),
+            )
         _record_report_audit("report_downloaded", record, format_name=export_format)
         return payload, HTTPStatus.OK, None
-    if path.startswith("/api/v1/reports/") and path not in {"/api/v1/reports/alerts", "/api/v1/reports/executive"}:
+    if path.startswith("/api/v1/reports/") and path not in {
+        "/api/v1/reports/alerts",
+        "/api/v1/reports/executive",
+    }:
         report_id = path.removeprefix("/api/v1/reports/")
         data = _load_api_dashboard_data()
         record = next((item for item in build_report_records(data) if item.id == report_id), None)
         if record is None:
             return _error("not_found", "Report does not exist"), HTTPStatus.NOT_FOUND, 30
         context = build_executive_report_context(data, region_id=record.region_id)
-        return {"schema_version": API_SCHEMA_VERSION, "report": record.to_dict(), "events": _report_audit_events(record.id), "preview": {"format": "html", "content": render_executive_report_html(context)}}, HTTPStatus.OK, 60
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "report": record.to_dict(),
+                "events": _report_audit_events(record.id),
+                "preview": {"format": "html", "content": render_executive_report_html(context)},
+            },
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/alerts":
         limit, offset = _pagination(query)
         data = _load_api_dashboard_data()
         filtered = _filter_alerts(_all_alerts(data), query)
         alerts = [_alert_payload(alert) for alert in filtered]
-        _log("alerts export", data_mode=data.data_status.mode, total=len(alerts), limit=limit, offset=offset)
+        _log(
+            "alerts export",
+            data_mode=data.data_status.mode,
+            total=len(alerts),
+            limit=limit,
+            offset=offset,
+        )
         METRICS.observe_workload(active_alerts=len(alerts))
         response = _listed(alerts, limit, offset)
         response["summary"] = _alert_summary(alerts)
@@ -286,13 +493,19 @@ def _route_v1(
     if path.startswith("/api/v1/alerts/"):
         alert_id = path.removeprefix("/api/v1/alerts/")
         data = _load_api_dashboard_data()
-        match = next((alert for alert in _all_alerts(data) if _stable_alert_id(alert) == alert_id), None)
+        match = next(
+            (alert for alert in _all_alerts(data) if _stable_alert_id(alert) == alert_id), None
+        )
         if match is None:
             return _error("not_found", "Alert does not exist"), HTTPStatus.NOT_FOUND, 30
-        return {
-            "schema_version": API_SCHEMA_VERSION,
-            "alert": _alert_payload(match),
-        }, HTTPStatus.OK, 60
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "alert": _alert_payload(match),
+            },
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/exports/alerts":
         data = _load_api_dashboard_data()
         alerts = [_alert_payload(alert) for alert in _filter_alerts(_all_alerts(data), query)]
@@ -301,19 +514,33 @@ def _route_v1(
             body = _alerts_csv(alerts)
             content_type = "text/csv; charset=utf-8"
         elif export_format == "json":
-            body = json.dumps({"schema_version": API_SCHEMA_VERSION, "items": alerts}, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            body = json.dumps(
+                {"schema_version": API_SCHEMA_VERSION, "items": alerts},
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
             content_type = "application/json"
         else:
             raise ValueError("format must be csv or json")
-        return RawResponse(body=body, content_type=content_type, filename=f"mwangaza-alerts.{export_format}"), HTTPStatus.OK, 60
+        return (
+            RawResponse(
+                body=body, content_type=content_type, filename=f"mwangaza-alerts.{export_format}"
+            ),
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/reports/alerts":
         data = _load_api_dashboard_data()
         alerts = [_alert_payload(alert) for alert in _filter_alerts(_all_alerts(data), query)]
-        return RawResponse(
-            body=_alerts_pdf(alerts),
-            content_type="application/pdf",
-            filename="mwangaza-alerts.pdf",
-        ), HTTPStatus.OK, 60
+        return (
+            RawResponse(
+                body=_alerts_pdf(alerts),
+                content_type="application/pdf",
+                filename="mwangaza-alerts.pdf",
+            ),
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/reports/executive":
         data = _load_api_dashboard_data()
         region_id, requested_period = _download_context(query, data)
@@ -323,15 +550,21 @@ def _route_v1(
             dashboard_url=os.environ.get("MWANGAZA_DASHBOARD_URL"),
         )
         _require_matching_period(requested_period, context.period_label)
-        return RawResponse(
-            body=render_executive_report_pdf(context),
-            content_type="application/pdf",
-            filename=safe_report_filename(context),
-        ), HTTPStatus.OK, 60
+        return (
+            RawResponse(
+                body=render_executive_report_pdf(context),
+                content_type="application/pdf",
+                filename=safe_report_filename(context),
+            ),
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/exports/snapshot":
         data = _load_api_dashboard_data()
         region_id, requested_period = _download_context(query, data)
-        export = build_visible_export(data, region_id=region_id, max_rows=MAX_LIMIT, include_geometry=False)
+        export = build_visible_export(
+            data, region_id=region_id, max_rows=MAX_LIMIT, include_geometry=False
+        )
         _require_matching_period(requested_period, export.period)
         export_format = _single_query(query, "format", "json").lower()
         if export_format == "csv":
@@ -342,29 +575,46 @@ def _route_v1(
             content_type = "application/json"
         else:
             raise ValueError("format must be csv or json")
-        return RawResponse(
-            body=body,
-            content_type=content_type,
-            filename=safe_export_filename(export, export_format),
-        ), HTTPStatus.OK, 60
+        return (
+            RawResponse(
+                body=body,
+                content_type=content_type,
+                filename=safe_export_filename(export, export_format),
+            ),
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/forecasts":
         limit, offset = _pagination(query)
-        return _listed([], limit, offset) | {"available": False, "message": "Forecasts are not available yet"}, HTTPStatus.OK, 60
+        return (
+            _listed([], limit, offset)
+            | {"available": False, "message": "Forecasts are not available yet"},
+            HTTPStatus.OK,
+            60,
+        )
     if path == "/api/v1/observability":
         readiness = readiness_status()
-        return {
-            "schema_version": API_SCHEMA_VERSION,
-            "run_id": current_run_id(),
-            "status": "operational" if readiness.ready else "degraded",
-            "readiness": readiness.to_public_dict(),
-            "metrics": METRICS.snapshot(),
-        }, HTTPStatus.OK, None
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "run_id": current_run_id(),
+                "status": "operational" if readiness.ready else "degraded",
+                "readiness": readiness.to_public_dict(),
+                "metrics": METRICS.snapshot(),
+            },
+            HTTPStatus.OK,
+            None,
+        )
     if path == "/api/v1/admin/config":
         repo = admin_repository_from_env()
         try:
             if body:
                 payload = _json_body(body)
-                version = repo.create_version(payload.get("configuration", {}), actor="public-admin", activate=bool(payload.get("activate", False)))
+                version = repo.create_version(
+                    payload.get("configuration", {}),
+                    actor="public-admin",
+                    activate=bool(payload.get("activate", False)),
+                )
                 return _admin_payload(repo, version=version), HTTPStatus.CREATED, None
             return _admin_payload(repo), HTTPStatus.OK, None
         finally:
@@ -373,19 +623,25 @@ def _route_v1(
         payload = _json_body(body)
         repo = admin_repository_from_env()
         try:
-            version = repo.activate_version(str(payload.get("version_id", "")), actor="public-admin")
+            version = repo.activate_version(
+                str(payload.get("version_id", "")), actor="public-admin"
+            )
             return _admin_payload(repo, version=version), HTTPStatus.OK, None
         finally:
             repo.close()
     if path == "/api/v1/admin/status":
-        return {
-            "schema_version": API_SCHEMA_VERSION,
-            "admin": {
-                "access": "public",
-                "auth": "none",
-                "institutional_auth": False,
+        return (
+            {
+                "schema_version": API_SCHEMA_VERSION,
+                "admin": {
+                    "access": "public",
+                    "auth": "none",
+                    "institutional_auth": False,
+                },
             },
-        }, HTTPStatus.OK, None
+            HTTPStatus.OK,
+            None,
+        )
     raise ValueError("unknown v1 endpoint")
 
 
@@ -429,24 +685,50 @@ def _stable_alert_id(alert: Any) -> str:
 
 def _alert_payload(alert: Any) -> dict[str, Any]:
     alert_id = _stable_alert_id(alert)
-    issued_at = str(getattr(alert, "issued_at", "") or getattr(alert, "period_start", "") or getattr(alert, "period", ""))
-    updated_at = str(getattr(alert, "updated_at", "") or getattr(alert, "period_end", "") or issued_at)
+    issued_at = str(
+        getattr(alert, "issued_at", "")
+        or getattr(alert, "period_start", "")
+        or getattr(alert, "period", "")
+    )
+    updated_at = str(
+        getattr(alert, "updated_at", "") or getattr(alert, "period_end", "") or issued_at
+    )
     events = list(getattr(alert, "events", ()) or ())
     if not events:
         events = [
-            {"event_type": "triggered", "status": "active", "created_at": issued_at, "from_severity": None, "to_severity": alert.severity, "metadata": {}},
-            {"event_type": "status_observed", "status": alert.status, "created_at": updated_at, "from_severity": alert.severity, "to_severity": alert.severity, "metadata": {}},
+            {
+                "event_type": "triggered",
+                "status": "active",
+                "created_at": issued_at,
+                "from_severity": None,
+                "to_severity": alert.severity,
+                "metadata": {},
+            },
+            {
+                "event_type": "status_observed",
+                "status": alert.status,
+                "created_at": updated_at,
+                "from_severity": alert.severity,
+                "to_severity": alert.severity,
+                "metadata": {},
+            },
         ]
     recommendations = list(getattr(alert, "recommendations", ()) or ())
     if not recommendations:
-        recommendations = [{
-            "action": alert.recommended_action or alert.action,
-            "suggested_actor": None,
-            "urgency": _alert_urgency(alert.severity),
-            "horizon": None,
-            "evidence": {"region_id": alert.region_id, "score": alert.score, "quality_flag": alert.quality_flag},
-            "recommendation_version": None,
-        }]
+        recommendations = [
+            {
+                "action": alert.recommended_action or alert.action,
+                "suggested_actor": None,
+                "urgency": _alert_urgency(alert.severity),
+                "horizon": None,
+                "evidence": {
+                    "region_id": alert.region_id,
+                    "score": alert.score,
+                    "quality_flag": alert.quality_flag,
+                },
+                "recommendation_version": None,
+            }
+        ]
     return {
         "id": alert_id,
         "region_id": alert.region_id,
@@ -472,11 +754,20 @@ def _alert_payload(alert: Any) -> dict[str, Any]:
 
 
 def _alert_urgency(severity: str) -> str:
-    return {"critical": "urgent_activation", "warning": "prepositioning", "watch": "preparation"}.get(severity, "monitoring")
+    return {
+        "critical": "urgent_activation",
+        "warning": "prepositioning",
+        "watch": "preparation",
+    }.get(severity, "monitoring")
 
 
 def _simulated_notifications(alert: Any, alert_id: str) -> list[dict[str, Any]]:
-    recipients = (("sms", "***0000"), ("email", "op***@example.org"), ("telegram", "@m***"), ("dashboard", "authenticated users"))
+    recipients = (
+        ("sms", "***0000"),
+        ("email", "op***@example.org"),
+        ("telegram", "@m***"),
+        ("dashboard", "authenticated users"),
+    )
     return [
         {
             "id": hashlib.sha256(f"{alert_id}|{channel}".encode("utf-8")).hexdigest()[:12],
@@ -484,7 +775,11 @@ def _simulated_notifications(alert: Any, alert_id: str) -> list[dict[str, Any]]:
             "recipient_masked": recipient,
             "content": f"[SIMULATED] {alert.region}: {alert.title}",
             "status": "simulated",
-            "created_at": str(getattr(alert, "updated_at", "") or getattr(alert, "period_end", "") or getattr(alert, "period", "")),
+            "created_at": str(
+                getattr(alert, "updated_at", "")
+                or getattr(alert, "period_end", "")
+                or getattr(alert, "period", "")
+            ),
             "is_simulated": True,
         }
         for channel, recipient in recipients
@@ -492,7 +787,10 @@ def _simulated_notifications(alert: Any, alert_id: str) -> list[dict[str, Any]]:
 
 
 def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
-    filters = {name: _single_query(query, name, "").lower() for name in ("q", "region", "severity", "status", "period")}
+    filters = {
+        name: _single_query(query, name, "").lower()
+        for name in ("q", "region", "severity", "status", "period")
+    }
     valid_severity = {"normal", "watch", "warning", "critical", "unknown"}
     valid_status = {"preventive", "active", "monitoring", "resolved", "superseded"}
     if filters["severity"] and filters["severity"] not in valid_severity:
@@ -501,7 +799,16 @@ def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
         raise ValueError("status is invalid")
     result: list[Any] = []
     for alert in alerts:
-        searchable = " ".join((_stable_alert_id(alert), str(alert.region), str(alert.title), str(alert.action), str(alert.quality_flag), str(alert.evidence))).lower()
+        searchable = " ".join(
+            (
+                _stable_alert_id(alert),
+                str(alert.region),
+                str(alert.title),
+                str(alert.action),
+                str(alert.quality_flag),
+                str(alert.evidence),
+            )
+        ).lower()
         if filters["q"] and filters["q"] not in searchable:
             continue
         if filters["region"] and filters["region"] != str(alert.region_id).lower():
@@ -510,7 +817,9 @@ def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
             continue
         if filters["status"] and filters["status"] != str(alert.status).lower():
             continue
-        period_values = " ".join((str(alert.period), str(alert.period_start), str(alert.period_end))).lower()
+        period_values = " ".join(
+            (str(alert.period), str(alert.period_start), str(alert.period_end))
+        ).lower()
         if filters["period"] and filters["period"] not in period_values:
             continue
         result.append(alert)
@@ -518,13 +827,18 @@ def _filter_alerts(alerts: list[Any], query: dict[str, list[str]]) -> list[Any]:
 
 
 def _filter_reports(reports: list[Any], query: dict[str, list[str]]) -> list[Any]:
-    filters = {name: _single_query(query, name, "").lower() for name in ("q", "region", "type", "period", "status")}
+    filters = {
+        name: _single_query(query, name, "").lower()
+        for name in ("q", "region", "type", "period", "status")
+    }
     valid_status = {"queued", "generating", "ready", "failed", "expired"}
     if filters["status"] and filters["status"] not in valid_status:
         raise ValueError("status is invalid")
     result: list[Any] = []
     for report in reports:
-        searchable = " ".join((report.id, report.region_id, report.region, report.template_id, report.language)).lower()
+        searchable = " ".join(
+            (report.id, report.region_id, report.region, report.template_id, report.language)
+        ).lower()
         period = f"{report.period_start} {report.period_end}".lower()
         if filters["q"] and filters["q"] not in searchable:
             continue
@@ -546,12 +860,19 @@ def _record_report_audit(event_type: str, report: Any, *, format_name: str) -> N
     try:
         repo = AuditRepository(path)
         repo.record_event(
-            actor="public-dashboard", event_type=event_type, entity_type="report",
-            entity_id=report.id, region_id=report.region_id, run_id=current_run_id(),
-            snapshot_id=report.snapshot_id, metadata={"format": format_name, "template_id": report.template_id},
+            actor="public-dashboard",
+            event_type=event_type,
+            entity_type="report",
+            entity_id=report.id,
+            region_id=report.region_id,
+            run_id=current_run_id(),
+            snapshot_id=report.snapshot_id,
+            metadata={"format": format_name, "template_id": report.template_id},
         )
     except Exception:
-        _log("report audit unavailable", level="WARNING", report_id=report.id, event_type=event_type)
+        _log(
+            "report audit unavailable", level="WARNING", report_id=report.id, event_type=event_type
+        )
     finally:
         if repo is not None:
             repo.close()
@@ -564,7 +885,10 @@ def _report_audit_events(report_id: str) -> list[dict[str, Any]]:
     repo: AuditRepository | None = None
     try:
         repo = AuditRepository(path)
-        events = (*repo.list_events(event_type="report_generated"), *repo.list_events(event_type="report_downloaded"))
+        events = (
+            *repo.list_events(event_type="report_generated"),
+            *repo.list_events(event_type="report_downloaded"),
+        )
         return [event.__dict__ for event in events if event.entity_id == report_id]
     except Exception:
         return []
@@ -582,7 +906,14 @@ def _all_alerts(data: Any) -> list[Any]:
     by_id = {_stable_alert_id(alert): alert for alert in persisted}
     for alert in data.alerts:
         by_id.setdefault(_stable_alert_id(alert), alert)
-    return sorted(by_id.values(), key=lambda alert: (str(alert.status) not in {"active", "preventive"}, getattr(alert, "priority_rank", 999), _stable_alert_id(alert)))
+    return sorted(
+        by_id.values(),
+        key=lambda alert: (
+            str(alert.status) not in {"active", "preventive"},
+            getattr(alert, "priority_rank", 999),
+            _stable_alert_id(alert),
+        ),
+    )
 
 
 def _alert_summary(alerts: list[dict[str, Any]]) -> dict[str, int]:
@@ -598,7 +929,21 @@ def _alert_summary(alerts: list[dict[str, Any]]) -> dict[str, int]:
 
 def _alerts_csv(alerts: list[dict[str, Any]]) -> bytes:
     stream = io.StringIO(newline="")
-    fields = ("id", "region_id", "region", "severity", "status", "alert_type", "issued_at", "updated_at", "resolved_at", "score", "quality_flag", "title", "recommended_action")
+    fields = (
+        "id",
+        "region_id",
+        "region",
+        "severity",
+        "status",
+        "alert_type",
+        "issued_at",
+        "updated_at",
+        "resolved_at",
+        "score",
+        "quality_flag",
+        "title",
+        "recommended_action",
+    )
     writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     writer.writerows(alerts)
@@ -606,7 +951,10 @@ def _alerts_csv(alerts: list[dict[str, Any]]) -> bytes:
 
 
 def _alerts_pdf(alerts: list[dict[str, Any]]) -> bytes:
-    rows = "\n".join(f"{item['id']} | {item['region']} | {item['severity']} | {item['status']} | {item['title']}" for item in alerts)
+    rows = "\n".join(
+        f"{item['id']} | {item['region']} | {item['severity']} | {item['status']} | {item['title']}"
+        for item in alerts
+    )
     return f"%PDF-HTML\nMwangaza filtered alerts\n{rows}\n".encode("utf-8")
 
 
@@ -651,7 +999,11 @@ async def _read_body(receive: Any) -> bytes:
         message = await receive()
         chunks.append(message.get("body", b""))
         if sum(len(chunk) for chunk in chunks) > 64 * 1024:
-            raise SecurityRequestError("payload_too_large", "Request body exceeds 64 KiB", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+            raise SecurityRequestError(
+                "payload_too_large",
+                "Request body exceeds 64 KiB",
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+            )
         if not message.get("more_body", False):
             break
     return b"".join(chunks)
@@ -676,7 +1028,11 @@ def _load_api_dashboard_data() -> Any:
 
     configured = os.environ.get("MWANGAZA_MODE", "").strip().lower()
     default_mode = "live" if configured == "production" else "demo"
-    mode = "demo" if configured == "demo" else os.environ.get("MWANGAZA_API_DATA_MODE", default_mode).strip().lower()
+    mode = (
+        "demo"
+        if configured == "demo"
+        else os.environ.get("MWANGAZA_API_DATA_MODE", default_mode).strip().lower()
+    )
     _log("dashboard load requested", configured_mode=mode or "demo")
     if mode in {"live", "auto"}:
         return _cached_live_dashboard_data()
@@ -695,7 +1051,12 @@ def _is_demo_mode() -> bool:
 
 
 def _demo_metadata() -> dict[str, Any]:
-    return {"data_mode": "demo", "is_demo": True, "reference_date": DEMO_REFERENCE_DATE, "snapshot_id": DEMO_SNAPSHOT_ID}
+    return {
+        "data_mode": "demo",
+        "is_demo": True,
+        "reference_date": DEMO_REFERENCE_DATE,
+        "snapshot_id": DEMO_SNAPSHOT_ID,
+    }
 
 
 def _cached_live_dashboard_data() -> Any:
@@ -706,7 +1067,9 @@ def _cached_live_dashboard_data() -> Any:
         age_seconds = now - cached_at
         if age_seconds < LIVE_DASHBOARD_CACHE_SECONDS:
             METRICS.record_cache(True)
-            _log("dashboard cache hit", age_s=round(age_seconds, 2), data_mode=data.data_status.mode)
+            _log(
+                "dashboard cache hit", age_s=round(age_seconds, 2), data_mode=data.data_status.mode
+            )
             return data
         _log("dashboard cache expired", age_s=round(age_seconds, 2))
         _start_dashboard_refresh()
@@ -728,10 +1091,18 @@ def _load_live_dashboard_now() -> Any:
     started = time.monotonic()
     _log("dashboard live load start")
     data = load_dashboard_shell_data()
-    if os.environ.get("MWANGAZA_MODE", "").strip().lower() == "production" and data.data_status.mode == "demo":
+    if (
+        os.environ.get("MWANGAZA_MODE", "").strip().lower() == "production"
+        and data.data_status.mode == "demo"
+    ):
         raise RuntimeError("production data unavailable; implicit demo fallback is disabled")
     _DASHBOARD_CACHE = (time.monotonic(), data)
-    _log("dashboard live load complete", elapsed_ms=_elapsed_ms(started), data_mode=data.data_status.mode, source=data.data_status.source)
+    _log(
+        "dashboard live load complete",
+        elapsed_ms=_elapsed_ms(started),
+        data_mode=data.data_status.mode,
+        source=data.data_status.source,
+    )
     return data
 
 
@@ -742,7 +1113,9 @@ def _start_dashboard_refresh() -> None:
             _log("dashboard refresh reused")
             return
         _DASHBOARD_REFRESHING = True
-    threading.Thread(target=_refresh_dashboard_in_background, name="mwangaza-dashboard-refresh", daemon=True).start()
+    threading.Thread(
+        target=_refresh_dashboard_in_background, name="mwangaza-dashboard-refresh", daemon=True
+    ).start()
     _log("dashboard background refresh started")
 
 
@@ -794,17 +1167,34 @@ def _openapi() -> dict[str, Any]:
     examples = {
         "/api/v1/regions": {"limit": 10, "offset": 0},
         "/api/v1/snapshots/latest": {"schema_version": API_SCHEMA_VERSION},
-        "/api/v1/about/status": {"app_version": APP_VERSION, "methodology_version": METHODOLOGY_VERSION},
+        "/api/v1/drought-continuation-probabilities": {
+            "region_id": "adm1-ke-43",
+            "horizon_days": 30,
+            "estimate_kinds": ["experimental_ml_prediction", "historical_reference"],
+        },
+        "/api/v1/about/status": {
+            "app_version": APP_VERSION,
+            "methodology_version": METHODOLOGY_VERSION,
+        },
         "/api/v1/alerts": {"limit": 10, "offset": 0},
         "/api/v1/alerts/{alert_id}": {"alert_id": "ALT-SOM-EXAMPLE"},
-        "/api/v1/exports/alerts": {"region": "som", "severity": "critical", "status": "active", "format": "csv"},
+        "/api/v1/exports/alerts": {
+            "region": "som",
+            "severity": "critical",
+            "status": "active",
+            "format": "csv",
+        },
         "/api/v1/reports/alerts": {"region": "som", "severity": "critical", "status": "active"},
         "/api/v1/reports": {"limit": 20, "offset": 0, "region": "som", "status": "ready"},
         "/api/v1/reports/{report_id}": {"report_id": "RPT-SOM-EXAMPLE"},
         "/api/v1/reports/{report_id}/download": {"report_id": "RPT-SOM-EXAMPLE", "format": "pdf"},
         "/api/v1/forecasts": {"available": False},
         "/api/v1/reports/executive": {"region": "som", "period": "2026-07-01 to 2026-07-15"},
-        "/api/v1/exports/snapshot": {"region": "som", "period": "2026-07-01 to 2026-07-15", "format": "csv"},
+        "/api/v1/exports/snapshot": {
+            "region": "som",
+            "period": "2026-07-01 to 2026-07-15",
+            "format": "csv",
+        },
         "/api/v1/admin/status": {"admin": {"configured": False}},
         "/api/v1/admin/config": {"active_version": None},
         "/api/v1/admin/config/activate": {"version_id": "cfg-example"},
@@ -819,7 +1209,14 @@ def _openapi() -> dict[str, Any]:
         }
         | {
             "/health": {"get": {"responses": {"200": {"description": "OK"}}}},
-            "/ready": {"get": {"responses": {"200": {"description": "Ready"}, "503": {"description": "Not ready"}}}},
+            "/ready": {
+                "get": {
+                    "responses": {
+                        "200": {"description": "Ready"},
+                        "503": {"description": "Not ready"},
+                    }
+                }
+            },
         },
     }
 
@@ -832,8 +1229,13 @@ async def _send_json(
     cache_seconds: int | None = None,
 ) -> None:
     body = json.dumps(payload, sort_keys=True).encode("utf-8")
-    headers = [(b"content-type", b"application/json"), (b"x-run-id", current_run_id().encode("ascii"))]
-    headers.extend((name.encode("ascii"), value.encode("ascii")) for name, value in SECURITY_HEADERS.items())
+    headers = [
+        (b"content-type", b"application/json"),
+        (b"x-run-id", current_run_id().encode("ascii")),
+    ]
+    headers.extend(
+        (name.encode("ascii"), value.encode("ascii")) for name, value in SECURITY_HEADERS.items()
+    )
     if cache_seconds is not None:
         headers.append((b"cache-control", f"public, max-age={cache_seconds}".encode("ascii")))
     await send(
@@ -855,7 +1257,11 @@ async def _send_bytes(send: Any, payload: RawResponse, status: HTTPStatus) -> No
         (b"x-content-type-options", b"nosniff"),
         (b"x-run-id", current_run_id().encode("ascii")),
     ]
-    headers.extend((name.encode("ascii"), value.encode("ascii")) for name, value in SECURITY_HEADERS.items() if name.lower() != "x-content-type-options")
+    headers.extend(
+        (name.encode("ascii"), value.encode("ascii"))
+        for name, value in SECURITY_HEADERS.items()
+        if name.lower() != "x-content-type-options"
+    )
     await send({"type": "http.response.start", "status": int(status), "headers": headers})
     await send({"type": "http.response.body", "body": payload.body})
 
@@ -876,6 +1282,11 @@ def _payload_summary(path: str, payload: dict[str, Any]) -> str:
         return f"available={payload.get('available')} total={payload.get('total')}"
     if path == "/api/v1/regions":
         return f"total={payload.get('total')} returned={len(payload.get('items', []))}"
+    if path == "/api/v1/drought-continuation-probabilities":
+        return (
+            f"availability={payload.get('availability')} total={payload.get('total')} "
+            f"returned={len(payload.get('items', []))}"
+        )
     return "ok"
 
 

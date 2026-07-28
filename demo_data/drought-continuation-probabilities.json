@@ -1,0 +1,161 @@
+{
+  "schema_version": "mwangaza.drought-continuation-probability-snapshot.v1",
+  "generated_at": "2026-07-28T00:00:00Z",
+  "snapshot_hash": "sha256:cf09079a5bf4f1a381953e4f4dfa854c576684fe00e0a5ca54fd69d4569b9e3a",
+  "target": "same_episode_continues",
+  "is_demo": true,
+  "artifact": {
+    "bundle_run_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "bundle_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "audit_run_hash": "sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666",
+    "routing_run_hash": "sha256:5981338901de379c9943fd2f30b826d0ede687eccff5489657210476e4e74d39",
+    "routing_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "items": [
+    {
+      "region_id": "adm1-ke-43",
+      "as_of": "2026-04-30T00:00:00Z",
+      "horizon_days": 30,
+      "target": "same_episode_continues",
+      "current_drought_status": "active",
+      "current_phase": "phase_alert",
+      "current_trend": "worsening",
+      "elapsed_days": 120,
+      "status": "available",
+      "reason_codes": [],
+      "estimates": [
+        {
+          "kind": "experimental_ml_prediction",
+          "status": "available",
+          "probability": 0.78,
+          "estimator_kind": "ml",
+          "model": "discrete_time_logistic_hazard",
+          "experimental": true,
+          "operational_use": false,
+          "validation": {
+            "status": "inconclusive",
+            "episode_weighted_brier": 0.20310233811144818,
+            "episode_weighted_brier_skill_score": 0.15860666146248892,
+            "episode_weighted_ece": 0.1086913943939178,
+            "bootstrap_delta_brier_ci95": [-0.08394137092155586, 0.002148684985913163],
+            "improved_outer_folds": 2,
+            "outer_fold_count": 3
+          },
+          "quality": {"status": "ok", "missing_fraction": 0.12, "out_of_range_fraction": 0.04, "region_training_rows": 18},
+          "reason_codes": [],
+          "drivers": [
+            {"feature": "elapsed_log_days", "direction": "lower_continuation_probability", "contribution": -0.44, "method": "logistic_logit_contribution", "causal": false, "statement": "Association in the experimental model; not a causal effect."},
+            {"feature": "soil_moisture_rootzone", "direction": "higher_continuation_probability", "contribution": 0.31, "method": "logistic_logit_contribution", "causal": false, "statement": "Association in the experimental model; not a causal effect."},
+            {"feature": "ndvi_anomaly", "direction": "lower_continuation_probability", "contribution": -0.18, "method": "logistic_logit_contribution", "causal": false, "statement": "Association in the experimental model; not a causal effect."}
+          ],
+          "artifact": {"schema_version": "mwangaza.drought-continuation-serving-bundle.v1", "run_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "audit_run_hash": "sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666", "trained_through": "2023-12-31"}
+        },
+        {
+          "kind": "historical_reference",
+          "status": "available",
+          "probability": 0.8617021276595744,
+          "estimator_kind": "baseline",
+          "model": "phase_survival",
+          "experimental": false,
+          "operational_use": false,
+          "validation": {"status": "historical_reference"},
+          "quality": {"status": "ok", "known_count": 1880, "episode_count": 146},
+          "reason_codes": [],
+          "drivers": [],
+          "evidence": {"current_phase": "phase_alert", "elapsed_days": 120, "causal": false}
+        }
+      ]
+    },
+    {
+      "region_id": "adm1-ke-43",
+      "as_of": "2026-04-30T00:00:00Z",
+      "horizon_days": 60,
+      "target": "same_episode_continues",
+      "current_drought_status": "active",
+      "current_phase": "phase_alert",
+      "current_trend": "worsening",
+      "elapsed_days": 120,
+      "status": "available",
+      "reason_codes": [],
+      "estimates": [{"kind": "historical_reference", "status": "available", "probability": 0.7495769881556683, "estimator_kind": "baseline", "model": "phase_survival", "experimental": false, "operational_use": false, "validation": {"status": "historical_reference"}, "quality": {"status": "ok", "known_count": 1773, "episode_count": 140}, "reason_codes": [], "drivers": [], "evidence": {"current_phase": "phase_alert", "elapsed_days": 120, "causal": false}}]
+    },
+    {
+      "region_id": "adm1-ke-43",
+      "as_of": "2026-04-30T00:00:00Z",
+      "horizon_days": 90,
+      "target": "same_episode_continues",
+      "current_drought_status": "active",
+      "current_phase": "phase_alert",
+      "current_trend": "worsening",
+      "elapsed_days": 120,
+      "status": "available",
+      "reason_codes": [],
+      "estimates": [{"kind": "historical_reference", "status": "available", "probability": 0.6664702416028285, "estimator_kind": "baseline", "model": "phase_survival", "experimental": false, "operational_use": false, "validation": {"status": "historical_reference"}, "quality": {"status": "ok", "known_count": 1697, "episode_count": 131}, "reason_codes": [], "drivers": [], "evidence": {"current_phase": "phase_alert", "elapsed_days": 120, "causal": false}}]
+    },
+    {
+      "region_id": "adm1-ke-43",
+      "as_of": "2026-04-30T00:00:00Z",
+      "horizon_days": 180,
+      "target": "same_episode_continues",
+      "current_drought_status": "active",
+      "current_phase": "phase_alert",
+      "current_trend": "worsening",
+      "elapsed_days": 120,
+      "status": "available",
+      "reason_codes": [],
+      "estimates": [{"kind": "historical_reference", "status": "available", "probability": 0.4340344168260038, "estimator_kind": "baseline", "model": "phase_survival", "experimental": false, "operational_use": false, "validation": {"status": "historical_reference"}, "quality": {"status": "ok", "known_count": 1569, "episode_count": 117}, "reason_codes": [], "drivers": [], "evidence": {"current_phase": "phase_alert", "elapsed_days": 120, "causal": false}}]
+    },
+    {
+      "region_id": "adm1-ke-01",
+      "as_of": "2026-04-30",
+      "horizon_days": 30,
+      "target": "same_episode_continues",
+      "current_drought_status": "inactive",
+      "current_phase": "phase_normal",
+      "current_trend": "stable",
+      "elapsed_days": null,
+      "status": "not_applicable",
+      "reason_codes": ["no_active_official_drought"],
+      "estimates": []
+    },
+    {
+      "region_id": "adm1-ke-01",
+      "as_of": "2026-04-30",
+      "horizon_days": 60,
+      "target": "same_episode_continues",
+      "current_drought_status": "inactive",
+      "current_phase": "phase_normal",
+      "current_trend": "stable",
+      "elapsed_days": null,
+      "status": "not_applicable",
+      "reason_codes": ["no_active_official_drought"],
+      "estimates": []
+    },
+    {
+      "region_id": "adm1-ke-01",
+      "as_of": "2026-04-30",
+      "horizon_days": 90,
+      "target": "same_episode_continues",
+      "current_drought_status": "inactive",
+      "current_phase": "phase_normal",
+      "current_trend": "stable",
+      "elapsed_days": null,
+      "status": "not_applicable",
+      "reason_codes": ["no_active_official_drought"],
+      "estimates": []
+    },
+    {
+      "region_id": "adm1-ke-01",
+      "as_of": "2026-04-30",
+      "horizon_days": 180,
+      "target": "same_episode_continues",
+      "current_drought_status": "inactive",
+      "current_phase": "phase_normal",
+      "current_trend": "stable",
+      "elapsed_days": null,
+      "status": "not_applicable",
+      "reason_codes": ["no_active_official_drought"],
+      "estimates": []
+    }
+  ]
+}

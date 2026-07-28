@@ -1,19 +1,18 @@
 # Sesión actual
 
-Feature siguiente: **sprint-64-risk-probability-api-drivers — Sprint 64 - Drought Continuation API and Drivers** — estado: `spec_ready`, pendiente de aprobación.
+Feature: **sprint-64-risk-probability-api-drivers — Sprint 64 - Drought Continuation API and Drivers** — estado: `review_pending`.
 
-## Decisión cerrada
+## Resultado
 
-- Sprint 63B está `done` en `60a4497`.
-- A 30 días se integrarán dos estimaciones simultáneas: `experimental_ml_prediction`
-  del hazard congelado y `historical_reference` de `phase_survival`.
-- ML conserva `validation_status=inconclusive`, `experimental=true` y
-  `operational_use=false`; no se afirma superioridad robusta.
-- A 60/90/180 días solo habrá referencia histórica.
-- Una indisponibilidad ML no oculta una referencia válida.
+- Bundle hazard congelado con C=0.1 y 2.772 filas pre-2024 de 23 regiones.
+- Run hash reproducible: `sha256:44c6ae469551ffdac0e11a73c9e47d3c4279dc0f1888bade434d4deca25b3070`.
+- Snapshot: 92 resultados; 2 regiones activas con ML+referencia y 21 Normal como `not_applicable`.
+- Endpoint GET dual a 30 días; baseline exclusivo a 60/90/180.
+- ML siempre `inconclusive`, experimental y no operacional.
+- Corrupción del modelo bloquea solo ML y no filtra paths.
+- 126 tests de probabilístico/contratos/API/seguridad y gates oficiales pasan.
 
 ## Siguiente acción
 
-- Revisar y aprobar el spec 64.
-- Tras aprobación, implementar materialización offline, contrato, servicio y API.
-- Sprint 65 ya refleja la comparación dual, pero permanece pendiente.
+- Mostrar endpoint y resultado real para revisión humana.
+- Cerrar 64 si se acepta; no comenzar 65 antes de esa revisión.

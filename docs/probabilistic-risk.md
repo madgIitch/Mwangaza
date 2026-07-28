@@ -317,3 +317,26 @@ episodios, la decisión de producto es mostrar a 30 días la predicción hazard 
 experimental junto a `phase_survival`, con el IC95 y el estado inconcluso visibles. Nunca
 se sustituye silenciosamente la referencia ni se afirma superioridad robusta. Run hash:
 `sha256:2c2173803f14d7fa77e2d7b64d2742b4817a610ed8d57d4e22c396db2609d666`.
+
+## Materialización y API dual (Sprint 64)
+
+El hazard se congela con `C=0.1`, valor elegido en los tres folds de 63B. El fit final
+usa exclusivamente targets conocidos de episodios terminados antes de 2024; no retunea,
+no reabre el holdout y registra soporte regional, missingness y rangos numéricos para el
+gate de inferencia. Después materializa las estimaciones actuales:
+
+```powershell
+uv run python scripts/materialize_drought_continuation.py `
+  --evaluated-at 2026-07-28T00:00:00Z
+```
+
+La corrida real procesó 3.216 filas del risk set, ajustó con 2.772 filas pre-2024 de 23
+regiones y escribió 92 resultados (23 regiones por cuatro horizontes). La última fase
+oficial era Normal en 21 regiones, que quedan `not_applicable`. Las dos regiones activas,
+`adm1-ke-20` y `adm1-ke-40`, tienen predicción hazard y referencia histórica simultáneas
+a 30 días; los horizontes largos conservan solo la referencia. Run hash:
+`sha256:44c6ae469551ffdac0e11a73c9e47d3c4279dc0f1888bade434d4deca25b3070`.
+
+La API consume únicamente `snapshot.json` y su manifiesto. Un mismatch o corrupción del
+bundle invalida ML sin ocultar el baseline. Para usar otro snapshot materializado se
+configura `MWANGAZA_DROUGHT_CONTINUATION_SNAPSHOT`; demo usa el fixture versionado.

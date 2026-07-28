@@ -4,7 +4,7 @@ import json
 import math
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Callable, ClassVar, Iterable, TypeVar
+from typing import Any, Callable, ClassVar, TypeVar
 
 from mwangaza.regions import RegionCatalogError, get_region
 
@@ -562,3 +562,9 @@ def _metadata(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ContractValidationError("metadata must be an object")
     return value
+
+
+from mwangaza.contracts.drought_continuation import (  # noqa: E402
+    ContinuationEstimate as ContinuationEstimate,
+    DroughtContinuationProbability as DroughtContinuationProbability,
+)

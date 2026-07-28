@@ -1804,3 +1804,14 @@ el IC95 y declara `operational_use=false`; la referencia permanece independiente
   - `spec/sprint-64-risk-probability-api-drivers-*/**`
   - `progress/**`
 
+## Serving probabilístico dual y sin entrenamiento bajo request
+
+`probabilistic.continuation_serving` congela offline el hazard de 63B sobre filas
+pre-2024 y materializa un snapshot versionado. El bundle conserva evidencia, hashes,
+soporte por región y rangos de entrenamiento; missingness, falta de soporte o drift pueden
+bloquear ML por región sin afectar la referencia `phase_survival`.
+
+`services.drought_continuation` verifica el hash canónico del snapshot y, fuera de demo,
+el manifiesto y el SHA-256 del bundle. Solo después construye contratos tipados. La API
+lee esa vista inmutable: a 30 días devuelve las dos estimaciones y a 60/90/180 solo el
+baseline. Ningún request importa datos históricos, ajusta modelos, escribe o llama GEE.

@@ -286,3 +286,11 @@
 - Se decide integrar el hazard como predicción ML experimental, no operacional y
   simultánea a la referencia histórica, sin alterar el veredicto inconcluso.
 - Specs 64–65 adaptados; 64 queda `spec_ready` para revisión antes de implementar.
+
+## 2026-07-28T20:15:00+02:00 - #sprint-64-risk-probability-api-drivers -> review_pending
+
+- Hazard C=0.1 congelado con 2.772 filas pre-2024 y cero filas holdout en fit.
+- Snapshot real de 92 filas: dos regiones activas con ML+referencia y 21 Normal.
+- Endpoint dual, contrato, drivers, hashes y degradación independiente implementados.
+- Run hash `sha256:44c6ae469551ffdac0e11a73c9e47d3c4279dc0f1888bade434d4deca25b3070`.
+- 126 tests + 6 subtests y gates oficiales pasan.
