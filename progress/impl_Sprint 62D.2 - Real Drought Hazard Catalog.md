@@ -37,3 +37,14 @@ El índice oficial conserva el boletín de Tharaka-Nithi de agosto de 2022, pero
 su enlace de documento devuelve HTTP 404. El backfill conserva identificador y
 URL como `document_unavailable_after_retries`, lo registra para revisión y
 continúa sin fabricar una fase ni abortar el lote.
+
+### Ejecución real completa
+
+- NDMA: 2.794 boletines indexados, 2.269 fases validadas y 525 en revisión.
+- Fases: 1.165 Normal, 745 Alert, 325 Alarm, 28 Recovery y 6 Emergency.
+- Normalización: 2.269 etiquetas, 23/121 ADM1, hash
+  `sha256:cd263249cbdab344856991c1a2880cd55797b62c426b572a0dce669b29a92788`.
+- Auditoría: 1.076 evidencias activas agrupadas en 152 episodios; 1.193
+  observaciones Normal/Recovery; 23 ADM1 cubiertas y 7/8 países unknown.
+- Hash de episodios:
+  `sha256:4d11d5463b522ac727f814ed19a0bf7ffe36d3f32b85e301804c79c035e77b04`.

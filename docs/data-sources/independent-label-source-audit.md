@@ -215,3 +215,10 @@ Tharaka-Nithi de agosto de 2022 (`c759391a-f98f-4650-8639-ebd24b4f6ceb`)
 devuelve HTTP 404 tras los reintentos. El índice y la URL se conservan como
 `document_unavailable_after_retries` en `review_required`; la ausencia del PDF
 no se interpreta como una fase negativa y no detiene el resto del backfill.
+
+Resultado completo del backfill del 28 de julio de 2026: 2.794 boletines
+indexados, 2.269 fases validadas y 525 documentos en revisión. Las fases
+validadas contienen 1.165 Normal, 745 Alert, 325 Alarm, 28 Recovery y 6
+Emergency, con cobertura de los 23 condados NDMA. La auditoría agrupó las
+1.076 observaciones activas en 152 episodios ADM1; los otros siete países IGAD
+permanecen `unknown`.
