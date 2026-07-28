@@ -258,3 +258,9 @@
 - Holdout 2024+ abierto una sola vez tras congelar código y validación.
 - HGB mejora IBS y recuperación global, pero falla el gate al degradar 180 días.
 - Serving permanece deshabilitado; 248 tests y verificaciones enfocadas pasan.
+
+## 2026-07-28T15:00:00+02:00 - #sprint-62f-drought-continuation-survival -> done
+
+- 62F aceptado y cerrado formalmente.
+- 63-65 reorientados a continuidad de sequía con routing ML/baseline por horizonte.
+- El holdout consumido queda excluido de fitting, calibración y selección posteriores.

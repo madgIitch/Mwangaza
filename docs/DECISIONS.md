@@ -748,3 +748,15 @@ de recuperación frente al baseline empírico, pero empeoró a 180 días. Como e
 no degradar ningún horizonte, queda rechazado para serving. El holdout 2024+ no se usa
 para retocar 62F; cualquier cambio de features, modelo o gate requiere un nuevo spec y
 un nuevo conjunto temporal verdaderamente no visto.
+
+## 2026-07-28 · La integración probabilística será híbrida y por horizonte
+
+Los Sprints 63-65 dejan de publicar el antiguo target sintético de riesgo orange/red y
+se concentran en `same_episode_continues`. HGB solo puede aparecer como ML
+experimental a 30 días después del gate de calibración de 63. Los horizontes 60, 90 y
+180 días usan `phase_survival`, elegido en validación, y nunca se rotulan como IA.
+
+La API y la interfaz deben mostrar el estimador utilizado, fallback, calidad y
+abstención. La ausencia de una fase activa es `not_applicable`, no una probabilidad cero.
+El holdout 2024+ abierto en 62F es evidencia inmutable y no puede alimentar nuevos
+ajustes; una futura promoción de ML en horizontes largos requiere datos no vistos.

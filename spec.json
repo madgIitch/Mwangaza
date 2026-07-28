@@ -4665,48 +4665,46 @@
     },
     {
       "id": "sprint-63-probability-calibration-skill-gate",
-      "name": "Sprint 63 - Probability Calibration and Skill Gate",
+      "name": "Sprint 63 - Continuation Calibration and Hybrid Skill Gate",
       "status": "pending",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,
       "demo_critical": false,
       "dependencies": [
-        "sprint-62-calibrated-risk-classifier",
-        "sprint-62b-real-historical-backfill",
-        "sprint-62e-drought-episode-evaluation"
+        "sprint-62f-drought-continuation-survival"
       ],
-      "objective": "Calibrar las probabilidades fuera de muestra, medir su skill y producir una decision persistida de elegibilidad por modelo, region y horizonte.",
+      "objective": "Convertir la evidencia de 62F en una politica hibrida reproducible: ML experimental para continuidad a 30 dias cuando supere su gate, phase_survival para 60/90/180 dias y abstencion cuando falte soporte.",
       "user_stories": [
         {
           "id": "HU63.1",
-          "story": "Como usuario quiero que un 70 por ciento tenga significado empirico y no sea solo un score reescalado."
+          "story": "Como usuario quiero saber la probabilidad de que la sequia activa continue y distinguir si la estima ML o un baseline."
         },
         {
           "id": "HU63.2",
-          "story": "Como responsable cientifico quiero que Mwangaza se abstenga con una razon verificable cuando la evidencia sea insuficiente."
+          "story": "Como responsable cientifico quiero gates separados por horizonte y que el holdout consumido en 62F no se reutilice para ajustar el modelo."
         }
       ],
       "tasks": [
-        "Calibrar con sigmoid usando predicciones fuera de muestra separadas del fit base.",
-        "Calcular Brier score, log loss, recall, precision, calibration bins y Brier Skill Score.",
-        "Definir gates por modelo, horizonte y representacion regional para skill, calidad, positivos, calibracion, drift y cobertura.",
-        "Persistir metricas, thresholds de gate, decision y razones estructuradas.",
-        "Definir estado unavailable estable y pruebas de abstencion.",
-        "Reservar isotonic y probabilidades multiclase como alcance futuro no implementado."
+        "Consumir el risk set estricto y el target same_episode_continues de 62F.",
+        "Calibrar el candidato HGB de 30 dias con sigmoid y predicciones temporales OOF separadas del fit base.",
+        "Evaluar Brier, BSS, log loss, calibration bins y diagnosticos de recuperacion por horizonte.",
+        "Persistir la ruta por horizonte: ml_experimental, baseline o unavailable, con razones estructuradas.",
+        "Mantener 60/90/180 dias en phase_survival y bloquear cualquier ajuste con el holdout 2024+ ya consumido.",
+        "Versionar artefactos, hashes, fallback y pruebas deterministas de abstencion."
       ],
-      "deliverable": "Probabilidades sigmoid calibradas con evaluacion persistida y gate estricto de publicacion por horizonte y region.",
+      "deliverable": "Artefacto hibrido versionado para continuidad del mismo episodio: HGB calibrado y condicionado por gate a 30 dias, phase_survival a 60/90/180 y abstencion segura.",
       "acceptance": [
-        "La calibracion inicial es exclusivamente sigmoid/Platt y usa predicciones fuera de muestra o folds separados de los datos usados para ajustar el clasificador base.",
-        "Por horizonte se persisten Brier score, baseline Brier, Brier Skill Score, log loss, recall, precision, conteos de clase y calibration bins con limites y frecuencias observadas.",
-        "Brier Skill Score se calcula como `1 - brier_model / brier_climatology`; baseline cero o invalido bloquea elegibilidad con razon estable.",
-        "La probabilidad solo es elegible cuando BSS es mayor que cero y se cumplen los minimos aprobados de historia, positivos, cobertura, calidad y representacion regional.",
-        "El gate bloquea calidad actual critica, drift por encima del umbral aprobado, horizonte no validado, region insuficientemente representada y calibracion no evaluable o extremadamente pobre.",
-        "Cada decision devuelve `eligible` y una lista ordenada de reason codes; la misma entrada produce exactamente la misma decision.",
-        "Las metricas globales no ocultan fallos regionales: se registra diagnostico por region/horizonte y puede abstenerse para una region aunque el modelo compartido sea globalmente elegible.",
-        "Un resultado no elegible conserva diagnosticos pero no expone `probability`; el mensaje publico canonico es `Probability unavailable - insufficient validated skill for this region and horizon.`",
-        "Isotonic, multiclase y ajuste automatico de thresholds quedan explicitamente fuera de alcance hasta una spec posterior.",
-        "Tests cubren calibracion separada, probabilidades extremas, clase rara, bins vacios, BSS positivo/cero/negativo, drift, calidad, regiones insuficientes y persistencia reproducible."
+        "El unico target es `same_episode_continues` condicionado a que exista una fase oficial activa en `as_of`; onset, orange/red e impacto humano quedan fuera de alcance.",
+        "HGB solo es candidato ML a 30 dias. Los horizontes 60, 90 y 180 se enrutan a `phase_survival`, elegido con validacion antes de abrir el holdout, y nunca se presentan como ML.",
+        "La calibracion de 30 dias es sigmoid/Platt y usa predicciones walk-forward OOF separadas tanto del fit base como de la evaluacion del calibrador.",
+        "El holdout 2024+ abierto en 62F no se usa para fitting, calibracion, seleccion de features, thresholds ni gates; sus hashes se conservan solo como evidencia inmutable.",
+        "Por horizonte se persisten Brier, baseline Brier, BSS, log loss, calibration bins, soporte, censura y error de recuperacion con sus denominadores.",
+        "La ruta `ml_experimental` exige BSS positivo frente al baseline del mismo horizonte, calibracion evaluable, soporte minimo y calidad actual valida; si falla, 30 dias degrada explicitamente a baseline o unavailable.",
+        "Cada decision produce `estimator_kind=ml|baseline|none`, `experimental`, artefacto elegido y reason codes ordenados; la misma entrada genera exactamente la misma decision.",
+        "Los diagnosticos globales no ocultan falta de representacion regional; una region sin soporte suficiente queda unavailable aunque exista un artefacto global.",
+        "No se incorporan nuevas fuentes, modelos de supervivencia, isotonic, multiclase ni ajuste automatico de thresholds en este sprint.",
+        "Tests cubren separacion temporal, bloqueo del holdout, calibracion, BSS, routing por horizonte, fallback, censura, regiones insuficientes y hashes reproducibles."
       ],
       "scope": [
         "src/mwangaza/probabilistic/**",
@@ -4727,7 +4725,7 @@
     },
     {
       "id": "sprint-64-risk-probability-api-drivers",
-      "name": "Sprint 64 - Risk Probability API and Drivers",
+      "name": "Sprint 64 - Drought Continuation API and Drivers",
       "status": "pending",
       "sdd": true,
       "milestone": "1.1.0",
@@ -4736,11 +4734,11 @@
       "dependencies": [
         "sprint-63-probability-calibration-skill-gate"
       ],
-      "objective": "Materializar, explicar y exponer probabilidades elegibles mediante un contrato publico versionado sin ejecutar entrenamiento bajo demanda.",
+      "objective": "Materializar y exponer la probabilidad de que una sequia oficialmente activa siga activa, conservando el metodo hibrido, su evidencia y sus limites sin entrenar bajo demanda.",
       "user_stories": [
         {
           "id": "HU64.1",
-          "story": "Como consumidor API quiero probabilidades, validacion, calidad y drivers trazables bajo un contrato estable."
+          "story": "Como consumidor API quiero probabilidades de continuidad, horizonte, metodo, validacion y drivers trazables bajo un contrato estable."
         },
         {
           "id": "HU64.2",
@@ -4748,25 +4746,25 @@
         }
       ],
       "tasks": [
-        "Definir contrato versionado RiskProbability con estado eligible/unavailable y tres horizontes.",
+        "Definir contrato versionado DroughtContinuationProbability con estados available, unavailable y not_applicable.",
         "Materializar inferencias desde snapshots y artefactos previamente aprobados.",
-        "Exponer GET /api/v1/risk-probabilities con filtros acotados por region y horizonte.",
-        "Calcular tres drivers principales con metodo determinista apropiado al modelo.",
+        "Exponer GET /api/v1/drought-continuation-probabilities con filtros acotados por region y horizonte.",
+        "Calcular hasta tres drivers no causales para ML y evidencia descriptiva para baselines.",
         "Sanear metadata y bloquear paths, secretos, artefactos no aprobados y entrenamiento bajo request.",
-        "Anadir fixtures demo explicitamente experimentales y contract tests."
+        "Anadir fixtures demo con routing hibrido explicito y contract tests."
       ],
-      "deliverable": "Endpoint publico de solo lectura con probabilidades calibradas elegibles o abstencion, metricas de skill, calidad y tres drivers no causales.",
+      "deliverable": "Endpoint publico de solo lectura para continuidad del mismo episodio con ML experimental a 30 dias, baseline en horizontes largos, fallback y abstencion trazables.",
       "acceptance": [
-        "`GET /api/v1/risk-probabilities` acepta filtros acotados `region_id`, `as_of` y `horizon_periods=1|2|3`, devuelve payload versionado y no inicia GEE, entrenamiento, calibracion ni escritura.",
-        "Un resultado elegible incluye region_id, as_of, horizon_periods, target=`risk_level_at_or_above_orange`, probability en `[0,1]`, band, current_level, model metadata, validation, quality, `is_experimental=true` y exactamente hasta tres drivers.",
-        "Un resultado no elegible incluye estado `unavailable`, reason codes, calidad y diagnosticos permitidos, omite `probability` y usa el copy canonico de abstencion.",
-        "El contrato afirma `estimated probability that the Mwangaza risk indicator reaches orange or red`; nunca afirma probabilidad oficial de sequia, crisis, perdida agricola o personas afectadas.",
-        "Los drivers se ordenan por magnitud absoluta, declaran direccion y metodo, y usan lenguaje `associated_with_higher_or_lower_model_output`; no usan verbos causales ni inventan puntos porcentuales si el metodo no los soporta.",
-        "Regresion logistica usa contribuciones reproducibles basadas en features transformadas; gradient boosting usa el metodo explicativo aprobado en la entrevista SDD y degrada a drivers unavailable si no puede calcularlos con seguridad.",
-        "La API solo lee artefactos y predicciones materializados con dataset/model/threshold hashes aprobados; mismatch, corrupcion o modelo no elegible produce unavailable y nunca fallback a porcentaje inventado.",
+        "`GET /api/v1/drought-continuation-probabilities` acepta `region_id`, `as_of` y `horizon_days=30|60|90|180`, devuelve payload versionado y no inicia GEE, entrenamiento, calibracion ni escritura.",
+        "El contrato solo aplica cuando `current_drought_status=active`; en otro caso devuelve `not_applicable` y nunca interpreta ausencia de etiqueta como recuperacion.",
+        "Un resultado available incluye region_id, as_of, horizon_days, target=`same_episode_continues`, probability en `[0,1]`, current_phase, estimator_kind, artifact metadata, validation, quality y experimental.",
+        "A 30 dias se usa ML solo si el gate de 63 lo permite; su fallo activa un baseline identificado. A 60/90/180 dias `estimator_kind=baseline` y el payload nunca los denomina prediccion ML.",
+        "Unavailable omite probability, conserva reason codes y usa el copy canonico; fallback siempre expone `fallback_reason` y nunca inventa un porcentaje.",
+        "El contrato afirma probabilidad estimada de que el mismo episodio oficialmente activo continue; no afirma onset, impacto humano, perdida agricola ni duracion exacta.",
+        "Los drivers ML se ordenan por magnitud absoluta, declaran direccion/metodo y usan lenguaje asociativo; los baselines exponen fase y elapsed days como evidencia descriptiva, no como drivers causales.",
+        "La API solo lee snapshots y artefactos cuyos hashes coinciden con la decision aprobada de 63; mismatch, corrupcion o region sin soporte produce unavailable.",
         "Paginacion, orden, cache headers, errores 400/404 y OpenAPI siguen los patrones v1 existentes; payloads no filtran paths locales, secretos ni datos personales.",
-        "Demo es determinista, offline y claramente fixture/experimental; live/cache no mezclan fixtures.",
-        "Contract, API y security tests cubren eligible/unavailable, filtros, tres horizontes, drivers, lenguaje, mismatch, corrupcion y prueba negativa de que una request no entrena ni consulta GEE."
+        "Contract, API y security tests cubren active/not_applicable/unavailable, cuatro horizontes, routing ML/baseline, fallback, drivers, hashes y prueba negativa de entrenamiento/GEE."
       ],
       "scope": [
         "src/mwangaza/probabilistic/**",
@@ -4791,7 +4789,7 @@
     },
     {
       "id": "sprint-65-probability-ui-integration",
-      "name": "Sprint 65 - Probability UI Integration",
+      "name": "Sprint 65 - Drought Continuation UI Integration",
       "status": "pending",
       "sdd": true,
       "milestone": "1.1.0",
@@ -4802,37 +4800,37 @@
         "sprint-59-reports-center-completion",
         "sprint-64-risk-probability-api-drivers"
       ],
-      "objective": "Integrar una lectura compacta y responsable de probabilidad de riesgo severo en Region Explorer y reportes sin crear otra pantalla ni ocultar la abstencion.",
+      "objective": "Integrar una lectura compacta de continuidad de sequia activa en Region Explorer y reportes, haciendo visible si procede de ML experimental, baseline o abstencion.",
       "user_stories": [
         {
           "id": "HU65.1",
-          "story": "Como analista regional quiero ver la probabilidad por horizonte, sus drivers y su skill junto al contexto observado."
+          "story": "Como analista regional quiero ver si una sequia activa probablemente continuara, por horizonte y junto al contexto observado."
         },
         {
           "id": "HU65.2",
-          "story": "Como decisor quiero distinguir claramente prediccion experimental, riesgo actual, resultado mas probable y ausencia de skill."
+          "story": "Como decisor quiero distinguir claramente ML experimental, baseline, fallback y ausencia de evidencia suficiente."
         }
       ],
       "tasks": [
-        "Anadir un unico modulo Severe-risk probability al inspector de Region Explorer.",
-        "Mostrar horizontes 1-3, probabilidad elegible, riesgo actual, calidad, confianza, skill y tres drivers.",
-        "Representar distribucion por niveles solo si existe un contrato multiclase posterior; no derivarla del target binario.",
-        "Soportar unavailable, disagreement y metadata incompleta sin numeros sustitutos.",
-        "Incorporar la prediccion elegible y su disclaimer a reportes materializados.",
+        "Anadir un unico modulo Drought continuation al inspector de Region Explorer.",
+        "Mostrar 30/60/90/180 dias, probabilidad, fase actual, metodo, calidad, skill y evidencia.",
+        "Distinguir visual y textualmente ML experimental, baseline y fallback sin jerarquias engañosas.",
+        "Soportar not_applicable, unavailable y metadata incompleta sin numeros sustitutos.",
+        "Incorporar la estimacion disponible y su metodo/disclaimer a reportes materializados.",
         "Preservar low-bandwidth, idiomas, accesibilidad, demo offline y ausencia de GEE desde navegador."
       ],
-      "deliverable": "Modulo compacto de probabilidad experimental en Region y Reports con explicacion, validacion y abstencion equivalentes en UI normal y low-bandwidth.",
+      "deliverable": "Modulo compacto de continuidad en Region y Reports con horizontes, routing ML/baseline, evidencia, fallback y abstencion equivalentes en UI normal y low-bandwidth.",
       "acceptance": [
-        "Region Explorer incorpora un solo modulo `Severe-risk probability` dentro del workspace existente; no crea una ruta o dashboard nuevo ni un velocimetro dominante.",
-        "El usuario puede elegir horizontes 1, 2 y 3 y ve probability, periodo objetivo, current level, model confidence/quality, BSS o skill status y hasta tres drivers solo cuando el payload es elegible.",
-        "El copy visible dice que se estima la probabilidad de que el indicador de riesgo Mwangaza alcance orange/red y muestra `Experimental prediction`; no usa `probability of drought` ni claims de impacto humano.",
-        "Unavailable ocupa el mismo lugar visual, no muestra 0%, conserva reason codes traducidos y presenta el mensaje canonico de skill insuficiente.",
-        "La interfaz no muestra distribucion green/yellow/orange/red mientras el backend solo modele el target binario; cualquier distribucion multiclase requiere un contrato futuro aprobado.",
-        "Drivers se presentan como asociaciones del modelo, no causalidad; tooltip o detalle conserva feature, direccion, metodo y periodo.",
-        "Reports incorpora solo probabilidades materializadas elegibles con as_of, horizonte, modelo, skill, calidad y disclaimer; unavailable se documenta como abstencion, no se omite silenciosamente.",
+        "Region Explorer incorpora un solo modulo `Drought continuation` dentro del workspace existente y solo lo activa cuando existe una fase oficial activa; no crea otra ruta ni un velocimetro dominante.",
+        "El usuario puede elegir 30, 60, 90 y 180 dias y ve probability, periodo objetivo, fase actual, estimator kind, calidad, skill y hasta tres drivers/evidencias cuando estan disponibles.",
+        "A 30 dias la insignia dice `Experimental ML` solo si la API selecciona ML; a 60/90/180 dice `Historical baseline` y nunca `AI prediction`.",
+        "El copy dice que se estima si el mismo episodio activo continuara; no promete inicio de sequia, duracion exacta, impacto humano ni certeza operativa.",
+        "Fallback muestra el baseline y explica por que ML no se uso. Unavailable y not applicable ocupan el mismo lugar visual y nunca muestran 0%.",
+        "Drivers ML se presentan como asociaciones, mientras fase y tiempo transcurrido de baselines se presentan como evidencia descriptiva; ambos conservan metodo y periodo.",
+        "Reports incorpora probability, as_of, horizonte, fase, estimator kind, artifact/skill, calidad y disclaimer; unavailable se documenta como abstencion.",
         "Navegador y generacion de reportes no entrenan, calibran ni consultan GEE; consumen exclusivamente API/snapshots materializados.",
-        "Low-bandwidth conserva horizonte, probabilidad o abstencion, riesgo actual, skill, calidad, drivers y disclaimer en texto/tabla; idiomas no traducen IDs, versiones, unidades ni reason codes.",
-        "Tests frontend/reports cubren eligible, unavailable, cambio de horizonte, deep state, metadata parcial, lenguaje no causal, ausencia de 0% fallback, low-bandwidth, demo offline y ausencia de llamadas de entrenamiento/GEE."
+        "Low-bandwidth conserva horizonte, probabilidad o abstencion, fase, metodo, skill, calidad, evidencia y disclaimer en texto/tabla; no traduce IDs, versiones ni reason codes.",
+        "Tests frontend/reports cubren ML, baseline, fallback, unavailable, not applicable, cuatro horizontes, lenguaje no causal, low-bandwidth, demo offline y ausencia de entrenamiento/GEE."
       ],
       "scope": [
         "frontend/**",
