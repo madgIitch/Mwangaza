@@ -707,3 +707,12 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 - Fuentes/taxonomías incompatibles generan series de episodios separadas. Los solapes
   discordantes se auditan, no se resuelven por prioridad implícita.
 - La ausencia de adapter, archivo o evidencia validada es `unknown`, no un negativo.
+
+<!-- harness:sprint-62e-drought-episode-evaluation -->
+## 2026-07-28 · sprint-62e-drought-episode-evaluation aprobado
+
+Contexto: se aprobó el spec `sprint-62e-drought-episode-evaluation` (Sprint 62E - Drought Episode Evaluation).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

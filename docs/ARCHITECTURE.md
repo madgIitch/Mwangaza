@@ -1648,3 +1648,21 @@ oficial validado; normalización NDMA/EM-DAT al contrato de etiquetas independie
 auditoría de episodios ADM1. Los artefactos fuente y los episodios no comparten schema ni
 se consumen todavía por el entrenamiento. El catálogo de autoridades IGAD hace explícita
 la cobertura desconocida antes de añadir adapters futuros.
+
+<!-- harness:sprint-62e-drought-episode-evaluation -->
+## sprint-62e-drought-episode-evaluation · Sprint 62E - Drought Episode Evaluation
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/probabilistic/**`
+  - `scripts/evaluate_drought_episodes.py`
+  - `tests/probabilistic/**`
+  - `tests/fixtures/probabilistic/**`
+  - `docs/probabilistic-risk.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/sprint-62e-drought-episode-evaluation-*/**`
+  - `progress/**`
+
