@@ -61,7 +61,7 @@ export function App({
     initialLowBandwidth ?? new URLSearchParams(window.location.search).get("lite") === "1"
   );
   const [offline, setOffline] = useState(initialOffline ?? navigator.onLine === false);
-  const [selectedRegionId, setSelectedRegionId] = useState(data.selectedRegionId);
+  const [selectedRegionId, setSelectedRegionId] = useState(() => requestedCountryId(data));
   const [theme, setTheme] = useState<ThemePreference>(() => initialTheme());
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export function App({
             regions: snapshotData.regions.length
           });
           setData(snapshotData);
-          setSelectedRegionId(snapshotData.selectedRegionId);
+          setSelectedRegionId(requestedCountryId(snapshotData));
           const next = await loadApiDashboardDetails(snapshotData);
           if (!cancelled) {
             appLog("details applied", {
@@ -99,7 +99,7 @@ export function App({
               selectedRegionId: next.selectedRegionId
             });
             setData(next);
-            setSelectedRegionId(next.selectedRegionId);
+            setSelectedRegionId(requestedCountryId(next));
           }
           if (!cancelled && snapshotData.dataMode === "cache" && attempt < LIVE_REFRESH_MAX_ATTEMPTS) {
             attempt += 1;
@@ -117,7 +117,7 @@ export function App({
           appLog("api fallback applied");
           setApiFallback(true);
           setData(demoDashboard);
-          setSelectedRegionId(demoDashboard.selectedRegionId);
+          setSelectedRegionId(requestedCountryId(demoDashboard));
         }
       }
     };
@@ -1609,6 +1609,13 @@ function loadingApiDashboard(): DashboardData {
   };
 }
 
+function requestedCountryId(data: DashboardData): string {
+  const requested = new URLSearchParams(window.location.search).get("country");
+  return requested && data.regions.some((region) => region.id === requested)
+    ? requested
+    : data.selectedRegionId;
+}
+
 function stripUiGeometry(region: RegionRisk): RegionRisk {
   return {
     id: region.id,
@@ -1651,7 +1658,9 @@ function RegionRiskSurface({
 }): JSX.Element {
   const [administrativeMap, setAdministrativeMap] = useState<AdministrativeFeatureCollection | null>(null);
   const [mapState, setMapState] = useState<"loading" | "ready" | "unavailable">("loading");
-  const [mapLayer, setMapLayer] = useState<"risk" | "episodes">("risk");
+  const [mapLayer, setMapLayer] = useState<"risk" | "episodes">(
+    new URLSearchParams(window.location.search).get("layer") === "episodes" ? "episodes" : "risk"
+  );
   const [activeUnit, setActiveUnit] = useState<AdministrativeFeature | null>(null);
   const boundaryAsset = ADMIN_BOUNDARY_ASSETS[selectedRegion.id];
   const measuredUnits = useMemo(() => new Map<string, AdministrativeUnit>(
@@ -2180,11 +2189,33 @@ function OverviewRiskMap({
 }): JSX.Element {
   const [geography, setGeography] = useState<RiskFeatureCollection | null>(null);
   const [geometryError, setGeometryError] = useState(false);
-  const [layer, setLayer] = useState<"risk" | "quality">("risk");
+  const [layer, setLayer] = useState<"risk" | "quality" | "episodes">(
+    new URLSearchParams(window.location.search).get("layer") === "episodes" ? "episodes" : "risk"
+  );
   const [hoveredRegionId, setHoveredRegionId] = useState(selectedRegion.id);
   const [mapZoom, setMapZoom] = useState(1);
   const tooltipRegion = data.regions.find((region) => region.id === hoveredRegionId) ?? selectedRegion;
   const tooltipProfile = data.profiles.find((profile) => profile.id === tooltipRegion.id);
+  const continuationByRegion = useMemo(() => new Map(
+    (data.droughtContinuation?.items ?? [])
+      .filter((item) => item.horizon_days === 30)
+      .map((item) => [item.region_id, item])
+  ), [data.droughtContinuation]);
+  const episodeSummaryByCountry = useMemo(() => new Map(data.profiles.map((profile) => {
+    const rows = (profile.administrativeUnits ?? []).map((unit) => ({
+      item: continuationByRegion.get(unit.regionId),
+      name: unit.name
+    }));
+    const evaluated = rows.filter(({ item }) => item && item.current_drought_status !== "unknown");
+    const active = evaluated.filter(({ item }) => item?.current_drought_status === "active");
+    return [profile.id, {
+      active: active.length,
+      evaluated: evaluated.length,
+      names: active.map(({ name }) => name),
+      status: active.length ? "active" as const : evaluated.length ? "inactive" as const : "unknown" as const
+    }];
+  })), [continuationByRegion, data.profiles]);
+  const tooltipEpisodes = episodeSummaryByCountry.get(tooltipRegion.id) ?? { active: 0, evaluated: 0, names: [], status: "unknown" as const };
   const setZoom = (zoom: number): void => setMapZoom(Math.max(1, Math.min(4, zoom)));
   const resetMap = (): void => setMapZoom(1);
 
@@ -2209,7 +2240,7 @@ function OverviewRiskMap({
   return (
     <section className="overview-map-panel">
       <div className="section-heading">
-        <div><p className="eyebrow">{t(language, "igadSituation")}</p><h2>{t(language, "riskMap")}</h2></div>
+        <div><p className="eyebrow">{t(language, "igadSituation")}</p><h2>{layer === "episodes" ? t(language, "persistentEpisodesMap") : t(language, "riskMap")}</h2></div>
         <span className="info-dot" title={t(language, "riskMapHelp")}>i</span>
       </div>
       <div className="overview-map-stage" aria-label={t(language, "overviewRiskMap")}>
@@ -2227,12 +2258,16 @@ function OverviewRiskMap({
                   const region = geo.properties.region as RegionRisk;
                   const regionIsAvailable = data.regions.some((item) => item.id === region.id);
                   const interactiveAnchor = Boolean(geo.properties.interactiveAnchor) && regionIsAvailable;
-                  const fill = layer === "risk" ? mapFill(region.level) : qualityMapFill(region.quality);
-                  const hoverFill = layer === "risk" ? mapHoverFill(region.level) : fill;
+                  const episodeSummary = episodeSummaryByCountry.get(region.id);
+                  const fill = layer === "risk" ? mapFill(region.level) : layer === "quality" ? qualityMapFill(region.quality) : episodeMapFill(episodeSummary?.status);
+                  const hoverFill = layer === "risk" ? mapHoverFill(region.level) : layer === "episodes" ? episodeMapHoverFill(episodeSummary?.status) : fill;
+                  const ariaLabel = layer === "episodes"
+                    ? `${region.name}: ${episodeSummary?.active ?? 0} ${t(language, "activeEpisodes")}, ${episodeSummary?.evaluated ?? 0} ${t(language, "evaluatedAdm1")}`
+                    : `${region.name}: ${region.score ?? t(language, "noData")}, ${localizedSeverity(language, region.level)}, ${t(language, "quality")} ${localizedQuality(language, region.quality)}`;
                   return (
                     <Geography
                       aria-hidden={!interactiveAnchor}
-                      aria-label={interactiveAnchor ? `${region.name}: ${region.score ?? t(language, "noData")}, ${localizedSeverity(language, region.level)}, ${t(language, "quality")} ${localizedQuality(language, region.quality)}` : undefined}
+                      aria-label={interactiveAnchor ? ariaLabel : undefined}
                       data-country={region.id}
                       geography={geo}
                       key={geo.rsmKey}
@@ -2267,25 +2302,33 @@ function OverviewRiskMap({
           />
         )}
         {hasGeometry ? <div className="overview-map-tooltip" aria-live="polite">
-          <span>{layer === "risk" ? t(language, "risk") : t(language, "dataQuality")}</span>
+          <span>{layer === "risk" ? t(language, "risk") : layer === "quality" ? t(language, "dataQuality") : t(language, "persistentEpisodes")}</span>
           <strong>{tooltipRegion.name}</strong>
-          <b>{tooltipRegion.score ?? t(language, "noData")}{tooltipRegion.score === null ? "" : "/100"} · {localizedSeverity(language, tooltipRegion.level)}</b>
-          <small>{localizedQuality(language, tooltipRegion.quality)} {t(language, "quality")} · {tooltipRegion.period}</small>
-          <small>{tooltipProfile?.metrics.slice(0, 3).map((metric) => `${metric.label}: ${metric.value}${metric.unit}`).join(" · ") || t(language, "indicatorsUnavailable")}</small>
-          <em>{data.source}</em>
+          {layer === "episodes" ? <>
+            <b>{tooltipEpisodes.active} {t(language, "activeEpisodes")}</b>
+            <small>{tooltipEpisodes.evaluated} {t(language, "evaluatedAdm1")}</small>
+            <small>{tooltipEpisodes.names.length ? tooltipEpisodes.names.slice(0, 3).join(" · ") : t(language, "noActiveEpisodes")}</small>
+            <em>{data.droughtContinuation?.analysis_as_of ?? t(language, "noData")}</em>
+          </> : <>
+            <b>{tooltipRegion.score ?? t(language, "noData")}{tooltipRegion.score === null ? "" : "/100"} · {localizedSeverity(language, tooltipRegion.level)}</b>
+            <small>{localizedQuality(language, tooltipRegion.quality)} {t(language, "quality")} · {tooltipRegion.period}</small>
+            <small>{tooltipProfile?.metrics.slice(0, 3).map((metric) => `${metric.label}: ${metric.value}${metric.unit}`).join(" · ") || t(language, "indicatorsUnavailable")}</small>
+            <em>{data.source}</em>
+          </>}
         </div> : null}
         <div className="map-controls" aria-label={t(language, "mapControls")}>
           <button aria-label={t(language, "home")} onClick={resetMap} type="button" title={t(language, "home")}>⌂</button>
           <button aria-label={t(language, "zoomIn")} disabled={mapZoom >= 4} onClick={() => setZoom(mapZoom + 0.5)} type="button">+</button>
           <button aria-label={t(language, "zoomOut")} disabled={mapZoom <= 1} onClick={() => setZoom(mapZoom - 0.5)} type="button">−</button>
-          <label><span>{t(language, "layer")}</span><select aria-label={t(language, "layer")} onChange={(event) => setLayer(event.target.value as "risk" | "quality")} value={layer}><option value="risk">{t(language, "risk")}</option><option value="quality">{t(language, "dataQuality")}</option></select></label>
+          <label><span>{t(language, "layer")}</span><select aria-label={t(language, "layer")} onChange={(event) => setLayer(event.target.value as "risk" | "quality" | "episodes")} value={layer}><option value="risk">{t(language, "risk")}</option><option value="episodes">{t(language, "persistentEpisodes")}</option><option value="quality">{t(language, "dataQuality")}</option></select></label>
         </div>
       </div>
       <p className="overview-map-attribution">{t(language, "boundaryAttribution")}</p>
       <div className="map-legend" aria-label={`${layer} legend`}>
-        {layer === "risk" ? <><span data-severity="normal">{t(language, "low")}</span><span data-severity="watch">{t(language, "watch")}</span><span data-severity="warning">{t(language, "alert")}</span><span data-severity="critical">{t(language, "severe")}</span><span data-severity="unknown">{t(language, "notAssessed")}</span></> : <><span data-quality="ok">{t(language, "high")}</span><span data-quality="degraded">{t(language, "medium")}</span><span data-quality="unknown">{t(language, "insufficient")}</span></>}
+        {layer === "risk" ? <><span data-severity="normal">{t(language, "low")}</span><span data-severity="watch">{t(language, "watch")}</span><span data-severity="warning">{t(language, "alert")}</span><span data-severity="critical">{t(language, "severe")}</span><span data-severity="unknown">{t(language, "notAssessed")}</span></> : layer === "episodes" ? <><span data-episode="active">{t(language, "persistentEpisode")}</span><span data-episode="inactive">{t(language, "noActiveEpisodes")}</span><span data-episode="unknown">{t(language, "notAssessed")}</span></> : <><span data-quality="ok">{t(language, "high")}</span><span data-quality="degraded">{t(language, "medium")}</span><span data-quality="unknown">{t(language, "insufficient")}</span></>}
       </div>
-      <p className="muted">{layer === "risk" ? t(language, "riskMapHelp") : t(language, "qualityMapHelp")}</p>
+      <p className="muted">{layer === "risk" ? t(language, "riskMapHelp") : layer === "episodes" ? t(language, "persistentEpisodesHelp") : t(language, "qualityMapHelp")}</p>
+      {layer === "episodes" ? <a className="overview-episode-link" href={`/region?country=${encodeURIComponent(tooltipRegion.id)}&layer=episodes`}>{t(language, "openEpisodeDetail")} · {tooltipRegion.name} →</a> : null}
     </section>
   );
 }

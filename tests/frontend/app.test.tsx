@@ -111,6 +111,49 @@ describe("React PWA dashboard", () => {
     expect(screen.getAllByText("Demo fixture").length).toBeGreaterThan(0);
   });
 
+  it("shows persistent episodes across IGAD in Overview and links to the regional layer", async () => {
+    window.history.pushState({}, "", "/overview");
+    const sourceItem = demoDashboard.droughtContinuation!.items.find((item) =>
+      item.current_drought_status === "active" && item.horizon_days === 30
+    )!;
+    const overviewEpisodes = {
+      ...demoDashboard,
+      profiles: demoDashboard.profiles.map((profile) => profile.id === "som" ? {
+        ...profile,
+        administrativeUnits: [hiiraanUnit]
+      } : profile),
+      droughtContinuation: {
+        ...demoDashboard.droughtContinuation!,
+        analysis_as_of: "2026-07-20",
+        items: [{ ...sourceItem, region_id: hiiraanUnit.regionId }],
+        total: 1
+      }
+    };
+
+    render(<App initialData={overviewEpisodes} skipApiLoad />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Layer" }), { target: { value: "episodes" } });
+
+    expect(screen.getByRole("heading", { name: "Persistent Episodes - IGAD" })).toBeInTheDocument();
+    const somalia = await screen.findByRole("button", { name: "Somalia: 1 active episodes, 1 ADM1 evaluated" });
+    expect(somalia).toHaveStyle({ fill: "#7656c7" });
+    expect(screen.getByText("Hiiraan")).toBeInTheDocument();
+    expect(screen.getByLabelText("episodes legend")).toHaveTextContent("Persistent episode");
+    expect(screen.getByRole("link", { name: /Open persistent episodes · Somalia/ })).toHaveAttribute(
+      "href",
+      "/region?country=som&layer=episodes"
+    );
+  });
+
+  it("opens a persistent-episode deep link with country and layer preserved", () => {
+    window.history.pushState({}, "", "/region?country=ken&layer=episodes");
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("combobox", { name: "Country" })).toHaveValue("ken");
+    expect(screen.getByRole("button", { name: "Persistent episodes" })).toHaveAttribute("data-active", "true");
+  });
+
   it("links Overview alerts and downloads to stable context-aware routes", () => {
     window.history.pushState({}, "", "/overview");
     render(<App initialData={demoDashboard} skipApiLoad />);

@@ -16,7 +16,8 @@ Estado: `review_pending`.
 - [x] Lint, typecheck, build y gates del harness pasan.
 - [x] El mapa alterna riesgo/episodios y conserva pais, periodo y ADM1 seleccionada.
 - [x] La capa de episodios muestra recuento, fecha, leyenda y tooltip de continuidad.
-- [ ] Revision visual humana en `/region` antes de cerrar el sprint.
+- [x] Overview agrega episodios por pais y enlaza al detalle ADM1 en la misma capa.
+- [ ] Revision visual humana en `/overview` y `/region` antes de cerrar el sprint.
 
 La inspeccion visual automatizada no se ejecuto porque no habia un navegador conectado
 en esta sesion. El sprint no se cierra hasta la aceptacion humana.

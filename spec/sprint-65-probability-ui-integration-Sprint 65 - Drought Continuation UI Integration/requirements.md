@@ -34,3 +34,7 @@ R13. El mapa ADM1 permite alternar entre `Current risk` y `Persistent episodes` 
 perder la seleccion. La segunda capa distingue episodio activo, evaluado sin episodio y
 no evaluado; muestra el recuento por pais y permite abrir un episodio activo directamente
 para ver duracion y continuidad.
+
+R14. Overview ofrece la misma capa `Persistent episodes` sobre los ocho paises IGAD. La
+capa agrega episodios ADM1 por pais, conserva el pais seleccionado, diferencia activo,
+evaluado sin episodio y no evaluado, y enlaza al detalle regional en la misma capa.

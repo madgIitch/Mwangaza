@@ -14,3 +14,4 @@
 - [x] (T12) Cubrir dominio, fuga temporal, contratos, API, frontend, reportes y seguridad. -> R12
 - [x] Tests que cubren los criterios de aceptacion.
 - [x] (T13) Anadir al mapa ADM1 las capas `Current risk` y `Persistent episodes`, con recuento, leyenda, tooltip y seleccion estable. -> R13
+- [x] (T14) Anadir `Persistent episodes` a Overview con agregacion por pais y deep-link al detalle regional. -> R14

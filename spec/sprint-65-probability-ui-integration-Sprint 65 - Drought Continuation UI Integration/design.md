@@ -70,6 +70,9 @@ inválido degrada solo continuidad sin contaminar el dashboard ni recurrir a fix
 capas. `Current risk` mantiene el semaforo compuesto. `Persistent episodes` usa una paleta
 binaria propia, muestra activos/evaluados por pais y ofrece duracion y probabilidad a 30
 dias en el tooltip. Cambiar de capa no cambia pais, periodo ni ADM1 seleccionada.
+- **overview_episode_layer:** Overview reutiliza la paleta y semantica de episodios. Cada
+  pais se colorea por presencia de al menos un episodio ADM1 activo, el tooltip muestra
+  activos/evaluados y el enlace regional usa `country` y `layer=episodes`.
 - **tests:** Las pruebas bloqueantes cubren 121 ADM1 y 484 resultados, 47/47 Kenya, estado
 activo/inactivo, probabilidades en cuatro horizontes, fechas y edades por señal, fuentes
 asincrónicas, NDMA solo como validación, FEWS solo como impacto, hashes, API/UI/Reports y

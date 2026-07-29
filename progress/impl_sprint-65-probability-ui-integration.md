@@ -21,3 +21,7 @@ sigue siendo `inconclusive` y no operacional.
 Durante revision se anadio la capa `Persistent episodes` al mapa ADM1. La vista mantiene
 la seleccion, cuenta episodios activos/evaluados por pais, usa una leyenda binaria propia
 y muestra duracion y probabilidades de 30 dias en el tooltip del territorio activo.
+
+Overview reutiliza la capa a escala IGAD: agrega activos/evaluados por pais, conserva la
+misma paleta violeta/neutra y abre `/region?country=<id>&layer=episodes` sin perder el
+contexto elegido.

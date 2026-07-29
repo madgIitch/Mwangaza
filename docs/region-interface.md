@@ -259,6 +259,10 @@ fixtures. Once the refresh completes, subsequent responses switch to
 - The panel shows the analysis cut and every signal's observation date, age and quality.
   The top bar labels a connected request as `LIVE QUERY` while its date remains an
   observation window.
+- Overview exposes the same `Persistent episodes` layer at IGAD country level. Countries
+  with at least one active ADM1 episode use the same violet state, the tooltip reports
+  active/evaluated counts, and a deep link opens Region Explorer with both country and
+  episode layer preserved.
 - The ADM1 map has two explicit layers. `Current risk` preserves the composite risk
   semaphore. `Persistent episodes` switches to a binary violet/neutral view, reports the
   active and evaluated counts for the selected country, and exposes duration plus 30-day
