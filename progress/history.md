@@ -322,3 +322,9 @@
 - Entrega implementada en `1c44981` y cierre formal registrado en `f90162f`.
 - PPTX editable, PDF final y capturas reales quedan versionados en el repositorio.
 - Sprint 52 no se inicia hasta que el usuario revise esta entrega.
+
+## 2026-07-30T01:27:59+02:00 - #sprint-52-demo-video -> spec_ready
+
+- Spec aprobada para una demo de máximo 3:00 y guion objetivo de 2:45.
+- Guion literal, acciones, fallback y checklist creados en `docs/demo-script.md`.
+- Grabación, subtítulos y exportación permanecen pendientes.

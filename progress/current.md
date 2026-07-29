@@ -1,17 +1,16 @@
 # Sesión actual
 
-Feature: **sprint-51-pitch-deck - Sprint 51 - Pitch Deck** - estado: `done`.
+Feature: **sprint-52-demo-video - Sprint 52 - Demo Video** - estado: `spec_ready`.
 
 ## Resultado
 
-- Presentación final de 10 slides centrada en la continuidad de episodios de sequía.
-- Guion de 5:00 exactos incluido en speaker notes y documentado por slide.
-- Cobertura, fecha de análisis, ML experimental y limitaciones alineadas con Sprint 65.
-- Demo story basada en capturas reales de landing, episodios persistentes IGAD y Bay ADM1.
-- PPTX editable y PDF verificado disponibles en `submission/deck/`.
-- Sin overflow; PDF renderizado correctamente; harness gates y 60 tests frontend pasan.
+- Spec adaptada y aprobada para un vídeo de máximo 3:00.
+- Guion literal de 2:45 y 318 palabras disponible en `docs/demo-script.md`.
+- Recorrido: landing → episodios persistentes IGAD → continuidad ADM1 de Bay.
+- Incluye acciones visibles, preparación, fallback, subtítulos y control de claims.
+- Se reservan 15 segundos de margen para transiciones y edición.
 
 ## Siguiente acción
 
-- Presentar los entregables al usuario.
-- No iniciar Sprint 52 - Demo Video hasta que el usuario decida continuar.
+- El usuario puede grabar siguiendo el guion escrito.
+- Después quedarán subtitulado, exportación y verificación del vídeo final.
