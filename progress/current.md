@@ -1,6 +1,6 @@
 # Sesion actual
 
-Feature: **sprint-65-probability-ui-integration - Sprint 65** - estado: `review_pending`.
+Feature: **sprint-65-probability-ui-integration - Sprint 65** - estado: `done`.
 
 ## Resultado
 
@@ -24,6 +24,5 @@ Feature: **sprint-65-probability-ui-integration - Sprint 65** - estado: `review_
 
 ## Siguiente accion
 
-- Revision humana en `/region`, especialmente una ADM1 activa como `adm1-ke-27` y una
-  inactiva como Turkana (`adm1-ke-43`).
-- Cerrar Sprint 65 solo tras aceptacion; no iniciar el siguiente sprint antes de verla.
+- Preparar y aprobar la spec de Sprint 51 - Pitch Deck antes de implementarlo.
+- Usar `/landing` y `/overview?layer=episodes` como recorrido principal del evaluador.
