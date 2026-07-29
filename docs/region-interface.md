@@ -214,6 +214,18 @@ $env:MWANGAZA_API_DATA_MODE="live"
 $env:MWANGAZA_DROUGHT_CONTINUATION_SNAPSHOT="data/models/drought-continuation-serving/snapshot.json"
 uv run uvicorn mwangaza.api.app:app --reload
 ```
+
+In a second terminal, start Vite in API mode (plain `npm run dev` intentionally
+uses offline demo fixtures):
+
+```powershell
+npm run dev:api
+```
+
+The first connected response can be `data_mode=cache` while the background GEE
+refresh is running. That cache contains observed materialized data, not demo
+fixtures. Once the refresh completes, subsequent responses switch to
+`data_mode=live` and identify `Google Earth Engine live query` as their source.
 - The public API exposes complete region profiles and processed temporal cuts for both explicit demo and live/cache data.
 - Region Explorer consumes explicit composite contributions, deterministic pilot rankings, live trends and seasonally comparable history.
 - Country, pilot view and period controls operate on already-loaded payloads; `View all alerts` preserves region, period and active status.
