@@ -4870,7 +4870,7 @@
     {
       "id": "sprint-65-probability-ui-integration",
       "name": "Sprint 65 - Drought Continuation UI Integration",
-      "status": "spec_ready",
+      "status": "done",
       "sdd": true,
       "milestone": "1.1.0",
       "estimated_hours": 8,
