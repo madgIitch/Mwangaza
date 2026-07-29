@@ -28,3 +28,9 @@ R12. Tests de dominio, fuga temporal, contratos, API, servicios, frontend, repor
 - **auth_secrets:** extracción remota separada de serving y secretos no serializados
 - **rollback_compat:** coexistencia con evidencia oficial y rollback versionado
 
+## Extension aprobada durante revision
+
+R13. El mapa ADM1 permite alternar entre `Current risk` y `Persistent episodes` sin
+perder la seleccion. La segunda capa distingue episodio activo, evaluado sin episodio y
+no evaluado; muestra el recuento por pais y permite abrir un episodio activo directamente
+para ver duracion y continuidad.

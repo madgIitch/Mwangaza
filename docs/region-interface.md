@@ -259,3 +259,7 @@ fixtures. Once the refresh completes, subsequent responses switch to
 - The panel shows the analysis cut and every signal's observation date, age and quality.
   The top bar labels a connected request as `LIVE QUERY` while its date remains an
   observation window.
+- The ADM1 map has two explicit layers. `Current risk` preserves the composite risk
+  semaphore. `Persistent episodes` switches to a binary violet/neutral view, reports the
+  active and evaluated counts for the selected country, and exposes duration plus 30-day
+  ML/historical continuation on hover without losing the selected ADM1.

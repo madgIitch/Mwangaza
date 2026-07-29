@@ -66,8 +66,11 @@ low-bandwidth y Reports conservan target, horizonte, calidad, antigüedad y disc
 - **rollback_compat:** El contrato anterior de fase oficial se conserva como evidencia/validación y no se
 mezcla con el nuevo target satelital. El snapshot es versionado y reversible; un artefacto
 inválido degrada solo continuidad sin contaminar el dashboard ni recurrir a fixtures demo.
+- **episode_map_layer:** Region Explorer conserva un solo mapa y anade un selector de dos
+capas. `Current risk` mantiene el semaforo compuesto. `Persistent episodes` usa una paleta
+binaria propia, muestra activos/evaluados por pais y ofrece duracion y probabilidad a 30
+dias en el tooltip. Cambiar de capa no cambia pais, periodo ni ADM1 seleccionada.
 - **tests:** Las pruebas bloqueantes cubren 121 ADM1 y 484 resultados, 47/47 Kenya, estado
 activo/inactivo, probabilidades en cuatro horizontes, fechas y edades por señal, fuentes
 asincrónicas, NDMA solo como validación, FEWS solo como impacto, hashes, API/UI/Reports y
 walk-forward que impide usar features, estados o targets disponibles después del corte.
-

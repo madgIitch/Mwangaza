@@ -14,6 +14,8 @@ Estado: `review_pending`.
 - [x] API local: 484 total, 121 ADM1, 47 Kenya; `adm1-ke-27` disponible y `adm1-ke-43` no aplicable.
 - [x] 403 pruebas Python y 60 frontend pasan.
 - [x] Lint, typecheck, build y gates del harness pasan.
+- [x] El mapa alterna riesgo/episodios y conserva pais, periodo y ADM1 seleccionada.
+- [x] La capa de episodios muestra recuento, fecha, leyenda y tooltip de continuidad.
 - [ ] Revision visual humana en `/region` antes de cerrar el sprint.
 
 La inspeccion visual automatizada no se ejecuto porque no habia un navegador conectado

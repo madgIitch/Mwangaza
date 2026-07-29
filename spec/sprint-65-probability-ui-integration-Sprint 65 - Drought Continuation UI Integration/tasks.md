@@ -13,3 +13,4 @@
 - [x] (T11) Mantener demo determinista y separacion cerrada entre artefactos demo y reales. -> R11
 - [x] (T12) Cubrir dominio, fuga temporal, contratos, API, frontend, reportes y seguridad. -> R12
 - [x] Tests que cubren los criterios de aceptacion.
+- [x] (T13) Anadir al mapa ADM1 las capas `Current risk` y `Persistent episodes`, con recuento, leyenda, tooltip y seleccion estable. -> R13

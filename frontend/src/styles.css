@@ -2051,6 +2051,49 @@ td {
 
 .region-map-heading p { margin: 0; }
 
+.region-map-layer-control {
+  align-items: flex-start;
+  display: grid;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.region-map-layer-control > span {
+  color: #667085;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.map-layer-switch {
+  background: #edf2ed;
+  border: 1px solid #d1dbd3;
+  border-radius: 7px;
+  display: flex;
+  padding: 3px;
+}
+
+.map-layer-switch button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #56645b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 8px 11px;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.map-layer-switch button[data-active="true"] {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(24, 52, 39, .12);
+  color: #173f31;
+}
+
+.region-map-score[data-layer="episodes"] { border-color: #7656c7; }
+
 .region-map-score {
   border-left: 4px solid #98a2b3;
   display: grid;
@@ -2142,6 +2185,11 @@ td {
 .map-tooltip-badges { align-items: center; display: flex; gap: 6px; margin: 2px 0; }
 .map-tooltip-badges b { font-size: 13px; margin-left: auto; }
 
+.episode-tooltip { display: grid; gap: 3px; margin-top: 3px; }
+.episode-tooltip b { color: #fff; font-size: 13px; }
+.episode-tooltip[data-status="active"] b { color: #d9ccff; }
+.episode-tooltip em { color: #fff; font-size: 12px; font-weight: 700; }
+
 .map-scale-note {
   background: rgba(255, 255, 255, .88);
   bottom: 14px;
@@ -2200,6 +2248,9 @@ td {
 .map-legend [data-severity="warning"]::before { background: #f08c2e; }
 .map-legend [data-severity="critical"]::before { background: #d92d20; }
 .map-legend [data-severity="unknown"]::before { background: #c4c9d1; }
+.map-legend [data-episode="active"]::before { background: #7656c7; }
+.map-legend [data-episode="inactive"]::before { background: #dce5dc; border: 1px solid #b9c8bd; }
+.map-legend [data-episode="unknown"]::before { background: #b8c0c8; }
 
 @keyframes map-pulse { to { opacity: .35; transform: scale(.75); } }
 
@@ -2673,6 +2724,9 @@ td {
     border-right: 0;
     border-bottom: 1px solid #dde5dc;
   }
+  .region-map-heading { align-items: stretch; flex-wrap: wrap; }
+  .region-map-layer-control { margin-left: 0; order: 3; width: 100%; }
+  .map-layer-switch button { flex: 1; }
   .metric-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

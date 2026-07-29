@@ -17,3 +17,7 @@ de entrenamiento, 121/121 ADM1, 47/47 Kenya, 11 activas, 484/484 resultados y
 El ML experimental de 30 dias obtuvo BSS ponderado por episodio +23.79%, ECE 0.0544,
 mejoro 2/2 folds y su IC95 del delta Brier fue [-0.0765, -0.0365]. El estado contractual
 sigue siendo `inconclusive` y no operacional.
+
+Durante revision se anadio la capa `Persistent episodes` al mapa ADM1. La vista mantiene
+la seleccion, cuenta episodios activos/evaluados por pais, usa una leyenda binaria propia
+y muestra duracion y probabilidades de 30 dias en el tooltip del territorio activo.

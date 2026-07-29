@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { compatibleDroughtContinuation, loadApiDashboard, loadApiDashboardSnapshot } from "../../frontend/src/api";
 import { App } from "../../frontend/src/App";
@@ -309,6 +309,50 @@ describe("React PWA dashboard", () => {
     expect(document.querySelector(".rank-marker[data-top='true']")).toHaveTextContent("1");
     expect(document.querySelector(".ranking-scroll .signal-badge[data-severity='critical']")).toHaveTextContent("Severe");
     expect(document.querySelector(".ranking-scroll .signal-badge[data-quality='ok']")).toHaveTextContent("High");
+  });
+
+  it("switches the ADM1 map from current risk to persistent episodes without losing selection", async () => {
+    window.history.pushState({}, "", "/region");
+    mockAdministrativeMap();
+    const sourceItem = demoDashboard.droughtContinuation!.items.find((item) =>
+      item.current_drought_status === "active" && item.horizon_days === 30
+    )!;
+    const withEpisodeLayer = {
+      ...demoDashboard,
+      profiles: demoDashboard.profiles.map((profile) => profile.id === "som" ? {
+        ...profile,
+        administrativeUnits: [hiiraanUnit]
+      } : profile),
+      droughtContinuation: {
+        ...demoDashboard.droughtContinuation!,
+        items: [{
+          ...sourceItem,
+          region_id: hiiraanUnit.regionId,
+          target: "observed_drought_condition_continues" as const,
+          current_phase: "satellite_condition_active",
+          elapsed_days: 20
+        }],
+        total: 1
+      }
+    };
+
+    render(<App initialData={withEpisodeLayer} skipApiLoad />);
+
+    const riskHiiraan = await screen.findByLabelText("Hiiraan: 76 critical");
+    fireEvent.click(riskHiiraan);
+    fireEvent.click(screen.getByRole("button", { name: "Persistent episodes" }));
+
+    const episodeHiiraan = screen.getByLabelText("Hiiraan: persistent episode active");
+    expect(episodeHiiraan).toHaveStyle({ fill: "#7656c7" });
+    expect(episodeHiiraan).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("Active episodes")).toBeInTheDocument();
+    expect(screen.getByText(/1 evaluated ·/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Persistent episode legend")).toHaveTextContent("Evaluated · no active episode");
+
+    fireEvent.mouseEnter(episodeHiiraan);
+    const tooltip = screen.getByText("Persistent episode active").closest(".map-tooltip") as HTMLElement;
+    expect(within(tooltip).getByText("20 active days observed")).toBeInTheDocument();
+    expect(within(tooltip).getByText(/30 days · .* ML .* historical/)).toBeInTheDocument();
   });
 
   it("uses page routes instead of hash anchors in the sidebar", () => {

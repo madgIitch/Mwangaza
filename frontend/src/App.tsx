@@ -6,7 +6,7 @@ import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { DroughtContinuation } from "./components/DroughtContinuation";
 import { LandingPage } from "./pages/LandingPage";
-import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, DroughtContinuationResponse, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
+import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, DroughtContinuationItem, DroughtContinuationResponse, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -1473,6 +1473,7 @@ function RegionExplorer({
 
       <div className="region-main-grid region-atlas-workspace">
         <RegionRiskSurface
+          continuation={data.droughtContinuation}
           onSelectUnit={selectSubregion}
           profile={effectiveProfile}
           selectedRegion={selectedRegion}
@@ -1636,11 +1637,13 @@ function appLog(message: string, fields: Record<string, unknown> = {}): void {
 }
 
 function RegionRiskSurface({
+  continuation,
   onSelectUnit,
   profile,
   selectedRegion,
   selectedUnitId
 }: {
+  continuation?: DroughtContinuationResponse;
   onSelectUnit: (unitId: string) => void;
   profile: RegionProfile;
   selectedRegion: RegionRisk;
@@ -1648,11 +1651,27 @@ function RegionRiskSurface({
 }): JSX.Element {
   const [administrativeMap, setAdministrativeMap] = useState<AdministrativeFeatureCollection | null>(null);
   const [mapState, setMapState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [mapLayer, setMapLayer] = useState<"risk" | "episodes">("risk");
   const [activeUnit, setActiveUnit] = useState<AdministrativeFeature | null>(null);
   const boundaryAsset = ADMIN_BOUNDARY_ASSETS[selectedRegion.id];
   const measuredUnits = useMemo(() => new Map<string, AdministrativeUnit>(
     (profile.administrativeUnits ?? []).map((unit) => [unit.boundaryIso, unit])
   ), [profile.administrativeUnits]);
+  const continuationByRegion = useMemo(() => new Map(
+    (continuation?.items ?? [])
+      .filter((item) => item.horizon_days === 30)
+      .map((item) => [item.region_id, item])
+  ), [continuation]);
+  const episodeCoverage = useMemo(() => {
+    const items = (profile.administrativeUnits ?? [])
+      .map((unit) => continuationByRegion.get(unit.regionId))
+      .filter((item) => item !== undefined);
+    return {
+      active: items.filter((item) => item.current_drought_status === "active").length,
+      evaluated: items.filter((item) => item.current_drought_status !== "unknown").length,
+      total: profile.administrativeUnits?.length ?? 0
+    };
+  }, [continuationByRegion, profile.administrativeUnits]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -1680,6 +1699,7 @@ function RegionRiskSurface({
 
   const mapView = ADMIN_MAP_VIEWS[selectedRegion.id] ?? ADMIN_MAP_VIEWS.som;
   const activeMeasurement = activeUnit ? measuredUnits.get(activeUnit.properties.shapeISO) : undefined;
+  const activeContinuation = activeMeasurement ? continuationByRegion.get(activeMeasurement.regionId) : undefined;
   return (
     <section className="region-map-panel">
       <div className="region-map-heading">
@@ -1688,11 +1708,26 @@ function RegionRiskSurface({
           <h2>{countryDisplayName(selectedRegion)}</h2>
           <p>First-level boundaries · national drought observation</p>
         </div>
-        <div className="region-map-score" data-severity={selectedRegion.level}>
-          <span>National score</span>
-          <strong>{formatScoreValue(selectedRegion.score)}</strong>
-          <small>{severityLabel(selectedRegion.level)}</small>
+        <div className="region-map-layer-control">
+          <span>Map layer</span>
+          <div className="map-layer-switch" role="group" aria-label="Map layer">
+            <button type="button" data-active={mapLayer === "risk"} onClick={() => setMapLayer("risk")}>Current risk</button>
+            <button type="button" data-active={mapLayer === "episodes"} onClick={() => setMapLayer("episodes")}>Persistent episodes</button>
+          </div>
         </div>
+        {mapLayer === "risk" ? (
+          <div className="region-map-score" data-severity={selectedRegion.level}>
+            <span>National score</span>
+            <strong>{formatScoreValue(selectedRegion.score)}</strong>
+            <small>{severityLabel(selectedRegion.level)}</small>
+          </div>
+        ) : (
+          <div className="region-map-score" data-layer="episodes">
+            <span>Active episodes</span>
+            <strong>{episodeCoverage.active}</strong>
+            <small>{episodeCoverage.evaluated} evaluated · {continuation?.analysis_as_of ?? "date unavailable"}</small>
+          </div>
+        )}
       </div>
       <div className="region-map-stage" aria-label="Regions map">
         {mapState === "ready" && administrativeMap ? (
@@ -1707,10 +1742,20 @@ function RegionRiskSurface({
               {({ geographies }) => geographies.map((geo) => {
                 const feature = geo as unknown as AdministrativeFeature & { rsmKey: string };
                 const unit = measuredUnits.get(feature.properties.shapeISO);
+                const continuationItem = unit ? continuationByRegion.get(unit.regionId) : undefined;
                 const selected = unit?.regionId === selectedUnitId;
+                const fill = mapLayer === "risk"
+                  ? (unit ? mapFill(unit.level) : "#dce5dc")
+                  : episodeMapFill(continuationItem?.current_drought_status);
+                const hoverFill = mapLayer === "risk"
+                  ? (unit ? mapHoverFill(unit.level) : "#bdcdbf")
+                  : episodeMapHoverFill(continuationItem?.current_drought_status);
+                const ariaStatus = mapLayer === "risk"
+                  ? (unit ? `${unit.score ?? "No data"} ${unit.level}` : "not individually assessed")
+                  : episodeMapLabel(continuationItem?.current_drought_status);
                 return (
                   <Geography
-                    aria-label={`${feature.properties.shapeName}: ${unit ? `${unit.score ?? "No data"} ${unit.level}` : "not individually assessed"}`}
+                    aria-label={`${feature.properties.shapeName}: ${ariaStatus}`}
                     aria-current={selected ? "true" : undefined}
                     geography={geo}
                     key={geo.rsmKey}
@@ -1727,13 +1772,13 @@ function RegionRiskSurface({
                     onMouseLeave={() => setActiveUnit(null)}
                     style={{
                       default: {
-                        fill: unit ? mapFill(unit.level) : "#dce5dc",
+                        fill,
                         stroke: selected ? "#173f31" : "#ffffff",
                         strokeWidth: selected ? 3 : 1.15,
                         outline: "none"
                       },
-                      hover: { fill: unit ? mapHoverFill(unit.level) : "#bdcdbf", stroke: "#173f31", strokeWidth: 2.2, outline: "none" },
-                      pressed: { fill: unit ? mapHoverFill(unit.level) : "#afc2b2", outline: "none" }
+                      hover: { fill: hoverFill, stroke: "#173f31", strokeWidth: 2.2, outline: "none" },
+                      pressed: { fill: hoverFill, outline: "none" }
                     }}
                     role={unit ? "button" : undefined}
                     tabIndex={unit ? 0 : -1}
@@ -1751,24 +1796,43 @@ function RegionRiskSurface({
           <div className="map-tooltip" role="status">
             <span>{activeUnit.properties.shapeISO}</span>
             <strong>{activeUnit.properties.shapeName}</strong>
-            {activeMeasurement ? <div className="map-tooltip-badges"><span className="signal-badge" data-severity={activeMeasurement.level}>{severityLabel(activeMeasurement.level)}</span><span className="signal-badge" data-quality={activeMeasurement.quality}>{qualityLabel(activeMeasurement.quality)}</span><b>{formatScoreValue(activeMeasurement.score)}</b></div> : <small>Not individually assessed</small>}
-            {activeMeasurement ? <em>NDVI {formatMapMetric(activeMeasurement.ndvi)} · Rain {formatMapMetric(activeMeasurement.rainfallMm, " mm")}</em> : null}
+            {mapLayer === "risk" ? (
+              activeMeasurement ? <><div className="map-tooltip-badges"><span className="signal-badge" data-severity={activeMeasurement.level}>{severityLabel(activeMeasurement.level)}</span><span className="signal-badge" data-quality={activeMeasurement.quality}>{qualityLabel(activeMeasurement.quality)}</span><b>{formatScoreValue(activeMeasurement.score)}</b></div><em>NDVI {formatMapMetric(activeMeasurement.ndvi)} · Rain {formatMapMetric(activeMeasurement.rainfallMm, " mm")}</em></> : <small>Not individually assessed</small>
+            ) : <EpisodeTooltip item={activeContinuation} />}
           </div>
         ) : null}
         <div className="map-scale-note">ADM1 · locally cached</div>
       </div>
       <div className="region-map-footer">
-        <div className="map-legend" aria-label="Risk legend">
-          <span data-severity="normal">Low</span>
-          <span data-severity="watch">Watch</span>
-          <span data-severity="warning">Alert</span>
-          <span data-severity="critical">Severe</span>
-          <span data-severity="unknown">Not assessed</span>
-        </div>
+        {mapLayer === "risk" ? <div className="map-legend" aria-label="Risk legend">
+          <span data-severity="normal">Low</span><span data-severity="watch">Watch</span><span data-severity="warning">Alert</span><span data-severity="critical">Severe</span><span data-severity="unknown">Not assessed</span>
+        </div> : <div className="map-legend" aria-label="Persistent episode legend">
+          <span data-episode="active">Persistent episode</span><span data-episode="inactive">Evaluated · no active episode</span><span data-episode="unknown">Not evaluated</span>
+        </div>}
         <p>Boundaries: geoBoundaries gbOpen · ADM1 · pinned source revision</p>
       </div>
-      <p className="map-integrity-note"><strong>Coverage note.</strong> The score shown above is national. Administrative units stay neutral unless the API supplies a unit-specific observation.</p>
+      {mapLayer === "risk"
+        ? <p className="map-integrity-note"><strong>Coverage note.</strong> The score shown above is national. Administrative units stay neutral unless the API supplies a unit-specific observation.</p>
+        : <p className="map-integrity-note"><strong>Direct reading.</strong> Violet areas have an active persistent drought episode and continuation probabilities. Neutral areas were evaluated but have no active episode. Analysis as of {continuation?.analysis_as_of ?? "an unavailable date"}.</p>}
     </section>
+  );
+}
+
+function EpisodeTooltip({ item }: { item?: DroughtContinuationItem }): JSX.Element {
+  if (!item || item.current_drought_status === "unknown") {
+    return <div className="episode-tooltip" data-status="unknown"><b>Not evaluated</b><small>No continuation assessment is available.</small></div>;
+  }
+  if (item.current_drought_status === "inactive") {
+    return <div className="episode-tooltip" data-status="inactive"><b>Evaluated · no active episode</b><small>Continuation is not applicable.</small></div>;
+  }
+  const ml = item.estimates.find((estimate) => estimate.kind === "experimental_ml_prediction" && estimate.status === "available");
+  const baseline = item.estimates.find((estimate) => estimate.kind === "historical_reference" && estimate.status === "available");
+  return (
+    <div className="episode-tooltip" data-status="active">
+      <b>Persistent episode active</b>
+      <small>{item.elapsed_days ?? 0} active days observed</small>
+      <em>30 days · {ml?.probability === undefined ? "ML unavailable" : `${formatEpisodeProbability(ml.probability)} ML`}{baseline?.probability === undefined ? "" : ` · ${formatEpisodeProbability(baseline.probability)} historical`}</em>
+    </div>
   );
 }
 
@@ -1995,6 +2059,28 @@ function mapHoverFill(severity: Severity): string {
     unknown: "#98a2b3"
   };
   return fills[severity];
+}
+
+function episodeMapFill(status?: DroughtContinuationItem["current_drought_status"]): string {
+  if (status === "active") return "#7656c7";
+  if (status === "inactive") return "#dce5dc";
+  return "#b8c0c8";
+}
+
+function episodeMapHoverFill(status?: DroughtContinuationItem["current_drought_status"]): string {
+  if (status === "active") return "#6042ad";
+  if (status === "inactive") return "#c4d0c7";
+  return "#98a2b3";
+}
+
+function episodeMapLabel(status?: DroughtContinuationItem["current_drought_status"]): string {
+  if (status === "active") return "persistent episode active";
+  if (status === "inactive") return "evaluated, no active episode";
+  return "not evaluated";
+}
+
+function formatEpisodeProbability(value: number): string {
+  return new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 0 }).format(value);
 }
 
 function qualityMapFill(quality: string): string {
