@@ -201,8 +201,8 @@ export function App({
             <h2>{data.source}</h2>
           </div>
           <div className="status-strip">
-            <span data-mode={offline ? "offline" : data.dataMode}>{offline ? t(language, "offline") : data.dataMode.toUpperCase()}</span>
-            <span>{data.lastUpdated}</span>
+            <span data-mode={offline ? "offline" : data.dataMode}>{offline ? t(language, "offline") : data.dataMode === "live" ? "LIVE QUERY" : data.dataMode.toUpperCase()}</span>
+            <span>{data.dataMode === "live" ? `Observation window: ${data.lastUpdated}` : data.lastUpdated}</span>
             <span>{data.message}</span>
           </div>
           <div className="topbar-placeholders" aria-label="Unavailable account controls">

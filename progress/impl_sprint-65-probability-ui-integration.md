@@ -1,12 +1,19 @@
-# Sprint 65 · Implementación
+# Sprint 65 - Implementacion
 
-- Añadido contrato TypeScript para la respuesta de continuidad y carga tolerante a fallo.
-- Añadido módulo `DroughtContinuation` compacto al inspector ADM1.
-- Añadidos cuatro horizontes, comparación dual, drivers, skill, IC95 y abstención.
-- Añadida representación equivalente para low-bandwidth.
-- Reutilizado el fixture versionado de Sprint 64 y añadidas ADM1 demo seleccionables.
-- Añadida sección de continuidad a preview, HTML y PDF de reportes.
-- La generación de informes lee solo el snapshot materializado y no consulta GEE.
+- Estado satelital homogeneo para 121 ADM1 con meteorologia, vegetacion y humedad del suelo.
+- Activacion y recuperacion con dos dekads consecutivos; episodios y targets causales.
+- Backtest walk-forward 2022/2023, episodios purgados y bootstrap por episodio.
+- NDMA como validacion externa; FEWS NET como evidencia de impacto exclusivamente.
+- Materializador reproducible con ETA, hashes, configuracion resuelta y gates de cobertura.
+- API de 484 resultados paginada completamente por el frontend.
+- UI y Reports distinguen target satelital, abstencion, fecha de analisis, fecha de consulta y frescura por senal.
+- La cabecera distingue `LIVE QUERY` de la ventana efectiva de observacion.
 
-La composición sigue la jerarquía existente: el mapa continúa siendo el ancla y la
-probabilidad es contexto secundario dentro del inspector, no un dashboard adicional.
+Corrida real: 102608 features, 1468 muestras, 1109 filas de entrenamiento, 65 regiones
+de entrenamiento, 121/121 ADM1, 47/47 Kenya, 11 activas, 484/484 resultados y
+`analysis_as_of=2026-07-20`. Run hash:
+`sha256:2e2fb19e4d490d62a2ece1ccef33b7f705b30fc3a2fcc7d482b0b458e349a7b2`.
+
+El ML experimental de 30 dias obtuvo BSS ponderado por episodio +23.79%, ECE 0.0544,
+mejoro 2/2 folds y su IC95 del delta Brier fue [-0.0765, -0.0365]. El estado contractual
+sigue siendo `inconclusive` y no operacional.

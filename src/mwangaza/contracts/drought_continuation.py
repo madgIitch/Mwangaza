@@ -11,6 +11,7 @@ SCHEMA_VERSION = "mwangaza.drought-continuation-probability.v1"
 ESTIMATE_KINDS = frozenset({"experimental_ml_prediction", "historical_reference"})
 STATUSES = frozenset({"available", "unavailable", "not_applicable"})
 HORIZONS = frozenset({30, 60, 90, 180})
+TARGETS = frozenset({"same_episode_continues", "observed_drought_condition_continues"})
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,9 @@ class DroughtContinuationProbability:
     status: str
     reason_codes: tuple[str, ...] = ()
     estimates: tuple[ContinuationEstimate, ...] = ()
+    condition_basis: str | None = None
+    state_version: str | None = None
+    signal_freshness: dict[str, dict[str, Any]] = field(default_factory=dict)
     schema_version: str = SCHEMA_VERSION
 
     @classmethod
@@ -116,6 +120,9 @@ class DroughtContinuationProbability:
             status=_required_string(value, "status"),
             reason_codes=_string_tuple(value.get("reason_codes", ()), "reason_codes"),
             estimates=tuple(ContinuationEstimate.from_mapping(entry) for entry in estimates),
+            condition_basis=_optional_string(value.get("condition_basis")),
+            state_version=_optional_string(value.get("state_version")),
+            signal_freshness=_nested_object(value.get("signal_freshness", {}), "signal_freshness"),
         )
         item.validate()
         return item
@@ -126,8 +133,14 @@ class DroughtContinuationProbability:
         _parse_iso(self.as_of)
         if self.horizon_days not in HORIZONS:
             raise ContractValidationError("horizon_days must be 30, 60, 90 or 180")
-        if self.target != "same_episode_continues":
+        if self.target not in TARGETS:
             raise ContractValidationError("unsupported drought continuation target")
+        if self.target == "observed_drought_condition_continues":
+            if self.condition_basis != "satellite_multisignal" or not self.state_version:
+                raise ContractValidationError("satellite continuation requires condition provenance")
+            for name, signal in self.signal_freshness.items():
+                if not name or not isinstance(signal, dict):
+                    raise ContractValidationError("signal freshness entries are invalid")
         if self.status not in STATUSES:
             raise ContractValidationError("unsupported drought continuation status")
         if self.current_drought_status not in {"active", "inactive", "unknown"}:
@@ -171,6 +184,23 @@ def _required_bool(value: Mapping[str, Any], name: str) -> bool:
     if not isinstance(item, bool):
         raise ContractValidationError(f"{name} must be boolean")
     return item
+
+
+def _optional_string(value: Any) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ContractValidationError("optional string must be non-empty")
+    return value.strip()
+
+
+def _nested_object(value: Any, name: str) -> dict[str, dict[str, Any]]:
+    if not isinstance(value, dict) or not all(
+        isinstance(key, str) and key and isinstance(item, dict)
+        for key, item in value.items()
+    ):
+        raise ContractValidationError(f"{name} must be an object of objects")
+    return {key: dict(item) for key, item in value.items()}
 
 
 def _required_int(value: Mapping[str, Any], name: str) -> int:
@@ -233,4 +263,5 @@ __all__ = [
     "HORIZONS",
     "SCHEMA_VERSION",
     "STATUSES",
+    "TARGETS",
 ]

@@ -16,25 +16,27 @@ export function DroughtContinuation({ response, regionId, variant = "inspector" 
     () => response?.items.find((candidate) => candidate.region_id === regionId && candidate.horizon_days === horizon),
     [horizon, regionId, response]
   );
+  const satellite = item?.target === "observed_drought_condition_continues";
 
   if (!regionId) {
-    return <ContinuationShell variant={variant}><p className="continuation-empty">Select an ADM1 area to check whether an officially active drought episode may continue.</p></ContinuationShell>;
+    return <ContinuationShell variant={variant}><p className="continuation-empty">Select an ADM1 area to evaluate drought-condition continuation.</p></ContinuationShell>;
   }
   if (!item) {
     return <ContinuationShell variant={variant}><p className="continuation-empty">No materialized continuation assessment is available for <code>{regionId}</code>.</p></ContinuationShell>;
   }
 
   return (
-    <ContinuationShell variant={variant}>
+    <ContinuationShell variant={variant} satellite={satellite}>
       <HorizonPicker horizon={horizon} onChange={setHorizon} />
       <div className="continuation-context">
         <span>{response?.is_demo ? "Demo fixture" : "Materialized GEE-derived evidence"}</span>
-        <span>As of {formatDate(item.as_of)}</span>
-        <span>Phase <code>{item.current_phase}</code></span>
+        <span>Analysis as of {formatDate(item.as_of)}</span>
+        {response?.query_generated_at ? <span>Query generated {formatDate(response.query_generated_at)}</span> : null}
+        <span>{satellite ? "Condition" : "Phase"} <code>{item.current_phase}</code></span>
         {item.elapsed_days === null ? null : <span>{item.elapsed_days} active days observed</span>}
       </div>
       {item.status === "not_applicable" ? (
-        <Abstention item={item} title="No active official drought episode" />
+        <Abstention item={item} title={satellite ? "No active satellite drought condition" : "No active official drought episode"} />
       ) : item.status === "unavailable" ? (
         <Abstention item={item} title="Probability unavailable" />
       ) : variant === "lite" ? (
@@ -44,20 +46,42 @@ export function DroughtContinuation({ response, regionId, variant = "inspector" 
           {item.estimates.map((estimate) => <EstimatePanel estimate={estimate} key={estimate.kind} />)}
         </div>
       )}
-      <p className="continuation-disclaimer">Estimates whether the same active episode continues through the selected horizon. It does not predict drought onset, exact duration or human impact.</p>
+      {satellite ? <SignalFreshness item={item} /> : null}
+      <p className="continuation-disclaimer">{satellite ? "Estimates whether the same observed multisignal drought condition continues through the selected horizon." : "Estimates whether the same officially active episode continues through the selected horizon."} It does not predict drought onset, exact duration or human impact.</p>
     </ContinuationShell>
   );
 }
 
-function ContinuationShell({ children, variant }: { children: React.ReactNode; variant: "inspector" | "lite" }): JSX.Element {
+function ContinuationShell({ children, variant, satellite = false }: { children: React.ReactNode; variant: "inspector" | "lite"; satellite?: boolean }): JSX.Element {
   return (
     <section className="drought-continuation" data-variant={variant} aria-label="Drought continuation">
       <header>
-        <div><p className="eyebrow">Same active episode</p><h3>Drought continuation</h3></div>
+        <div><p className="eyebrow">{satellite ? "Observed drought condition" : "Same active episode"}</p><h3>Drought continuation</h3></div>
         <span className="continuation-target">30–180 days</span>
       </header>
       {children}
     </section>
+  );
+}
+
+function SignalFreshness({ item }: { item: DroughtContinuationItem }): JSX.Element | null {
+  const signals = Object.entries(item.signal_freshness ?? {});
+  if (!signals.length) return null;
+  return (
+    <details className="continuation-freshness">
+      <summary>Observation dates and freshness</summary>
+      <table>
+        <thead><tr><th>Signal</th><th>Observed</th><th>Age</th><th>Quality</th></tr></thead>
+        <tbody>{signals.map(([name, signal]) => (
+          <tr key={name}>
+            <th scope="row"><code>{name}</code></th>
+            <td>{signal.observed_at ? formatDate(signal.observed_at) : "Unavailable"}</td>
+            <td>{typeof signal.age_days === "number" ? `${signal.age_days} days` : "—"}</td>
+            <td>{signal.quality ?? "unknown"}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </details>
   );
 }
 
@@ -109,6 +133,8 @@ function MlEvidence({ estimate }: { estimate: ContinuationEstimate }): JSX.Eleme
 function BaselineEvidence({ estimate }: { estimate: ContinuationEstimate }): JSX.Element {
   const phase = estimate.evidence?.current_phase;
   const elapsed = estimate.evidence?.elapsed_days;
+  const condition = estimate.evidence?.condition_basis;
+  if (condition !== undefined) return <p className="estimate-evidence">Descriptive evidence: <code>{String(condition)}</code>{elapsed === undefined ? "" : ` after ${String(elapsed)} observed days`}.</p>;
   if (phase === undefined && elapsed === undefined) return <p className="estimate-evidence">Historical frequency for comparable phase and elapsed duration.</p>;
   return <p className="estimate-evidence">Descriptive evidence: phase <code>{String(phase)}</code>{elapsed === undefined ? "" : ` after ${String(elapsed)} observed days`}.</p>;
 }

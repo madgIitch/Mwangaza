@@ -1,0 +1,27 @@
+{
+  "schema_version": "mwangaza.satellite-drought-condition-config.v1",
+  "reference_end": "2020-12-31",
+  "state_start": "2021-01-01",
+  "training_cutoff": "2024-01-01",
+  "activation_consecutive_dekads": 2,
+  "recovery_consecutive_dekads": 2,
+  "meteorological_threshold": -0.8,
+  "ndvi_anomaly_threshold": -0.02,
+  "ndvi_persistence_dekads": 2,
+  "soil_moisture_percentile": 0.2,
+  "soil_reference_minimum": 12,
+  "max_signal_age_days": {
+    "spi_3m": 45,
+    "spei_3m": 75,
+    "ndvi_anomaly": 45,
+    "ndvi_decline_persistence_dekads": 45,
+    "ndvi_slope_3dekad": 45,
+    "soil_moisture_rootzone": 75
+  },
+  "horizons_days": [30, 60, 90, 180],
+  "elapsed_bin_days": 30,
+  "ml_horizon_days": 30,
+  "ml_min_backtest_rows": 50,
+  "ml_max_ece": 0.15,
+  "seed": 2026
+}

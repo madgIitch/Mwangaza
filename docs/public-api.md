@@ -52,3 +52,9 @@ At 30 days, active regions expose an `experimental_ml_prediction` next to a
 At longer horizons only the historical reference is returned. If the model artifact is
 missing or corrupt, only ML becomes unavailable; a valid reference remains visible.
 Responses are cacheable for 60 seconds and never include local artifact paths or filenames.
+
+The current materialization contains 30/60/90/180-day rows for each of the 121 ADM1 units
+and uses target `observed_drought_condition_continues`. Inactive units return
+`not_applicable`; active units retain an available historical probability. Top-level
+`analysis_as_of` and `query_generated_at`, together with item-level `signal_freshness`,
+distinguish effective observation dates from query/load time.

@@ -38,6 +38,7 @@ class ReportContinuationEstimate:
     artifact_version: str
     skill_score: float | None = None
     interval_95: tuple[float, float] | None = None
+    target: str = "same_episode_continues"
 
 
 @dataclass(frozen=True)
@@ -157,7 +158,7 @@ def build_executive_report_context(
             "This report is a decision-support prototype, not an official alert.",
             "`potentially_exposed` is potential exposure, not measured impact.",
             "Observed, cached and demo/synthetic data must be interpreted separately.",
-            "Drought continuation estimates describe the same active episode; they do not predict onset, exact duration or human impact.",
+            "Drought continuation estimates describe persistence of the active observed condition; they do not predict onset, exact duration or human impact.",
         ),
         continuation=continuation,
         dashboard_url=url,
@@ -309,6 +310,7 @@ def _continuation_for_region(region_id: str) -> tuple[ReportContinuationEstimate
                         else None
                     ),
                     interval_95=interval_95,
+                    target=item.target,
                 )
             )
     return tuple(sorted(rows, key=lambda row: (row.region_id, row.horizon_days, row.kind)))
@@ -338,9 +340,14 @@ def _render_continuation_html(rows: tuple[ReportContinuationEstimate, ...]) -> s
         )
         for row in rows
     )
+    satellite = any(row.target == "observed_drought_condition_continues" for row in rows)
+    scope = (
+        "Probability that the same observed multisignal drought condition continues."
+        if satellite else "Probability that the same officially active episode continues."
+    )
     return (
         "<h2>Drought Continuation</h2>"
-        "<p class=\"note\">Probability that the same officially active episode continues. Experimental ML: Not for operational use.</p>"
+        f"<p class=\"note\">{escape(scope)} Experimental ML: Not for operational use.</p>"
         "<table><thead><tr><th>Region</th><th>As of</th><th>Phase</th><th>Horizon</th><th>Estimate</th><th>Probability</th><th>Method</th><th>Evidence</th></tr></thead>"
         f"<tbody>{body}</tbody></table>"
     )
@@ -349,8 +356,13 @@ def _render_continuation_html(rows: tuple[ReportContinuationEstimate, ...]) -> s
 def _continuation_pdf_lines(rows: tuple[ReportContinuationEstimate, ...]) -> tuple[str, ...]:
     if not rows:
         return ("No applicable materialized continuation estimate is available.",)
+    satellite = any(row.target == "observed_drought_condition_continues" for row in rows)
     return (
-        "Same active episode only; experimental ML is inconclusive and not for operational use.",
+        (
+            "Same observed multisignal drought condition only; experimental ML is inconclusive and not for operational use."
+            if satellite else
+            "Same officially active episode only; experimental ML is inconclusive and not for operational use."
+        ),
         *(
             f"{row.region_id} | {row.as_of[:10]} | {row.phase} | {row.horizon_days} days | {_continuation_kind_label(row.kind)} | {_report_probability(row)} | {row.model} | {_continuation_evidence(row)}"
             for row in rows

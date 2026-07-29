@@ -183,7 +183,7 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     getJson<PublicAlertsResponse>("/api/v1/alerts?limit=20"),
     getJson<PublicForecastsResponse>("/api/v1/forecasts"),
     getJson<PublicReportsResponse>("/api/v1/reports?limit=100"),
-    getJson<DroughtContinuationResponse>("/api/v1/drought-continuation-probabilities?limit=100")
+    loadAllDroughtContinuation()
   ]);
   apiLog("details load settled", {
     alerts: alertsResult.status,
@@ -215,6 +215,25 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     reports,
     droughtContinuation,
     forecastDiagnostics: forecasts
+  };
+}
+
+async function loadAllDroughtContinuation(): Promise<DroughtContinuationResponse> {
+  const limit = 100;
+  const first = await getJson<DroughtContinuationResponse>(
+    `/api/v1/drought-continuation-probabilities?limit=${limit}&offset=0`
+  );
+  if (first.items.length >= first.total) return first;
+  const offsets: number[] = [];
+  for (let offset = limit; offset < first.total; offset += limit) offsets.push(offset);
+  const pages = await Promise.all(offsets.map((offset) =>
+    getJson<DroughtContinuationResponse>(
+      `/api/v1/drought-continuation-probabilities?limit=${limit}&offset=${offset}`
+    )
+  ));
+  return {
+    ...first,
+    items: [first, ...pages].flatMap((page) => page.items)
   };
 }
 

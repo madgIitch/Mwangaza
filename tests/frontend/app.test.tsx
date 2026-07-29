@@ -181,7 +181,7 @@ describe("React PWA dashboard", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
 
     expect(snapshotRequests).toBe(2);
-    expect(screen.getByText("LIVE", { selector: ".status-strip span" })).toBeInTheDocument();
+    expect(screen.getByText("LIVE QUERY", { selector: ".status-strip span" })).toBeInTheDocument();
   });
 
   it("renders Region Explorer as an internal app screen on /region", async () => {
@@ -628,7 +628,7 @@ describe("React PWA dashboard", () => {
         });
       }
       if (url.startsWith("/api/v1/drought-continuation-probabilities")) {
-        return jsonResponse({ ...demoDashboard.droughtContinuation, is_demo: false });
+        return jsonResponse({ ...demoDashboard.droughtContinuation, is_demo: false, total: 204 });
       }
       return jsonResponse({
         schema_version: "mwangaza.api.v1",
@@ -644,7 +644,9 @@ describe("React PWA dashboard", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/snapshots/latest", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/alerts?limit=20", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/reports?limit=100", expect.any(Object));
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=0", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=100", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=200", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/forecasts", expect.any(Object));
     expect(data.message).toBe("Loaded from /api/v1/**");
     expect(data.alerts[0].title).toBe("API alert");

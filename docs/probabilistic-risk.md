@@ -359,3 +359,25 @@ de continuidad `is_demo=false`, mientras `demo` exige `is_demo=true`. La vista r
 el mapa ADM1 calculado desde GEE con el snapshot de continuidad materializado a partir de
 las series GEE/CHIRPS/MODIS/FLDAS y las fases oficiales; ninguna petición del navegador
 consulta GEE directamente.
+
+### Correccion de cobertura satelital completa
+
+Sprint 65 sustituye el estado limitado por cobertura NDMA por
+`satellite-multisignal-hysteresis-v1`. Las 121 ADM1 se evaluan con las mismas familias
+meteorologica, vegetacion y humedad del suelo. Dos familias deben indicar estres y la
+activacion o recuperacion exige dos dekads consecutivos. NDMA es validacion externa
+oficial; FEWS NET conserva exclusivamente su papel de evidencia de impacto.
+
+```powershell
+uv run python scripts/materialize_all_adm1_continuation.py
+```
+
+El comando exige 121 ADM1, 47 de Kenya y 484 resultados. Una condicion inactiva produce
+`not_applicable`; una activa siempre tiene una referencia historica a 30, 60, 90 y 180
+dias. El ML experimental solo se sirve a 30 dias si supera el gate temporal. Los folds
+walk-forward ocultan por `available_at` toda senal futura y purgan episodios fronterizos.
+
+El snapshot separa `analysis_as_of` de `query_generated_at` y conserva por senal
+`observed_at`, `available_at`, `age_days` y calidad. Una coleccion lenta no retrasa
+artificialmente las demas; el corte actual es 2026-07-20 aunque algunas observaciones
+efectivas sean anteriores.

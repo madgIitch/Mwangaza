@@ -107,3 +107,10 @@ They are not averaged and neither silently replaces the other. At 60, 90 and 180
 only `historical_reference` is permitted. An unavailable ML estimate has no probability
 but does not invalidate an independently valid reference. ML drivers are limited to three,
 carry direction and method, and declare `causal=false`.
+
+The current all-ADM1 snapshot uses target `observed_drought_condition_continues`; the
+legacy `same_episode_continues` target remains readable for old artifacts. Every ADM1 is
+assessed with the same satellite rule. Inactive conditions are `not_applicable`; active
+conditions must retain an available historical estimate. Satellite items add
+`condition_basis`, `state_version` and signal-specific freshness. Response metadata
+separates `analysis_as_of` from `query_generated_at` and declares 121 ADM1 / 484 results.

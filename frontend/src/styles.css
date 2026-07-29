@@ -1991,6 +1991,10 @@ td {
 .estimate-evidence, .continuation-reasons { color: #c4d0c9; font-size: 11px; line-height: 1.45; }
 .continuation-reasons code { display: inline-block; margin: 2px 4px 2px 0; }
 .continuation-disclaimer { color: #9fb2a6; font-size: 10px; line-height: 1.45; margin: 12px 0 0; }
+.continuation-freshness { color: #c4d0c9; font-size: 10px; margin-top: 12px; }
+.continuation-freshness summary { cursor: pointer; font-weight: 800; }
+.continuation-freshness table { margin-top: 8px; width: 100%; }
+.continuation-freshness th, .continuation-freshness td { border-top: 1px solid rgba(255,255,255,.12); padding: 5px 4px; text-align: left; vertical-align: top; }
 .continuation-empty, .continuation-abstention { color: #c4d0c9; font-size: 12px; line-height: 1.45; }
 .continuation-abstention { border-left: 2px solid #91a69a; margin-top: 12px; padding-left: 12px; }
 .continuation-abstention p { margin-bottom: 0; }

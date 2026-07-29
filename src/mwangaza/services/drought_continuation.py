@@ -15,6 +15,7 @@ from mwangaza.probabilistic.continuation_serving import (
     SNAPSHOT_SCHEMA_VERSION,
 )
 from mwangaza.probabilistic.survival import canonical_json
+from mwangaza.probabilistic.satellite_continuation import TARGET as SATELLITE_TARGET
 
 
 class DroughtContinuationServiceError(RuntimeError):
@@ -28,6 +29,9 @@ class ContinuationSnapshot:
     artifact: dict[str, Any]
     items: tuple[DroughtContinuationProbability, ...]
     is_demo: bool = False
+    query_generated_at: str | None = None
+    analysis_as_of: str | None = None
+    coverage: dict[str, Any] | None = None
 
 
 def load_continuation_snapshot(path: Path | None = None) -> ContinuationSnapshot:
@@ -39,16 +43,19 @@ def load_continuation_snapshot(path: Path | None = None) -> ContinuationSnapshot
     stable = dict(payload)
     stable.pop("snapshot_hash", None)
     stable.pop("generated_at", None)
+    stable.pop("query_generated_at", None)
     if _hash(stable) != expected_snapshot_hash:
         raise DroughtContinuationServiceError("continuation snapshot hash mismatch")
     artifact = payload.get("artifact")
     if not isinstance(artifact, dict):
         raise DroughtContinuationServiceError("continuation artifact metadata is missing")
-    if artifact.get("audit_run_hash") != EXPECTED_AUDIT_RUN_HASH:
-        raise DroughtContinuationServiceError("continuation audit evidence mismatch")
-    if artifact.get("routing_run_hash") != EXPECTED_ROUTING_RUN_HASH:
-        raise DroughtContinuationServiceError("continuation routing evidence mismatch")
     is_demo = bool(payload.get("is_demo"))
+    satellite = payload.get("target") == SATELLITE_TARGET
+    if not is_demo and not satellite:
+        if artifact.get("audit_run_hash") != EXPECTED_AUDIT_RUN_HASH:
+            raise DroughtContinuationServiceError("continuation audit evidence mismatch")
+        if artifact.get("routing_run_hash") != EXPECTED_ROUTING_RUN_HASH:
+            raise DroughtContinuationServiceError("continuation routing evidence mismatch")
     model_failure = None if is_demo else _verify_materialized_files(source, artifact)
     values = payload.get("items")
     if not isinstance(values, list):
@@ -67,6 +74,9 @@ def load_continuation_snapshot(path: Path | None = None) -> ContinuationSnapshot
             sorted(items, key=lambda item: (item.region_id, item.as_of, item.horizon_days))
         ),
         is_demo=is_demo,
+        query_generated_at=_optional_text(payload.get("query_generated_at")),
+        analysis_as_of=_optional_text(payload.get("analysis_as_of")),
+        coverage=dict(payload.get("coverage") or {}),
     )
 
 
@@ -106,6 +116,9 @@ def continuation_response(
     return {
         "snapshot_schema_version": SNAPSHOT_SCHEMA_VERSION,
         "generated_at": snapshot.generated_at,
+        "query_generated_at": snapshot.query_generated_at,
+        "analysis_as_of": snapshot.analysis_as_of,
+        "coverage": snapshot.coverage,
         "snapshot_hash": snapshot.snapshot_hash,
         "artifact": snapshot.artifact,
         "availability": "available",
@@ -141,10 +154,21 @@ def _verify_materialized_files(source: Path, artifact: dict[str, Any]) -> str | 
     outputs = manifest.get("outputs")
     if not isinstance(outputs, dict):
         return "serving_manifest_invalid"
-    if manifest.get("audit_run_hash") != EXPECTED_AUDIT_RUN_HASH:
-        return "audit_hash_mismatch"
-    if manifest.get("routing_run_hash") != EXPECTED_ROUTING_RUN_HASH:
-        return "routing_hash_mismatch"
+    satellite = artifact.get("target") == SATELLITE_TARGET
+    if satellite:
+        if manifest.get("schema_version") != "mwangaza.satellite-continuation-serving-manifest.v1":
+            return "serving_manifest_invalid"
+        if manifest.get("target") != SATELLITE_TARGET:
+            return "target_mismatch"
+        if manifest.get("catalog_region_count") != 121 or manifest.get("materialized_item_count") != 484:
+            return "coverage_incomplete"
+        if manifest.get("run_hash") != artifact.get("bundle_run_hash"):
+            return "bundle_run_hash_mismatch"
+    else:
+        if manifest.get("audit_run_hash") != EXPECTED_AUDIT_RUN_HASH:
+            return "audit_hash_mismatch"
+        if manifest.get("routing_run_hash") != EXPECTED_ROUTING_RUN_HASH:
+            return "routing_hash_mismatch"
     if outputs.get("snapshot_sha256") != _sha256(source):
         return "snapshot_file_hash_mismatch"
     filename = outputs.get("model_filename")
@@ -201,8 +225,16 @@ def _public_artifact(value: dict[str, Any]) -> dict[str, Any]:
         "audit_run_hash",
         "routing_run_hash",
         "routing_sha256",
+        "state_version",
+        "target",
+        "external_validation",
+        "fews_role",
     }
     return {name: value[name] for name in sorted(allowed) if name in value}
+
+
+def _optional_text(value: Any) -> str | None:
+    return str(value) if isinstance(value, str) and value else None
 
 
 def _json(path: Path) -> dict[str, Any]:

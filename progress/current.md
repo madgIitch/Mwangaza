@@ -1,21 +1,19 @@
-# Sesión actual
+# Sesion actual
 
-Feature: **sprint-65-probability-ui-integration — Sprint 65 - Drought Continuation UI Integration** — estado: `review_pending`.
+Feature: **sprint-65-probability-ui-integration - Sprint 65** - estado: `review_pending`.
 
 ## Resultado
 
-- Region Explorer incorpora un módulo compacto ligado por ID exacto a la ADM1 seleccionada.
-- A 30 días compara ML experimental y referencia histórica; a 60/90/180 solo muestra la referencia.
-- Estados `unavailable` y `not_applicable` abstienen sin mostrar 0%.
-- BSS, IC95, calidad y asociaciones no causales permanecen visibles.
-- Low-bandwidth conserva la misma semántica mediante tabla.
-- Reports HTML/PDF incorpora las estimaciones activas desde el snapshot materializado.
-- Demo offline incluye Turkana activo y Baringo inactivo para revisar ambos estados.
-- 59 tests frontend, 41 tests UI/reportes, lint, typecheck y build pasan.
-- Dashboard y continuidad deben compartir modo: cualquier mezcla demo/real falla cerrada.
-- Smoke GEE real Kenya: 47 ADM1 en perfil, 121/121 ADM1 IGAD concluyentes, `not_demo=true`.
+- Continuidad satelital materializada para 121/121 ADM1 y 47/47 Kenya.
+- 484/484 resultados a 30, 60, 90 y 180 dias; 11 condiciones activas.
+- Regiones inactivas muestran `not_applicable`; activas muestran al menos el baseline.
+- Corte de analisis 2026-07-20 con observacion, disponibilidad, edad y calidad por senal.
+- NDMA valida externamente y FEWS NET aporta impacto; ninguno limita la cobertura.
+- ML experimental a 30 dias: BSS +23.79%, ECE 0.0544, 2/2 folds mejorados.
+- 403 pruebas Python, 60 frontend, lint, typecheck, build y harness gates pasan.
 
-## Siguiente acción
+## Siguiente accion
 
-- Revisión humana en `/region`: seleccionar Kenya → Turkana.
-- Cerrar 65 solo tras aceptación; no comenzar el siguiente sprint antes de esa revisión.
+- Revision humana en `/region`, especialmente una ADM1 activa como `adm1-ke-27` y una
+  inactiva como Turkana (`adm1-ke-43`).
+- Cerrar Sprint 65 solo tras aceptacion; no iniciar el siguiente sprint antes de verla.

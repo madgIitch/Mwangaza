@@ -252,3 +252,10 @@ fixtures. Once the refresh completes, subsequent responses switch to
 - Alerts center deep-link filters from `View all alerts` are tracked by `sprint-56-region-explorer-completion`.
 - Real composite-score contribution payloads and month-over-month indicator deltas are tracked by `sprint-56-region-explorer-completion`.
 - Account dropdown and notification inbox are visual placeholders until admin/security/notification flows are approved; their `/region` integration is tracked by `sprint-56-region-explorer-completion`.
+- Continuation materializes four horizons for all 121 ADM1 units, including 47/47 Kenya.
+  The active state is homogeneous satellite evidence; NDMA is external validation and
+  FEWS NET remains impact evidence. Inactive units show `not_applicable`, while active
+  units always show at least the historical probability.
+- The panel shows the analysis cut and every signal's observation date, age and quality.
+  The top bar labels a connected request as `LIVE QUERY` while its date remains an
+  observation window.

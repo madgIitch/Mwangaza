@@ -192,7 +192,7 @@ export interface DroughtContinuationItem {
   region_id: string;
   as_of: string;
   horizon_days: 30 | 60 | 90 | 180;
-  target: "same_episode_continues";
+  target: "same_episode_continues" | "observed_drought_condition_continues";
   current_drought_status: "active" | "inactive" | "unknown";
   current_phase: string;
   current_trend: string;
@@ -200,16 +200,30 @@ export interface DroughtContinuationItem {
   status: "available" | "unavailable" | "not_applicable";
   reason_codes: string[];
   estimates: ContinuationEstimate[];
+  condition_basis?: string;
+  state_version?: string;
+  signal_freshness?: Record<string, {
+    quality?: string;
+    observed_at?: string | null;
+    available_at?: string | null;
+    age_days?: number | null;
+    source_collection?: string;
+    source_version?: string;
+    missing_reason?: string | null;
+  }>;
 }
 
 export interface DroughtContinuationResponse {
   schema_version: "mwangaza.api.v1";
   availability: "available" | "unavailable";
   generated_at: string;
+  query_generated_at?: string | null;
+  analysis_as_of?: string | null;
   is_demo: boolean;
   items: DroughtContinuationItem[];
   total: number;
   snapshot_hash?: string;
+  coverage?: { adm1_count?: number; kenya_adm1_count?: number; result_count?: number };
 }
 
 export interface ReportRecord {
