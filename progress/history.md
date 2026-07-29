@@ -309,3 +309,10 @@
 - 59 tests frontend y 41 tests UI/reportes pasan; build y lint limpios.
 - Añadido gate explícito que impide unir un dashboard demo con probabilidades reales o viceversa.
 - Smoke remoto GEE para Kenya pasa con 47 ADM1 del país y 121/121 ADM1 IGAD concluyentes.
+
+## 2026-07-29T18:54:34+02:00 - #sprint-51-pitch-deck -> review_pending
+
+- Deck editable de 10 slides y PDF final con duración configurada de 5:00.
+- Capturas reales cubren landing, episodios persistentes IGAD y continuidad de Bay ADM1.
+- Cifras de Sprint 65 etiquetadas como materializadas o experimentales según corresponde.
+- QA visual, overflow, gates oficiales, typecheck, lint y 60 tests frontend pasan.
