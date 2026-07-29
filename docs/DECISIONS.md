@@ -861,3 +861,16 @@ Decisiones registradas:
 - **tests:** suma de tiempos, rutas, claims y checklist verificables manualmente
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-53-container-deployment -->
+## 2026-07-29 · sprint-53-container-deployment aprobado
+
+Contexto: se aprobó el spec `sprint-53-container-deployment` (Sprint 53 - Container Deployment).
+
+Decisiones registradas:
+
+- **auth_secrets:** secretos solo mediante entorno o Secret Manager
+- **rollback_compat:** imágenes versionadas y rollback documentado por revisión
+- **tests:** CI construye targets y smoke local valida health, readiness y frontend
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

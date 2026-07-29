@@ -1875,3 +1875,36 @@ baseline. Ningún request importa datos históricos, ajusta modelos, escribe o l
 - **edge_cases:** margen de 15 segundos y regla para omitir esperas/cargas
 - **ui_states:** episodio activo, área evaluada sin episodio y horizontes de continuidad
 
+<!-- harness:sprint-53-container-deployment -->
+## sprint-53-container-deployment · Sprint 53 - Container Deployment
+
+
+
+### Scope aprobado
+
+  - `Dockerfile`
+  - `.dockerignore`
+  - `docker-compose.yml`
+  - `infrastructure/**`
+  - `scripts/**`
+  - `.github/workflows/**`
+  - `docs/deployment/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.harness/gates.config.json`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `spec.json`
+  - `.harness/interviews/**`
+
+### Contexto técnico
+
+- **data_model:** no cambia contratos de datos; solo empaquetado y configuración runtime
+- **external_contracts:** dos imágenes/servicios, Docker Compose y Cloud Run
+- **edge_cases:** arranque demo sin secretos, rutas SPA y API same-origin
+- **ui_states:** el frontend conserva rutas profundas y modo visible demo/live
+

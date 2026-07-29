@@ -3617,7 +3617,9 @@
     {
       "id": "sprint-53-container-deployment",
       "name": "Sprint 53 - Container Deployment",
-      "status": "pending",
+      "title": "Despliegue reproducible de frontend y API",
+      "description": "Construir dos imágenes no root y desplegables en Cloud Run, con modo demo sin secretos, proxy same-origin, healthchecks y documentación operativa.",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.9.11",
       "estimated_hours": 7,
@@ -3645,15 +3647,18 @@
       ],
       "deliverable": "Contenedores reproducibles de dashboard y API.",
       "acceptance": [
-        "AC1: Las imágenes se construyen en CI.",
-        "AC2: La imagen no contiene `.env`, claves GEE ni cache privada.",
-        "AC3: Los procesos se ejecutan como usuario no root cuando sea viable.",
-        "AC4: Los healthchecks reflejan readiness real.",
-        "AC5: El despliegue acepta secretos mediante el entorno o gestor externo.",
-        "AC6: El modo demo puede desplegarse sin credenciales."
+        "Un único `Dockerfile` multi-stage construye targets reproducibles `api` y `web`; CI construye ambos sin credenciales ni red en runtime.",
+        "`.dockerignore` impide incorporar `.env`, Git, claves GEE, caches privadas, históricos locales, modelos, entornos virtuales y entregables innecesarios.",
+        "Los contenedores finales ejecutan procesos como usuarios no root y exponen únicamente el puerto HTTP requerido.",
+        "La API publica `/health` y `/ready`; el web publica `/healthz` y enruta same-origin `/api`, `/health` y `/ready` hacia la API.",
+        "`docker-compose.yml` inicia ambos servicios en modo demo sin credenciales GEE y permite abrir la SPA y sus rutas profundas.",
+        "La configuración production acepta secretos solo mediante variables de entorno o Google Secret Manager, sin copiarlos a capas, argumentos de build ni logs.",
+        "La documentación incluye construcción local, smoke test, despliegue anónimo en Cloud Run, diagnóstico, actualización y rollback.",
+        "Una comprobación automatizada falla si las imágenes no construyen o si los contenedores demo no alcanzan health/readiness y una ruta frontend."
       ],
       "scope": [
         "Dockerfile",
+        ".dockerignore",
         "docker-compose.yml",
         "infrastructure/**",
         "scripts/**",
@@ -3664,13 +3669,20 @@
         "Makefile",
         ".env.example",
         ".gitignore",
-        ".github/workflows/**",
         ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**"
+        "progress/**",
+        "spec.json",
+        ".harness/interviews/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-29T23:41:18.326Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:8de493113910813ebeb1f6f9d8cc19fb66eda750420ed14c3668e4d58d2f1b2b",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-29T23:41:18.444Z"
     },
     {
       "id": "sprint-54-scheduled-production-refresh",
