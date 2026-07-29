@@ -19,10 +19,10 @@ R7. El selector Light/Dark aplica el tema a todo el shell, persiste una preferen
 R8. En low-bandwidth se conserva todo el contenido, estado, enlaces y selector de tema en texto, mientras ilustraciones decorativas, fondos pesados y transiciones se omiten; el logo navega a `/overview`.
 R9. `Refresh status` sólo relee el endpoint ligero, conserva el último estado válido durante el refresh y muestra estados loading, metadata parcial, obsoleto y error saneado con reintento seguro.
 R10. Demo funciona offline y determinista; live/cache no mezclan fixtures. Tests API/frontend cubren saneado, payload parcial, ausencia de GEE/escrituras, rutas, enlaces, tema persistente/fallback, teclado, low-bandwidth y documentación de implementado, pendiente y futuro.
+R11. El bloque principal de About usa una fotografía editorial profesional, generada y versionada localmente, con descripción accesible, sin marcas ni claims incrustados; la imagen se omite por completo en low-bandwidth.
 
 ## Restricciones
 
 - **error_states:** Carga, error, parcial, obsoleto y enlace no configurado son observables.
 - **auth_secrets:** Todas las superficies son públicas, de sólo lectura y saneadas.
 - **rollback_compat:** Se preservan rutas, demo y contratos existentes.
-

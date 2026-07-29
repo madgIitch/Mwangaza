@@ -454,17 +454,9 @@ function AboutScreen({ data, lowBandwidth, autoRefresh }: { data: DashboardData;
             ))}
           </div>
         </div>
-        {!lowBandwidth ? <div className="about-illustration" aria-label="Satellite drought monitoring concept">
-          <div className="sun" />
-          <div className="satellite">SAT</div>
-          <div className="horn-map">
-            <span data-severity="normal" />
-            <span data-severity="watch" />
-            <span data-severity="warning" />
-            <span data-severity="critical" />
-          </div>
-          <div className="field-lines" />
-        </div> : null}
+        {!lowBandwidth ? <figure className="about-photo">
+          <img src="/about-climate-analysts.png" alt="Two climate analysts reviewing satellite drought observations" />
+        </figure> : null}
       </section>
 
       <div className="about-main-grid">

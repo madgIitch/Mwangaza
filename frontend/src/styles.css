@@ -1148,90 +1148,29 @@ td {
   font-size: 12px;
 }
 
-.about-illustration {
-  position: relative;
+.about-photo {
   min-height: 300px;
+  aspect-ratio: 2.35 / 1;
+  margin: 0;
   overflow: hidden;
+  border: 1px solid #c7d5cc;
   border-radius: 8px;
-  background:
-    radial-gradient(circle at 58% 22%, rgba(244, 196, 69, 0.55) 0 34px, transparent 35px),
-    linear-gradient(180deg, #eef7ef 0%, #d6ebdf 46%, #a8d4bf 100%);
+  background: #25352b;
+  box-shadow: 0 14px 30px rgba(22, 63, 49, .12);
 }
 
-.about-illustration::before,
-.about-illustration::after {
-  content: "";
-  position: absolute;
-  left: -5%;
-  right: -5%;
-  bottom: 28px;
-  height: 110px;
-  border-radius: 55% 55% 0 0;
-  background: rgba(15, 122, 59, 0.18);
+.about-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.005);
+  transition: transform .7s cubic-bezier(.2,.7,.2,1);
 }
 
-.about-illustration::after {
-  bottom: -20px;
-  height: 140px;
-  background: rgba(15, 90, 45, 0.35);
-}
-
-.sun {
-  position: absolute;
-  right: 16%;
-  top: 18%;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: #f4c445;
-  opacity: 0.8;
-}
-
-.satellite {
-  position: absolute;
-  left: 10%;
-  top: 16%;
-  border: 1px solid rgba(15, 122, 59, 0.35);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #075a2d;
-  padding: 8px 10px;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.horn-map {
-  position: absolute;
-  left: 16%;
-  right: 12%;
-  top: 42%;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  transform: rotate(-3deg);
-}
-
-.horn-map span {
-  height: 72px;
-  border: 3px solid rgba(23, 32, 51, 0.18);
-  border-radius: 8px 8px 16px 8px;
-}
-
-.horn-map [data-severity="normal"] { background: #2f9e44; }
-.horn-map [data-severity="watch"] { background: #f2c94c; }
-.horn-map [data-severity="warning"] { background: #f08c2e; }
-.horn-map [data-severity="critical"] { background: #d92d20; }
-
-.field-lines {
-  position: absolute;
-  inset: auto 0 0;
-  z-index: 2;
-  height: 74px;
-  background: repeating-linear-gradient(90deg, rgba(255,255,255,0.26) 0 2px, transparent 2px 28px);
-  transform: skewY(-5deg);
-  transform-origin: left bottom;
-}
+.about-photo:hover img { transform: scale(1.025); }
 
 .about-main-grid,
 .about-method-grid {
@@ -2372,7 +2311,7 @@ td {
 @keyframes landing-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } } @keyframes landing-scale { from { transform: scale(1.04); filter: brightness(.75); } to { transform: scale(1); filter: brightness(1); } }
 @media (max-width: 700px) { .landing-nav nav a:not(:last-child) { display:none; }.landing-hero-copy { padding-bottom: 6rem; }.landing-scroll { display:none; }.landing-approach,.landing-pilots { grid-template-columns: 1fr; }.landing-capabilities > div { grid-template-columns: 1fr; }.landing-terrain { min-height: 22rem; padding: 2rem 1.25rem; clip-path:none; }.landing-terrain img { object-position: 62% center; }.landing-terrain span { padding-top: 8rem; }.landing-footer { flex-direction: column; }.landing-page * { min-width: 0; } }
 @media (prefers-reduced-motion: reduce) { .landing-page * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
-@media (prefers-reduced-motion: reduce) { .map-loading span, .region-svg-map path, .overview-screen { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .map-loading span, .region-svg-map path, .overview-screen, .about-photo img { animation: none !important; transition: none !important; } }
 
 /* Dark theme: preserve hierarchy instead of inverting every surface uniformly. */
 :root[data-theme="dark"] {
@@ -2461,6 +2400,7 @@ td {
 :root[data-theme="dark"] .regional-country-indicators small { color: #aebfb4; }
 :root[data-theme="dark"] .overview-actions .action-list li { color: #d7e4db; }
 :root[data-theme="dark"] .overview-actions .action-list li::before { background: #58c878; }
+:root[data-theme="dark"] .about-photo { border-color: #526459; box-shadow: 0 14px 30px rgba(0,0,0,.24); }
 
 /* The public landing keeps its authored editorial palette despite a saved app preference. */
 :root[data-theme="dark"] .landing-page { background: #f4f0e7; color: #142119; }

@@ -13,3 +13,4 @@ Checklist de implementación.
 - [x] (T9) Conectar `Refresh status` al endpoint ligero con estados seguros. ↔ R9
 - [x] (T10) Preservar demo offline y cubrir API, UI, rutas, tema y documentación. ↔ R10
 - [x] Tests que cubren los criterios de aceptación.
+- [x] (T11) Sustituir la ilustración de About por fotografía editorial local, accesible y omitida en low-bandwidth. ↔ R11

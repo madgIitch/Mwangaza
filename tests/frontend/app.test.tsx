@@ -468,6 +468,7 @@ describe("React PWA dashboard", () => {
 
     expect(screen.getByRole("heading", { name: "About Mwangaza" })).toBeInTheDocument();
     expect(screen.getByText(/satellite-powered drought early warning/)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Two climate analysts reviewing satellite drought observations" })).toHaveAttribute("src", "/about-climate-analysts.png");
     expect(screen.getByRole("heading", { name: "Data Sources" })).toBeInTheDocument();
     expect(screen.getByText("Google Earth Engine")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "How Mwangaza Works" })).toBeInTheDocument();
@@ -477,6 +478,14 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Data provenance and methodology" })).toHaveAttribute("href", "/about/provenance");
+  });
+
+  it("omits the About photograph in low-bandwidth mode", () => {
+    window.history.pushState({}, "", "/about");
+    render(<App initialData={demoDashboard} skipApiLoad />);
+    fireEvent.click(screen.getByLabelText("Low bandwidth"));
+    expect(screen.queryByRole("img", { name: "Two climate analysts reviewing satellite drought observations" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "About Mwangaza" })).toBeInTheDocument();
   });
 
   it("persists the global theme and links the brand to Overview", () => {
