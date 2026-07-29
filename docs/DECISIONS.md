@@ -839,3 +839,12 @@ PDF. Las URLs históricas `/admin` y `/reports` se canonicalizan a `/overview`. 
 Regions y Active alerts conservan sus flujos, continuidad y exportaciones CSV/JSON.
 Los contratos backend de administración e informes permanecen intactos por compatibilidad,
 pero la interfaz pública deja de consumirlos.
+
+<!-- harness:sprint-51-pitch-deck -->
+## 2026-07-29 · sprint-51-pitch-deck aprobado
+
+Contexto: se aprobó el spec `sprint-51-pitch-deck` (Sprint 51 - Pitch Deck).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

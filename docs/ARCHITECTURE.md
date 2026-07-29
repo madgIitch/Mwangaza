@@ -1837,3 +1837,18 @@ baseline. Ningún request importa datos históricos, ajusta modelos, escribe o l
   - `spec/sprint-65-probability-ui-integration-*/**`
   - `progress/**`
 
+<!-- harness:sprint-51-pitch-deck -->
+## sprint-51-pitch-deck · Sprint 51 - Pitch Deck
+
+
+
+### Scope aprobado
+
+  - `submission/deck/**`
+  - `assets/pitch/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `spec.json`
+  - `.harness/interviews/**`
+

@@ -3499,7 +3499,7 @@
     {
       "id": "sprint-51-pitch-deck",
       "name": "Sprint 51 - Pitch Deck",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.9.9",
       "estimated_hours": 6,
@@ -3527,28 +3527,32 @@
       ],
       "deliverable": "Presentación final coherente con la implementación.",
       "acceptance": [
-        "AC1: La presentación cubre problema, usuario, solución, flujo de datos, acción temprana, demo, arquitectura, limitaciones y futuro.",
-        "AC2: Todas las capturas corresponden al build final.",
-        "AC3: Las cifras simuladas están etiquetadas.",
-        "AC4: La arquitectura muestra GEE, pipeline, cache, API, dashboard y reportes.",
-        "AC5: Existe una versión exportada a PDF.",
-        "AC6: El pitch puede realizarse dentro del tiempo oficial configurado."
+        "La presentación explica problema, usuario, solución, flujo de datos, acción temprana, demo, arquitectura, limitaciones y futuro mediante una narrativa coherente para el jurado.",
+        "La presentación usa capturas del build final y cada captura identifica la vista o interacción que demuestra.",
+        "Toda cifra simulada, experimental o dependiente de un corte temporal está etiquetada de forma visible y no se presenta como impacto observado.",
+        "La arquitectura muestra Google Earth Engine, pipeline de señales, materialización/cache, API y dashboard con exportaciones, de acuerdo con la implementación vigente.",
+        "Existen una versión editable `submission/deck/mwangaza-pitch-deck.pptx` y una versión exportada `submission/deck/mwangaza-pitch-deck.pdf` con el mismo contenido.",
+        "El guion configura una duración objetivo de 5 minutos, asigna tiempo a cada slide y suma como máximo 300 segundos.",
+        "La demostración principal conduce al evaluador desde la propuesta de valor hasta la capa `Persistent episodes` y el detalle ADM1; también documenta un fallback con capturas si falla la consulta en vivo.",
+        "El deck diferencia claramente observación actual, referencia histórica y predicción ML experimental, e incluye las limitaciones de no predecir inicio exacto, duración exacta ni impacto humano.",
+        "El entregable incluye fuentes o procedencia para las cifras técnicas y conserva el corte temporal de los datos mostrados."
       ],
       "scope": [
         "submission/deck/**",
         "assets/pitch/**",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**"
+        "progress/**",
+        "spec.json",
+        ".harness/interviews/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-29T15:29:55.920Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:ec50d98aa867b30003f4fb118581e6bb230bc3f6bcbb30a5b3aca3f9798d2005",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-29T15:29:56.036Z"
     },
     {
       "id": "sprint-52-demo-video",
