@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-51-pitch-deck - Sprint 51 - Pitch Deck** - estado: `review_pending`.
+Feature: **sprint-51-pitch-deck - Sprint 51 - Pitch Deck** - estado: `done`.
 
 ## Resultado
 
@@ -13,5 +13,5 @@ Feature: **sprint-51-pitch-deck - Sprint 51 - Pitch Deck** - estado: `review_pen
 
 ## Siguiente acción
 
-- Cerrar formalmente Sprint 51 tras el commit de implementación.
+- Presentar los entregables al usuario.
 - No iniciar Sprint 52 - Demo Video hasta que el usuario decida continuar.

@@ -1,6 +1,6 @@
 # Sprint 51 - Revisión
 
-Estado: `review_pending`.
+Estado: `done`.
 
 - [x] Spec aprobada antes de implementar (`793bee1`).
 - [x] 10 slides y 300 segundos exactos.
@@ -14,5 +14,4 @@ Estado: `review_pending`.
 - [x] Frontend: 60/60 tests PASS.
 - [x] Revisión humana aportó las capturas finales utilizadas en la demo story.
 
-Veredicto: listo para cierre formal.
-
+Veredicto: Sprint 51 cerrado formalmente en `f90162f`.

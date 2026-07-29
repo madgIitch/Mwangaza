@@ -316,3 +316,9 @@
 - Capturas reales cubren landing, episodios persistentes IGAD y continuidad de Bay ADM1.
 - Cifras de Sprint 65 etiquetadas como materializadas o experimentales según corresponde.
 - QA visual, overflow, gates oficiales, typecheck, lint y 60 tests frontend pasan.
+
+## 2026-07-29T18:57:24+02:00 - #sprint-51-pitch-deck -> done
+
+- Entrega implementada en `1c44981` y cierre formal registrado en `f90162f`.
+- PPTX editable, PDF final y capturas reales quedan versionados en el repositorio.
+- Sprint 52 no se inicia hasta que el usuario revise esta entrega.
