@@ -3557,7 +3557,9 @@
     {
       "id": "sprint-52-demo-video",
       "name": "Sprint 52 - Demo Video",
-      "status": "pending",
+      "title": "Guion y grabación de la demo final",
+      "description": "Preparar una demostración grabable de máximo tres minutos que muestre el recorrido diferencial de Mwangaza con claims verificables y un fallback estable.",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.9.10",
       "estimated_hours": 6,
@@ -3585,29 +3587,32 @@
       ],
       "deliverable": "Vídeo de demo listo para entrega.",
       "acceptance": [
-        "AC1: El vídeo muestra mapa, drilldown, tendencia, alerta, recomendación, PDF y notificación simulada.",
-        "AC2: Se explica claramente dónde termina la observación y empieza la simulación.",
-        "AC3: La demo utiliza uno de los escenarios e2e versionados.",
-        "AC4: No aparecen claves, correos privados ni consola con secretos.",
-        "AC5: El vídeo incluye subtítulos o narración clara.",
-        "AC6: El enlace final se prueba desde una sesión no autenticada cuando la plataforma lo requiera."
+        "Existe `docs/demo-script.md` con narración literal, acciones en pantalla y tiempos que suman como máximo 180 segundos.",
+        "El guion recorre `/landing`, `/overview?layer=episodes` y un detalle ADM1 activo, usando uno de los escenarios finales versionados.",
+        "El vídeo explica de forma directa qué áreas tienen un episodio activo y qué probabilidad existe de que continúe a 30, 60, 90 o 180 días.",
+        "La narración diferencia observación satelital, referencia histórica y predicción ML experimental, sin presentar el backtest como impacto observado ni certeza operativa.",
+        "El guion no depende de Reports, Admin, PDF ni notificaciones, superficies retiradas del recorrido final.",
+        "La preparación y el fallback evitan esperas visibles y permiten completar la grabación con las capturas finales si falla una consulta.",
+        "La grabación no muestra claves, correos privados, consola, variables de entorno ni contenido ajeno al producto.",
+        "El documento incluye checklist de grabación, subtítulos y verificación del archivo exportado desde una sesión no autenticada cuando la plataforma lo requiera."
       ],
       "scope": [
         "submission/video/**",
         "scripts/prepare_demo.py",
         "docs/demo-script.md",
-        "pyproject.toml",
-        "requirements*.txt",
-        "Makefile",
-        ".env.example",
-        ".gitignore",
-        ".github/workflows/**",
-        ".harness/gates.config.json",
         "docs/**",
         "spec/**",
-        "progress/**"
+        "progress/**",
+        "spec.json",
+        ".harness/interviews/**"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-07-29T23:26:00.639Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:b9e29573e2895dd3c3cc2b197073ded543ed08a1429660d60e815c148e536be3",
+      "approved_by": "peorr",
+      "approved_at": "2026-07-29T23:26:00.764Z"
     },
     {
       "id": "sprint-53-container-deployment",

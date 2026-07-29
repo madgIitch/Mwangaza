@@ -1852,3 +1852,26 @@ baseline. Ningún request importa datos históricos, ajusta modelos, escribe o l
   - `spec.json`
   - `.harness/interviews/**`
 
+<!-- harness:sprint-52-demo-video -->
+## sprint-52-demo-video · Sprint 52 - Demo Video
+
+
+
+### Scope aprobado
+
+  - `submission/video/**`
+  - `scripts/prepare_demo.py`
+  - `docs/demo-script.md`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `spec.json`
+  - `.harness/interviews/**`
+
+### Contexto técnico
+
+- **data_model:** no se crean nuevos datos; se presenta el snapshot materializado existente
+- **external_contracts:** rutas `/landing`, `/overview?layer=episodes` y detalle ADM1
+- **edge_cases:** margen de 15 segundos y regla para omitir esperas/cargas
+- **ui_states:** episodio activo, área evaluada sin episodio y horizontes de continuidad
+

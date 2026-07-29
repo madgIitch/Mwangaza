@@ -848,3 +848,16 @@ Contexto: se aprobó el spec `sprint-51-pitch-deck` (Sprint 51 - Pitch Deck).
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-52-demo-video -->
+## 2026-07-29 · sprint-52-demo-video aprobado
+
+Contexto: se aprobó el spec `sprint-52-demo-video` (Sprint 52 - Demo Video).
+
+Decisiones registradas:
+
+- **auth_secrets:** no mostrar consola, variables, credenciales ni información privada
+- **rollback_compat:** solo documentación y preparación aditiva de la demo
+- **tests:** suma de tiempos, rutas, claims y checklist verificables manualmente
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
