@@ -170,7 +170,7 @@ export function App({
     <div className="app-shell" data-low-bandwidth={lowBandwidth ? "true" : "false"} data-theme={theme}>
       <aside className="sidebar" aria-label="Mwangaza navigation">
         <a className="brand-block" href="/overview" aria-label="Mwangaza — go to Overview">
-          <div className="brand-mark" aria-hidden="true" />
+          <img className="brand-mark" src="/icons/icon.svg" alt="" />
           <div>
             <h1>{data.project}</h1>
             <p>{data.tagline}</p>

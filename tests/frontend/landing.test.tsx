@@ -6,6 +6,7 @@ describe("public landing page", () => {
   it("explains Mwangaza with exactly three capabilities and configured links", () => {
     render(<LandingPage links={{ dashboard: "/overview", github: "https://github.com/example/project", demo: "/overview?demo=1" }} />);
     expect(screen.getByRole("heading", { name: "Mwangaza - Bringing Light to Early Action" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Mwangaza" }).querySelector("img")).toHaveAttribute("src", "/icons/icon.svg");
     expect(screen.getAllByRole("article")).toHaveLength(3);
     expect(screen.getByText(/121 ADM1 areas across eight countries/)).toBeInTheDocument();
     expect(screen.getByText(/experimental ML with historical reference/i)).toBeInTheDocument();

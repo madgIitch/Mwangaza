@@ -492,7 +492,9 @@ describe("React PWA dashboard", () => {
     window.history.pushState({}, "", "/about");
     render(<App initialData={demoDashboard} skipApiLoad />);
 
-    expect(screen.getByRole("link", { name: "Mwangaza — go to Overview" })).toHaveAttribute("href", "/overview");
+    const brandLink = screen.getByRole("link", { name: "Mwangaza — go to Overview" });
+    expect(brandLink).toHaveAttribute("href", "/overview");
+    expect(brandLink.querySelector("img")).toHaveAttribute("src", "/icons/icon.svg");
     fireEvent.click(screen.getByRole("button", { name: "Switch to dark theme" }));
     expect(window.localStorage.getItem("mwangaza-theme")).toBe("dark");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
@@ -753,6 +755,7 @@ describe("React PWA dashboard", () => {
     expect(manifest.start_url).toBe("/");
     expect(manifest.display).toBe("standalone");
     expect(manifest.icons.length).toBeGreaterThan(0);
+    expect(manifest.icons).toEqual(expect.arrayContaining([expect.objectContaining({ src: "/icons/icon.svg", type: "image/svg+xml" })]));
   });
 
   it("does not precache API data in the service worker shell", () => {

@@ -22,6 +22,7 @@ R10. Demo funciona offline y determinista; live/cache no mezclan fixtures. Tests
 R11. El bloque principal de About usa una fotografía editorial profesional, generada y versionada localmente, con descripción accesible, sin marcas ni claims incrustados; la imagen se omite por completo en low-bandwidth.
 R12. El tema oscuro elimina superficies blancas residuales en Overview, Region, Alerts, About, documentos y estado técnico; mapas, tablas, filtros, selecciones y metadatos conservan contraste y jerarquía sin invertir los colores semánticos.
 R13. El shell no muestra placeholders de notificaciones o cuenta, y About no promociona enlaces a Privacy, Terms o Contact; sus rutas directas se preservan por compatibilidad.
+R14. Mwangaza usa una marca vectorial propia y coherente como favicon/PWA, identidad del shell y wordmark de la landing; permanece legible a tamaño pequeño, funciona en ambos temas y no duplica ornamento dentro del contenido operativo.
 
 ## Restricciones
 

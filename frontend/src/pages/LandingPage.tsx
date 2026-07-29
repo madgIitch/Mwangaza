@@ -8,7 +8,7 @@ export function LandingPage({ links = landingLinks }: { links?: LandingLinks }):
     { key: "github", label: "View on GitHub", href: links.github, primary: false }
   ].filter(item => validPublicUrl(item.href));
   return <main className="landing-page">
-    <header className="landing-nav"><a className="landing-wordmark" href="/landing">Mwangaza</a><nav aria-label="Landing navigation"><a href="#approach">How it works</a><a href="/overview?layer=episodes">Persistent episodes</a><a href="/about">About</a></nav></header>
+    <header className="landing-nav"><a className="landing-wordmark" href="/landing"><img src="/icons/icon.svg" alt="" /><span>Mwangaza</span></a><nav aria-label="Landing navigation"><a href="#approach">How it works</a><a href="/overview?layer=episodes">Persistent episodes</a><a href="/about">About</a></nav></header>
     <section className="landing-hero">
       <img src="/landing/hero-northern-kenya.png" alt="Aerial view of a braided dry riverbed across semi-arid Northern Kenya at dawn" />
       <div className="landing-hero-shade" />

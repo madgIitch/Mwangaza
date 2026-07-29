@@ -16,3 +16,4 @@ Checklist de implementación.
 - [x] (T11) Sustituir la ilustración de About por fotografía editorial local, accesible y omitida en low-bandwidth. ↔ R11
 - [x] (T12) Auditar y eliminar superficies blancas residuales del tema oscuro en todas las rutas públicas. ↔ R12
 - [x] (T13) Retirar placeholders de cuenta/notificaciones y enlaces legales/contacto del About visible. ↔ R13
+- [x] (T14) Diseñar e integrar la marca vectorial en favicon/PWA, shell y landing. ↔ R14
