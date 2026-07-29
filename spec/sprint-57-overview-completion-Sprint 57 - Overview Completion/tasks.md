@@ -18,3 +18,4 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T14) Low-bandwidth conserva región, riesgos, alertas, métricas, deltas, tendencias, recomendaciones y acciones de descarga en texto/tablas sin SVG ni animaciones. ↔ R14
 - [x] (T15) Tests API/frontend verifican controles, rutas, descargas, idiomas y degradación; ninguna interacción de Overview inicia Earth Engine desde el navegador. ↔ R15
 - [x] Tests que cubren los criterios de aceptación.
+- [x] (T16) Corregir superficies, controles y contraste del tema oscuro sin alterar la semántica del mapa. ↔ R16

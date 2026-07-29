@@ -24,6 +24,7 @@ R12. Cuenta y notificaciones permanecen etiquetadas como no disponibles y no son
 R13. Demo funciona sin red/GEE y conserva `is_demo`, `reference_date` y `snapshot_id`; live/cache no mezclan fixtures y mantienen fuente/frescura visibles.
 R14. Low-bandwidth conserva región, riesgos, alertas, métricas, deltas, tendencias, recomendaciones y acciones de descarga en texto/tablas sin SVG ni animaciones.
 R15. Tests API/frontend verifican controles, rutas, descargas, idiomas y degradación; ninguna interacción de Overview inicia Earth Engine desde el navegador.
+R16. El tema oscuro conserva una jerarquía legible en navegación, estados, alertas, cobertura regional, controles y acciones; evita superficies blancas accidentales y textos de bajo contraste sin alterar los colores semánticos del mapa.
 
 ## Restricciones
 
