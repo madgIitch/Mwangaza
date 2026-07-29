@@ -18,6 +18,9 @@ Feature: **sprint-65-probability-ui-integration - Sprint 65** - estado: `review_
 - La superficie publica queda concentrada en Overview, Regions, Active alerts, About y
   Technical status. Admin y Reports ya no tienen navegacion, pantallas, cargas frontend
   ni acciones PDF; sus URLs antiguas redirigen a Overview y CSV/JSON se conservan.
+- La landing refleja ya la cobertura de ocho paises y 121 ADM1, explica los episodios
+  persistentes y horizontes 30/60/90/180 dias, enlaza a esa capa y mantiene visible que
+  ML es experimental y se compara con una referencia historica.
 
 ## Siguiente accion
 

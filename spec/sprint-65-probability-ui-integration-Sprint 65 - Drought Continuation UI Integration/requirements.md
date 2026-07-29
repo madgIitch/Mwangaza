@@ -44,3 +44,8 @@ Technical status. Admin y Reports desaparecen de navegacion, rutas, pantallas, c
 y acciones PDF especificas; las exportaciones CSV/JSON y el resto de paginas mantienen
 su comportamiento. Los contratos backend de administracion e informes permanecen
 compatibles pero no son consumidos por la interfaz publica.
+
+R16. La landing `/landing` explica el alcance vigente de ocho paises y 121 ADM1, presenta
+`Persistent episodes` y los horizontes 30/60/90/180 dias como capacidad diferencial,
+enlaza directamente a la capa de episodios y mantiene visibles la naturaleza experimental
+de ML, la referencia historica y los limites de uso responsable.

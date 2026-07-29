@@ -81,6 +81,10 @@ dias en el tooltip. Cambiar de capa no cambia pais, periodo ni ADM1 seleccionada
   enlaces, rutas, cargas de datos y acciones PDF. Overview, Regions y Active alerts
   conservan sus flujos operativos y las exportaciones CSV/JSON. Los endpoints backend se
   mantienen como contratos compatibles para no ampliar este cambio a una retirada de API.
+- **landing_alignment:** La landing conserva su composicion editorial e imagen principal,
+  pero sustituye el relato de pilotos limitados por cobertura IGAD completa y continuidad
+  de episodios. Un enlace interno abre `/overview?layer=episodes`; el copy evita presentar
+  ML experimental como operacional y mantiene el aviso de decision-support.
 - **tests:** Las pruebas bloqueantes cubren 121 ADM1 y 484 resultados, 47/47 Kenya, estado
 activo/inactivo, probabilidades en cuatro horizontes, fechas y edades por señal, fuentes
 asincrónicas, NDMA solo como validación, FEWS solo como impacto, hashes, API/UI/Reports y
