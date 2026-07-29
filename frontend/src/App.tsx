@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { activateAdminConfig, loadAboutStatus, loadAdminConfig, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus, saveAdminConfig } from "./api";
+import { loadAboutStatus, loadApiDashboardDetails, loadApiDashboardSnapshot, loadTechnicalStatus } from "./api";
 import { demoDashboard } from "./fixtures";
 import { normalizeLanguage, t } from "./i18n";
 import { NorthernKenyaScenario } from "./components/NorthernKenyaScenario";
 import { DroughtContinuation } from "./components/DroughtContinuation";
 import { LandingPage } from "./pages/LandingPage";
-import type { AboutStatusResponse, AdminConfigResponse, AdminConfiguration, AdministrativeUnit, Alert, DashboardData, DroughtContinuationItem, DroughtContinuationResponse, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, ReportRecord, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
+import type { AboutStatusResponse, AdministrativeUnit, Alert, DashboardData, DroughtContinuationItem, DroughtContinuationResponse, GeoJsonGeometry, HistoricalRow, Language, Metric, RegionProfile, RegionRisk, Severity, TechnicalStatusResponse, ThemePreference, TrendSeries } from "./types";
 import "./styles.css";
 
 interface AppProps {
@@ -152,10 +152,17 @@ export function App({
     () => data.alerts.filter((alert) => alert.status === "active").sort((a, b) => severityRank[b.severity] - severityRank[a.severity]),
     [data.alerts]
   );
-  const route = window.location.pathname;
+  const requestedRoute = window.location.pathname;
+  const route = requestedRoute === "/admin" || requestedRoute === "/reports" ? "/overview" : requestedRoute;
   const isOverviewRoute = route === "/" || route === "/overview";
   const isAlertsRoute = route === "/alerts" || route.startsWith("/alerts/");
   const requestedAlertId = route.startsWith("/alerts/") ? decodeURIComponent(route.slice("/alerts/".length)) : undefined;
+
+  useEffect(() => {
+    if (requestedRoute === "/admin" || requestedRoute === "/reports") {
+      window.history.replaceState({}, "", "/overview");
+    }
+  }, [requestedRoute]);
 
   if (route === "/landing") return <LandingPage />;
 
@@ -173,9 +180,7 @@ export function App({
           <a data-active={isOverviewRoute ? "true" : "false"} href="/overview">{t(language, "overview")}</a>
           <a data-active={route === "/region" ? "true" : "false"} href="/region">{t(language, "regions")}</a>
           <a data-active={isAlertsRoute ? "true" : "false"} href="/alerts">{t(language, "activeAlerts")}</a>
-          <a data-active={route === "/reports" ? "true" : "false"} href="/reports">{t(language, "reports")}</a>
           <a data-active={route === "/about" ? "true" : "false"} href="/about">{t(language, "about")}</a>
-          <a data-active={route === "/admin" ? "true" : "false"} href="/admin">Admin</a>
           <a className="technical-link" data-active={route === "/technical" ? "true" : "false"} href="/technical">Technical status</a>
         </nav>
         <div className="language-control">
@@ -237,8 +242,6 @@ export function App({
           />
         ) : isAlertsRoute ? (
           <AlertsCenter data={data} activeAlerts={activeAlerts} requestedAlertId={requestedAlertId} />
-        ) : route === "/reports" ? (
-          <ReportsCenter data={data} />
         ) : route === "/about/provenance" || route === "/methodology" ? (
           <MethodologyScreen />
         ) : route === "/privacy" ? (
@@ -249,8 +252,6 @@ export function App({
           <PolicyScreen kind="contact" />
         ) : route === "/about" ? (
           <AboutScreen data={data} lowBandwidth={lowBandwidth} autoRefresh={!skipApiLoad} />
-        ) : route === "/admin" ? (
-          <AdminPanel lowBandwidth={lowBandwidth} />
         ) : route === "/technical" ? (
           <TechnicalPanel lowBandwidth={lowBandwidth} />
         ) : lowBandwidth ? (
@@ -355,184 +356,6 @@ function TechnicalPanel({ lowBandwidth }: { lowBandwidth: boolean }): JSX.Elemen
   );
 }
 
-function AdminPanel({ lowBandwidth }: { lowBandwidth: boolean }): JSX.Element {
-  const [response, setResponse] = useState<AdminConfigResponse | null>(null);
-  const [draft, setDraft] = useState<AdminConfiguration>(defaultAdminDraft());
-  const [message, setMessage] = useState("Loading admin configuration.");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    loadAdminConfig()
-      .then((next) => {
-        setResponse(next);
-        setDraft(next.active_version?.configuration ?? defaultAdminDraft());
-        setMessage("Public demo mode. Changes are available without credentials.");
-      })
-      .catch(() => {
-        setMessage("Admin configuration endpoint is unavailable.");
-      });
-  }, []);
-
-  const active = response?.active_version ?? null;
-  const versions = response?.versions ?? [];
-
-  const save = async (): Promise<void> => {
-    setError("");
-    try {
-      const next = await saveAdminConfig(draft);
-      setResponse(next);
-      setMessage(`Saved append-only version ${next.saved_version?.version_id ?? ""}. No recalculation was triggered.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Configuration validation failed.");
-    }
-  };
-
-  const activate = async (versionId: string): Promise<void> => {
-    setError("");
-    try {
-      const next = await activateAdminConfig(versionId);
-      setResponse(next);
-      setDraft(next.active_version?.configuration ?? draft);
-      setMessage(`Activated ${versionId}. Refresh jobs remain manual.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Activation failed.");
-    }
-  };
-
-  const updateThresholdLabel = (label: string): void => {
-    setDraft({ ...draft, thresholds: { ...draft.thresholds, label } });
-  };
-  const updateWarningAction = (action: string): void => {
-    setDraft({
-      ...draft,
-      actions: {
-        ...draft.actions,
-        templates: {
-          ...draft.actions.templates,
-          warning: { ...draft.actions.templates.warning, action }
-        }
-      }
-    });
-  };
-
-  return (
-    <section className="admin-screen" aria-label="Admin Configuration">
-      <div className="admin-header">
-        <div>
-          <p className="eyebrow">Demo admin</p>
-          <h2>Admin Configuration</h2>
-          <p>Version thresholds and early-action guidance without recalculating operational data.</p>
-        </div>
-        <span data-state="configured">Public access</span>
-      </div>
-
-      <section className="admin-login" aria-label="Admin access status">
-        <p>{message}</p>
-        {error ? <div className="notice" role="alert">{error}</div> : null}
-      </section>
-
-      <div className="admin-grid">
-        <section className="admin-editor">
-          <h2>Configuration editor</h2>
-          <label className="field">
-            <span>Threshold label</span>
-            <input
-              aria-label="Threshold label"
-              disabled={!response}
-              onChange={(event) => updateThresholdLabel(event.target.value)}
-              value={draft.thresholds.label}
-            />
-          </label>
-          <label className="field">
-            <span>Warning action</span>
-            <textarea
-              aria-label="Warning action"
-              disabled={!response}
-              onChange={(event) => updateWarningAction(event.target.value)}
-              value={draft.actions.templates.warning.action}
-            />
-          </label>
-          <div className="admin-actions">
-            <button disabled={!response} onClick={save} type="button">Save new version</button>
-            <span>No refresh, forecast or Earth Engine call is triggered.</span>
-          </div>
-        </section>
-
-        <section className="admin-active">
-          <h2>Active version</h2>
-          {active ? (
-            <dl>
-              <div><dt>Version</dt><dd>{active.version_id}</dd></div>
-              <div><dt>Status</dt><dd>{active.status}</dd></div>
-              <div><dt>Created</dt><dd>{active.created_at}</dd></div>
-              <div><dt>Hash prefix</dt><dd>{active.content_hash.slice(0, 12)}</dd></div>
-            </dl>
-          ) : (
-            <Placeholder title="No active version" detail="Save and activate a valid configuration to make it current." />
-          )}
-          <Placeholder title="Demo scope" detail="This hackathon panel is intentionally public. Add institutional identity and authorization before production use." />
-        </section>
-      </div>
-
-      <section className={lowBandwidth ? "admin-history admin-history-lite" : "admin-history"}>
-        <h2>Version history</h2>
-        <table>
-          <thead><tr><th>Version</th><th>Status</th><th>Created by</th><th>Validation</th><th>Action</th></tr></thead>
-          <tbody>
-            {versions.map((version) => (
-              <tr key={version.version_id}>
-                <td>{version.version_id}</td>
-                <td>{version.status}</td>
-                <td>{version.created_by}</td>
-                <td>{version.validation_errors.length ? version.validation_errors.join("; ") : "valid"}</td>
-                <td>
-                  <button
-                    disabled={version.status === "active" || version.validation_errors.length > 0}
-                    onClick={() => void activate(version.version_id)}
-                    type="button"
-                  >
-                    Activate
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!versions.length ? <tr><td colSpan={5}>No configuration versions yet.</td></tr> : null}
-          </tbody>
-        </table>
-      </section>
-    </section>
-  );
-}
-
-function defaultAdminDraft(): AdminConfiguration {
-  return {
-    schema_version: "mwangaza.admin.v1",
-    thresholds: {
-      threshold_version: "prototype-thresholds-v1",
-      domain_min: 0,
-      domain_max: 100,
-      bands: [
-        { level: "green", minimum: 0, maximum: 25 },
-        { level: "yellow", minimum: 25, maximum: 50 },
-        { level: "orange", minimum: 50, maximum: 75 },
-        { level: "red", minimum: 75, maximum: 100 }
-      ],
-      is_official: false,
-      label: "prototype-not-igad-official"
-    },
-    actions: {
-      recommendation_version: "actions-v1",
-      templates: {
-        green: { level: "green", action: "Continue routine monitoring", suggested_actor: "Analyst", urgency: "monitoring" },
-        watch: { level: "watch", action: "Prepare early action checklist", suggested_actor: "Program lead", urgency: "preparation" },
-        warning: { level: "warning", action: "Preposition supplies and brief partners", suggested_actor: "Operations lead", urgency: "prepositioning" },
-        emergency: { level: "emergency", action: "Activate urgent coordination review", suggested_actor: "Incident lead", urgency: "urgent_activation" },
-        unknown: { level: "unknown", action: "Review data quality before intervention", suggested_actor: "Data lead", urgency: "data_review" }
-      }
-    }
-  };
-}
-
 function StandalonePage({ title, detail }: { title: string; detail: string }): JSX.Element {
   return (
     <section className="standalone-page" aria-label={title}>
@@ -585,7 +408,7 @@ function AboutScreen({ data, lowBandwidth, autoRefresh }: { data: DashboardData;
     {
       title: "Early Action",
       icon: "ACT",
-      detail: "Turns configured risk signals into alerts, recommendations and report-ready summaries.",
+      detail: "Turns configured risk signals into alerts and clear early-action recommendations.",
       metric: composite
     }
   ];
@@ -688,7 +511,7 @@ function AboutScreen({ data, lowBandwidth, autoRefresh }: { data: DashboardData;
             <li><strong>Observe</strong><span>Retrieve NDVI, rainfall and land-surface temperature.</span></li>
             <li><strong>Compare</strong><span>Compare recent values with seasonal historical baselines.</span></li>
             <li><strong>Assess</strong><span>Generate anomalies, composite score, quality flags and drought level.</span></li>
-            <li><strong>Act</strong><span>Surface alerts, recommendations and exportable reports.</span></li>
+            <li><strong>Act</strong><span>Surface alerts, recommendations and portable data exports.</span></li>
           </ol>
           <a className="text-link" href="/about/provenance">Data provenance and methodology</a>
           <a className="text-link" href="/methodology">Open methodology route</a>
@@ -841,7 +664,6 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
         <div className="alerts-header-actions">
           <a download href={`/api/v1/exports/alerts?${filterQuery ? `${filterQuery}&` : ""}format=csv`}>Export CSV</a>
           <a download href={`/api/v1/exports/alerts?${filterQuery ? `${filterQuery}&` : ""}format=json`}>Export JSON</a>
-          <a download href={`/api/v1/reports/alerts${filterQuery ? `?${filterQuery}` : ""}`}>Export PDF</a>
           <button disabled type="button" title="Authentication and alert-setting permissions are not available">Alert settings unavailable</button>
         </div>
       </div>
@@ -949,7 +771,6 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
               <p>{alertNarrative(selectedAlert, selectedRegion)}</p>
               <div className="alert-detail-actions">
                 <a href={`/region?country=${encodeURIComponent(selectedAlert.regionId)}`}>View full region analysis</a>
-                <a href={`/api/v1/reports/alerts?q=${encodeURIComponent(selectedRow?.id ?? selectedAlert.id)}`}>Generate PDF report</a>
               </div>
             </>
           ) : (
@@ -976,7 +797,6 @@ function AlertsCenter({ data, activeAlerts, requestedAlertId }: { data: Dashboar
 }
 
 function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert: Alert; alertIdValue: string; data: DashboardData; profile: RegionProfile; region: RegionRisk }): JSX.Element {
-  const reportUrl = `/api/v1/reports/alerts?q=${encodeURIComponent(alertIdValue)}`;
   return (
     <section className="alert-detail-page" aria-label={`Alert ${alertIdValue}`}>
       <header>
@@ -1007,7 +827,6 @@ function AlertDetailPage({ alert, alertIdValue, data, profile, region }: { alert
       </div>
       <nav className="alert-detail-actions" aria-label="Alert actions">
         <a href={`/region?country=${encodeURIComponent(region.id)}`}>Open region analysis</a>
-        <a href={reportUrl}>Download alert PDF</a>
         <a href={`/alerts?region=${encodeURIComponent(region.id)}&period=${encodeURIComponent(alert.period)}&status=${encodeURIComponent(alert.status)}`}>Back to filtered alerts</a>
       </nav>
     </section>
@@ -1050,321 +869,6 @@ function AlertLifecycle({ selectedAlert, selectedRegion }: { selectedAlert?: Ale
       </ol>
     </section>
   );
-}
-
-interface ReportRow {
-  id: string;
-  regionId: string;
-  region: string;
-  type: string;
-  period: string;
-  generatedOn: string;
-  status: ReportRecord["status"];
-  filename: string;
-  formats: ReportRecord["formats"];
-  snapshotId: string;
-  profile?: RegionProfile;
-  risk?: RegionRisk;
-}
-
-function ReportsCenter({ data }: { data: DashboardData }): JSX.Element {
-  const [query, setQuery] = useState("");
-  const [regionFilter, setRegionFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [tab, setTab] = useState<"generated" | "scheduled" | "templates" | "all">("generated");
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [generationState, setGenerationState] = useState<"idle" | "generating" | "created" | "error">("idle");
-
-  const reports = useMemo(() => buildReportRows(data), [data]);
-  const filteredReports = reports.filter((report) => {
-    const text = `${report.id} ${report.region} ${report.type} ${report.period} ${report.status}`.toLowerCase();
-    const matchesQuery = !query || text.includes(query.toLowerCase());
-    const matchesRegion = regionFilter === "all" || report.regionId === regionFilter;
-    const matchesType = typeFilter === "all" || report.type === typeFilter;
-    const matchesPeriod = periodFilter === "all" || report.period === periodFilter;
-    const matchesStatus = statusFilter === "all" || report.status === statusFilter;
-    const matchesTab = tab === "all" || (tab === "generated" && report.status !== "queued") || (tab === "scheduled" && false) || (tab === "templates" && false);
-    return matchesQuery && matchesRegion && matchesType && matchesPeriod && matchesStatus && matchesTab;
-  });
-  const selectedReport = filteredReports.find((report) => report.id === selectedReportId) ?? filteredReports[0] ?? reports[0];
-  const selectedProfile = selectedReport?.profile ?? data.profiles[0];
-  const selectedRisk = selectedReport?.risk ?? data.regions[0];
-  const selectedMetrics = selectedProfile?.metrics.length ? selectedProfile.metrics.slice(0, 4) : data.metrics.slice(0, 4);
-  const generateReport = async (): Promise<void> => {
-    setGenerationState("generating");
-    try {
-      const response = await fetch(`/api/v1/reports?region_id=${encodeURIComponent(data.selectedRegionId)}`, { method: "POST", headers: { accept: "application/json" } });
-      if (!response.ok) throw new Error("generation failed");
-      const payload = await response.json() as { report: { id: string } };
-      setSelectedReportId(payload.report.id);
-      setGenerationState("created");
-    } catch {
-      setGenerationState("error");
-    }
-  };
-
-  return (
-    <section className="reports-screen" aria-label="Reports Center">
-      <div className="reports-header">
-        <div>
-          <h2>Reports Center</h2>
-          <p>Generate, review, and export executive drought reports across IGAD</p>
-        </div>
-        <div className="reports-header-actions">
-          <button disabled type="button" title="Authentication and template contract required">Report templates · pending contract</button>
-          <button disabled={generationState === "generating"} onClick={() => void generateReport()} type="button">{generationState === "generating" ? "Generating…" : "Generate new report"}</button>
-        </div>
-      </div>
-
-      <div className="reports-filters" aria-label="Report filters">
-        <input aria-label="Search reports" onChange={(event) => setQuery(event.target.value)} placeholder="Search reports by region, type, or ID..." value={query} />
-        <select aria-label="Report region" onChange={(event) => setRegionFilter(event.target.value)} value={regionFilter}>
-          <option value="all">Region / Country: All</option>
-          {data.regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
-        </select>
-        <select aria-label="Report type" onChange={(event) => setTypeFilter(event.target.value)} value={typeFilter}>
-          <option value="all">Report type: All</option>
-          <option value="Executive PDF">Executive PDF</option>
-          <option value="Situation Brief">Situation Brief</option>
-          <option value="Monthly Summary">Monthly Summary</option>
-        </select>
-        <select aria-label="Report time period" onChange={(event) => setPeriodFilter(event.target.value)} value={periodFilter}>
-          <option value="all">Period: All</option>
-          {[...new Set(reports.map((report) => report.period))].map((period) => <option key={period} value={period}>{period}</option>)}
-        </select>
-        <select aria-label="Report status" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
-          <option value="all">Status: All</option>
-          <option value="ready">Ready</option>
-          <option value="generating">Generating</option>
-          <option value="failed">Failed</option>
-          <option value="expired">Expired</option>
-        </select>
-      </div>
-
-      <div className="report-tabs" aria-label="Report tabs">
-        {(["generated", "scheduled", "templates", "all"] as const).map((item) => (
-          <button data-active={tab === item ? "true" : "false"} key={item} onClick={() => setTab(item)} type="button">
-            {item === "all" ? "All reports" : item[0].toUpperCase() + item.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      <section className="report-status-line" aria-label="Report summary">
-        <strong>{reports.filter((report) => report.status === "ready").length}<span>Ready</span></strong>
-        <strong>{reports.filter((report) => report.status === "generating").length}<span>Generating</span></strong>
-        <strong>{reports.filter((report) => report.status === "failed").length}<span>Failed</span></strong>
-        <p><span className="status-dot" /> Materialized snapshots · {data.regions.length} IGAD countries</p>
-        <small>Scheduling and distribution require authentication</small>
-      </section>
-
-      <div className="reports-studio">
-        <div className="reports-index">
-        <section className="reports-queue">
-          <div className="section-heading">
-            <h2>Generated reports queue</h2>
-            <span className="muted">Showing {filteredReports.length ? `1 to ${filteredReports.length}` : "0"} of {reports.length} reports</span>
-          </div>
-          {filteredReports.length ? (
-            <table>
-              <thead><tr><th>#</th><th>Report ID</th><th>Region / Country</th><th>Type</th><th>Period</th><th>Generated on</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>
-                {filteredReports.map((report, index) => (
-                  <tr data-selected={report.id === selectedReport?.id ? "true" : "false"} key={report.id}>
-                    <td>{index + 1}</td>
-                    <td>{report.id}</td>
-                    <td>{report.region}</td>
-                    <td>{report.type}</td>
-                    <td>{report.period}</td>
-                    <td>{report.generatedOn}</td>
-                    <td><span className="report-status">{report.status[0].toUpperCase() + report.status.slice(1)}</span></td>
-                    <td><button onClick={() => setSelectedReportId(report.id)} type="button">View</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <Placeholder title={reports.length ? "No reports match filters" : "Report records unavailable"} detail={reports.length ? "Adjust or clear the active filters." : "The dashboard snapshot is loaded, but /api/v1/reports is not available. Restart the API to load backend-owned records."} />
-          )}
-        </section>
-        <RecentExports report={selectedReport} />
-        </div>
-        <ReportPreview continuation={data.droughtContinuation} report={selectedReport} metrics={selectedMetrics} recommendations={selectedProfile?.recommendations ?? data.recommendations} />
-        <aside className="reports-inspector">
-          <SelectedReportPanel report={selectedReport} metrics={selectedMetrics} risk={selectedRisk} />
-          <ReportSidePanels />
-        </aside>
-      </div>
-    </section>
-  );
-}
-
-function SelectedReportPanel({ report, metrics, risk }: { report?: ReportRow; metrics: Metric[]; risk: RegionRisk }): JSX.Element {
-  if (!report) {
-    return <section className="selected-report-panel"><Placeholder title="No selected report" detail="No report is available in the current payload." /></section>;
-  }
-
-  return (
-    <section className="selected-report-panel">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Selected report</p>
-          <h2>{report.region} - {report.type} Report</h2>
-          <p>Current drought conditions and early action summary</p>
-        </div>
-        <span className="severity-badge" data-severity={risk.level}>{severityLabel(risk.level)}</span>
-      </div>
-      <p className="muted">ID: {report.id}</p>
-      <dl className="report-meta">
-        <div><dt>Quality</dt><dd>{qualityLabel(risk.quality)}</dd></div>
-        <div><dt>Generated</dt><dd>{report.generatedOn}</dd></div>
-        <div><dt>Based on snapshot</dt><dd>{report.period}</dd></div>
-        <div><dt>Language</dt><dd>EN</dd></div>
-      </dl>
-      <div className="selected-report-metrics">
-        {metrics.map((metric) => (
-          <article key={metric.label}>
-            <span>{metric.label}</span>
-            <strong>{metric.value}<small>{metric.unit}</small></strong>
-            <p>No comparison yet</p>
-          </article>
-        ))}
-      </div>
-      <p>{report.region} report is based on the published snapshot for {report.period}. Indicators and recommendations should be used alongside local knowledge.</p>
-      <div className="report-actions">
-        <a href={`#preview-${report.id}`}>Open HTML preview</a>
-        {report.formats.map((format) => <a download href={`/api/v1/reports/${encodeURIComponent(report.id)}/download?format=${format}`} key={format}>Download {format.toUpperCase()}</a>)}
-        <button disabled title="Authentication and distribution contract required" type="button">Share · pending contract</button>
-      </div>
-    </section>
-  );
-}
-
-function RecentExports({ report }: { report?: ReportRow }): JSX.Element {
-  const rows = (report?.formats ?? []).map((format) => [format.toUpperCase(), report?.id ?? "Incomplete record", "public-dashboard", "Local download", `/api/v1/reports/${encodeURIComponent(report?.id ?? "")}/download?format=${format}`]);
-  return (
-    <section className="recent-exports">
-      <h2>Recent exports</h2>
-      <table>
-        <thead><tr><th>Format</th><th>Report ID</th><th>User / Channel</th><th>Destination</th><th>Action</th></tr></thead>
-        <tbody>
-          {rows.map(([format, id, channel, destination, filename]) => (
-            <tr key={`${format}-${id}`}>
-              <td>{format}</td><td>{id}</td><td>{channel}</td><td>{destination}</td><td><a download href={filename}>Download</a></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <a className="text-link" href="/reports">View all exports</a>
-    </section>
-  );
-}
-
-function ReportPreview({ continuation, report, metrics, recommendations }: { continuation?: DroughtContinuationResponse; report?: ReportRow; metrics: Metric[]; recommendations: string[] }): JSX.Element {
-  return (
-    <section className="report-preview-panel" id={report ? `preview-${report.id}` : undefined}>
-      <div className="section-heading">
-        <h2>Report preview</h2>
-        <span className="muted">HTML preview · 1 page</span>
-      </div>
-      <article className="report-paper">
-        <header>
-          <strong>MWANGAZA EARLY WARNING REPORT</strong>
-          <span>{report ? `${report.region} - ${report.period}` : "No report selected"}</span>
-        </header>
-        <div className="preview-map">Materialized snapshot · {report?.snapshotId ?? "unavailable"}</div>
-        <section>
-          <h3>Key findings</h3>
-          <ul>{metrics.slice(0, 3).map((metric) => <li key={metric.label}>{metric.label}: {metric.value}{metric.unit}</li>)}</ul>
-        </section>
-        <section>
-          <h3>Recommended early actions</h3>
-          <ul>{recommendations.slice(0, 3).map((item) => <li key={item}>{item}</li>)}</ul>
-        </section>
-        <ReportContinuationPreview response={continuation} regionId={report?.regionId} />
-      </article>
-      <div className="viewer-controls" aria-label="Report preview controls">
-        {report ? <a download href={`/api/v1/reports/${encodeURIComponent(report.id)}/download?format=pdf`}>Open generated PDF</a> : null}
-        <button onClick={() => window.print()} type="button">Print HTML preview</button>
-      </div>
-    </section>
-  );
-}
-
-function ReportContinuationPreview({ response, regionId }: { response?: DroughtContinuationResponse; regionId?: string }): JSX.Element {
-  const prefix = continuationCountryPrefix(regionId ?? "");
-  const items = (response?.items ?? []).filter((item) => item.status !== "not_applicable" && (item.region_id === regionId || (prefix && item.region_id.startsWith(prefix))));
-  if (!items.length) return <section><h3>Drought continuation</h3><p>No applicable materialized continuation estimate is available.</p></section>;
-  return (
-    <section className="report-continuation-preview">
-      <h3>Drought continuation</h3>
-      <p>Probability that the same officially active episode continues. Experimental ML is inconclusive and not for operational use.</p>
-      <table>
-        <thead><tr><th>ADM1 / horizon</th><th>Estimate</th><th>Probability</th><th>Method / quality</th></tr></thead>
-        <tbody>{items.flatMap((item) => item.estimates.map((estimate) => (
-          <tr key={`${item.region_id}-${item.horizon_days}-${estimate.kind}`}>
-            <td><code>{item.region_id}</code><br />{item.horizon_days} days · {item.as_of.slice(0, 10)} · <code>{item.current_phase}</code></td>
-            <td>{estimate.kind === "experimental_ml_prediction" ? "Experimental ML prediction" : "Historical reference"}</td>
-            <td>{estimate.status === "available" && estimate.probability !== undefined ? `${(estimate.probability * 100).toFixed(1)}%` : "Unavailable"}</td>
-            <td><code>{estimate.model}</code><br />{String(estimate.validation.status ?? "unknown")} · {String(estimate.quality.status ?? "unknown")}</td>
-          </tr>
-        )))}</tbody>
-      </table>
-    </section>
-  );
-}
-
-function continuationCountryPrefix(regionId: string): string {
-  const iso2: Record<string, string> = { dji: "dj", eri: "er", eth: "et", ken: "ke", sdn: "sd", som: "so", ssd: "ss", uga: "ug" };
-  return iso2[regionId] ? `adm1-${iso2[regionId]}-` : "";
-}
-
-function ReportSidePanels(): JSX.Element {
-  return (
-    <div className="report-context">
-      <section>
-        <h2>Report contents</h2>
-        <ul>
-          <li>Overview</li>
-          <li>Current indicators</li>
-          <li>Historical comparison</li>
-          <li>Early action recommendations</li>
-          <li>Methodology</li>
-        </ul>
-        <a className="text-link" href="/reports">View full table of contents</a>
-      </section>
-      <section>
-        <h2>Distribution</h2>
-        <p>Dashboard: Available here</p>
-        <p>Email summary: pending contract</p>
-        <p>Partner download: pending authentication</p>
-      </section>
-      <section>
-        <h2>Template used</h2>
-        <p>Executive PDF</p>
-        <p className="muted">Includes map, trends, recommendations and data provenance.</p>
-      </section>
-    </div>
-  );
-}
-
-function buildReportRows(data: DashboardData): ReportRow[] {
-  if (data.reports?.length) {
-    return data.reports.map((record) => {
-      const profile = data.profiles.find((item) => item.id === record.regionId);
-      const risk = data.regions.find((item) => item.id === record.regionId);
-      return {
-        id: record.id, regionId: record.regionId, region: record.region,
-        type: record.templateId === "executive-v1" ? "Executive PDF" : record.templateId,
-        period: `${record.periodStart.slice(0, 10)} to ${record.periodEnd.slice(0, 10)}`,
-        generatedOn: record.generatedAt, status: record.status,
-        filename: `mwangaza-executive-report-${record.regionId}.pdf`, formats: record.formats,
-        snapshotId: record.snapshotId, profile, risk
-      };
-    });
-  }
-  return [];
 }
 
 function RegionExplorer({
@@ -2351,7 +1855,6 @@ function OverviewScreen({
   const displayMetrics = selectedProfile.metrics.length ? selectedProfile.metrics : data.metrics;
   const topAlerts = activeAlerts.slice(0, 4);
   const alertsUrl = `/alerts?region=${encodeURIComponent(selectedRegion.id)}&period=${encodeURIComponent(selectedRegion.period)}&status=active`;
-  const reportUrl = downloadUrl("/api/v1/reports/executive", selectedRegion.id, selectedRegion.period);
   const csvUrl = downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "csv");
   const jsonUrl = downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "json");
   const availableRegionIds = new Set(data.regions.map((region) => region.id));
@@ -2472,10 +1975,6 @@ function OverviewScreen({
             <a className="text-link" href={alertsUrl}>{t(language, "guidance")}</a>
           </section>
           <section className="overview-share">
-            <a className="report-cta" download href={reportUrl}>
-              <span className="report-cta-copy"><strong>{t(language, "report")}</strong><small>{data.reportFilename}</small></span>
-              <span aria-hidden="true" className="report-cta-arrow">↓</span>
-            </a>
             <div className="export-box">
               <h2>{t(language, "exportData")}</h2>
               <a download href={csvUrl}><strong>CSV</strong><span>{data.exportFilenames.csv}</span></a>
@@ -2642,7 +2141,6 @@ function LowBandwidthView({
         <nav className="lite-downloads" aria-label="Alert downloads">
           <a download href={`/api/v1/exports/alerts?${exportQuery ? `${exportQuery}&` : ""}format=csv`}>CSV</a>
           <a download href={`/api/v1/exports/alerts?${exportQuery ? `${exportQuery}&` : ""}format=json`}>JSON</a>
-          <a download href={`/api/v1/reports/alerts${exportQuery ? `?${exportQuery}` : ""}`}>PDF</a>
         </nav>
         {requestedAlertId && !requestedAlert ? <Placeholder title="Alert not found" detail="The requested alert is not present in the loaded snapshot." /> : null}
         {visibleAlerts.length ? <table>
@@ -2728,7 +2226,7 @@ function LowBandwidthView({
       {selectedProfile.trends.length ? selectedProfile.trends.map((trend) => <table key={trend.indicator}><caption>{trend.label} · {trend.source}</caption><thead><tr><th>{t(language, "period")}</th><th>{t(language, "value")}</th><th>{t(language, "baseline")}</th></tr></thead><tbody>{trend.points.map((point) => <tr key={point.label}><td>{formatTrendPeriod(point.label)}</td><td>{point.value ?? t(language, "gap")}</td><td>{point.baseline ?? t(language, "gap")}</td></tr>)}</tbody></table>) : <p>{t(language, "trendPending")}</p>}
       <h2>{t(language, "earlyActions")}</h2>
       <ul>{(selectedProfile.recommendations.length ? selectedProfile.recommendations : data.recommendations).map((item) => <li key={item}>{item}</li>)}</ul>
-      <nav className="lite-downloads" aria-label={t(language, "snapshotDownloads")}><a download href={downloadUrl("/api/v1/reports/executive", selectedRegion.id, selectedRegion.period)}>{t(language, "report")}</a><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "csv")}>CSV</a><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "json")}>JSON</a></nav>
+      <nav className="lite-downloads" aria-label={t(language, "snapshotDownloads")}><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "csv")}>CSV</a><a download href={downloadUrl("/api/v1/exports/snapshot", selectedRegion.id, selectedRegion.period, "json")}>JSON</a></nav>
       <p className="muted">{t(language, "snapshotSource")}: <code>/api/v1/snapshots/latest</code></p>
     </section>
   );

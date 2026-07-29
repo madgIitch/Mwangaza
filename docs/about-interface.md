@@ -26,7 +26,7 @@ Quiet operational transparency: white working surfaces, green drought-action acc
 ## Sidebar Requirements
 
 - Product identity remains `Mwangaza` with the tagline `Bringing Light to Early Action`.
-- Navigation labels remain page routes: Overview, Regions, Active alerts, Reports and export, About.
+- Navigation labels remain page routes: Overview, Regions, Active alerts, About and Technical status.
 - About is highlighted when `/about` is active.
 - The logo can later link to `/overview`; this is tracked as future shell polish.
 - Decorative sidebar illustration and persisted Light/Dark theme switch are future scope.
@@ -62,7 +62,7 @@ Claims to avoid:
 - Vegetation Monitoring: NDVI and vegetation condition relative to seasonal baseline.
 - Rainfall Monitoring: recent rainfall totals and deficit/anomaly signals.
 - Surface Temperature: satellite-derived land surface temperature as complementary heat-stress evidence, not air temperature.
-- Early Action: recommendations, alerts and reports derived from configured rules and observed indicators.
+- Early Action: persistent episodes, recommendations and alerts derived from configured rules and observed indicators.
 
 ## Data Sources
 
@@ -82,7 +82,7 @@ Future source-detail panels should include dataset, provider, unit, resolution, 
 1. Observe: retrieve NDVI, rainfall and land-surface temperature.
 2. Compare: compare recent values with seasonal historical baselines.
 3. Assess: derive anomalies, composite score, quality flags and drought level.
-4. Act: surface alerts, recommendations and exportable reports.
+4. Act: surface persistent episodes, alerts, recommendations and portable data exports.
 
 ## Project Context
 

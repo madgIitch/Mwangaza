@@ -1,5 +1,11 @@
 # Reports Interface Target
 
+> Retired from the public frontend on 2026-07-29. `/reports`, its navigation item,
+> report queue, preview, PDF actions and frontend API loading were removed to keep the
+> evaluator path focused on Overview, Regions and Active alerts. Backend report contracts
+> remain unchanged for compatibility and are not consumed by the canonical UI. The
+> material below is retained as historical design context.
+
 `/reports` is the center for generating, reviewing, exporting and tracing executive drought reports across IGAD.
 
 ## Visual Thesis

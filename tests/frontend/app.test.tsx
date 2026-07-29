@@ -35,7 +35,6 @@ const hiiraanUnit = {
 function mockAdministrativeMap(): void {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => somaliaAdm1 }));
 }
-
 describe("React PWA dashboard", () => {
   beforeEach(() => {
     window.history.pushState({}, "", "/");
@@ -54,8 +53,8 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Risk Map - IGAD" })).toBeInTheDocument();
     expect(screen.getByText("Selected region:")).toBeInTheDocument();
     expect(screen.getByText("Drought risk escalation")).toBeInTheDocument();
-    expect(screen.getByText("Generate Executive PDF Report")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Export data" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /PDF|Report/i })).not.toBeInTheDocument();
   });
 
   it("renders Overview as a dedicated /overview page route", () => {
@@ -160,7 +159,6 @@ describe("React PWA dashboard", () => {
 
     expect(screen.getAllByRole("link", { name: "View details" })[0]).toHaveAttribute("href", "/alerts/ALT-SOM-DEMO-202607");
     expect(screen.getByRole("link", { name: "View all alerts" })).toHaveAttribute("href", "/alerts?region=som&period=2026-07-01%20to%202026-07-15&status=active");
-    expect(screen.getByRole("link", { name: /Generate Executive PDF Report/ })).toHaveAttribute("href", "/api/v1/reports/executive?region=som&period=2026-07-01+to+2026-07-15");
     expect(screen.getByRole("link", { name: /CSV/ })).toHaveAttribute("href", "/api/v1/exports/snapshot?region=som&period=2026-07-01+to+2026-07-15&format=csv");
     expect(screen.getByRole("link", { name: /JSON/ })).toHaveAttribute("href", "/api/v1/exports/snapshot?region=som&period=2026-07-01+to+2026-07-15&format=json");
   });
@@ -404,9 +402,16 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
     expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/region");
     expect(screen.getByRole("link", { name: "Active alerts" })).toHaveAttribute("href", "/alerts");
-    expect(screen.getByRole("link", { name: "Reports and export" })).toHaveAttribute("href", "/reports");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
-    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
+    expect(screen.queryByRole("link", { name: /Reports|Admin/i })).not.toBeInTheDocument();
+  });
+
+  it.each(["/reports", "/admin"])("redirects the retired %s route to Overview", (route) => {
+    window.history.pushState({}, "", route);
+    render(<App initialData={demoDashboard} skipApiLoad />);
+
+    expect(screen.getByRole("heading", { name: "Risk Map - IGAD" })).toBeInTheDocument();
+    expect(window.location.pathname).toBe("/overview");
   });
 
   it("removes legacy hash anchors from the browser URL", () => {
@@ -454,55 +459,6 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Alerts Center · Low bandwidth" })).toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "CSV" })).toHaveAttribute("href", "/api/v1/exports/alerts?format=csv");
-  });
-
-  it("renders reports as a standalone export center instead of scrolling inside Overview", () => {
-    window.history.pushState({}, "", "/reports");
-
-    const reportData = {
-      ...demoDashboard,
-      reports: [{
-        id: "RPT-SOM-ABC123", generatedAt: "2026-07-15T00:00:00+00:00", updatedAt: "2026-07-15T00:00:00+00:00",
-        expiresAt: null, status: "ready" as const, regionId: "som", region: "Somalia",
-        periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", templateId: "executive-v1",
-        language: "en", author: "Mwangaza automated report", snapshotId: "snapshot-demo",
-        formats: ["pdf", "csv", "json"] as Array<"pdf" | "csv" | "json">, error: null
-      }]
-    };
-    render(<App initialData={reportData} skipApiLoad />);
-
-    expect(screen.getByRole("heading", { name: "Reports Center" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Search reports")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Generated reports queue" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Somalia - Executive PDF Report" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Recent exports" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Report preview" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Report contents" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Download PDF" })[0]).toHaveAttribute("href", "/api/v1/reports/RPT-SOM-ABC123/download?format=pdf");
-    expect(screen.getByText("HTML preview · 1 page")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Share · pending contract" })).toBeDisabled();
-    expect(screen.queryByText(/simulated/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
-  });
-
-  it("includes materialized continuation evidence in a Kenya report preview", () => {
-    window.history.pushState({}, "", "/reports");
-    const reportData = {
-      ...demoDashboard,
-      reports: [{
-        id: "RPT-KEN-CONT", generatedAt: "2026-07-15T00:00:00+00:00", updatedAt: "2026-07-15T00:00:00+00:00",
-        expiresAt: null, status: "ready" as const, regionId: "ken", region: "Kenya",
-        periodStart: "2026-07-01T00:00:00Z", periodEnd: "2026-07-15T00:00:00Z", templateId: "executive-v1",
-        language: "en", author: "Mwangaza automated report", snapshotId: "snapshot-demo",
-        formats: ["pdf"] as Array<"pdf" | "csv" | "json">, error: null
-      }]
-    };
-    render(<App initialData={reportData} skipApiLoad />);
-
-    expect(screen.getByRole("heading", { name: "Drought continuation" })).toBeInTheDocument();
-    expect(screen.getAllByText("adm1-ke-43").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Experimental ML is inconclusive and not for operational use/)).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "78.0%" })).toBeInTheDocument();
   });
 
   it("renders about as a standalone methodology and project information screen", () => {
@@ -565,7 +521,7 @@ describe("React PWA dashboard", () => {
     expect(document.querySelector(".region-svg-map")).not.toBeInTheDocument();
   });
 
-  it("selects Northern Kenya districts and keeps report and notification aligned", () => {
+  it("selects Northern Kenya districts and keeps operational context aligned", () => {
     window.history.pushState({}, "", "/region");
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
     render(<App initialData={demoDashboard} skipApiLoad />);
@@ -573,7 +529,7 @@ describe("React PWA dashboard", () => {
     expect(screen.getByRole("heading", { name: "Northern Kenya subnational scenario" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Marsabit/ }));
     expect(screen.getByRole("heading", { name: "Marsabit · KEN-010" })).toBeInTheDocument();
-    expect(screen.getByText(/report-KEN-010-demo/)).toBeInTheDocument();
+    expect(screen.getByText(/Operational area:/).closest("p")).toHaveTextContent("KEN-010");
     fireEvent.change(screen.getByLabelText("Notification language"), { target: { value: "sw" } });
     expect(screen.getByText(/Kagua upatikanaji wa maji katika Marsabit/)).toBeInTheDocument();
   });
@@ -730,7 +686,7 @@ describe("React PWA dashboard", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/snapshots/latest", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/alerts?limit=20", expect.any(Object));
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/reports?limit=100", expect.any(Object));
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/v1/reports?limit=100", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=0", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=100", expect.any(Object));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/drought-continuation-probabilities?limit=100&offset=200", expect.any(Object));
@@ -808,58 +764,6 @@ describe("React PWA dashboard", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("API unavailable"));
   });
 
-  it("loads the complete admin panel without credentials", async () => {
-    window.history.pushState({}, "", "/admin");
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(adminResponse())));
-
-    render(<App initialData={demoDashboard} skipApiLoad />);
-
-    expect(screen.getByRole("heading", { name: "Admin Configuration" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText("Public demo mode. Changes are available without credentials.")).toBeInTheDocument());
-    expect(screen.getByLabelText("Warning action")).toBeEnabled();
-    expect(screen.queryByLabelText("Demo admin credential")).not.toBeInTheDocument();
-    expect(screen.getByText(/institutional identity and authorization/i)).toBeInTheDocument();
-  });
-
-  it("edits warning action and saves an append-only version without credentials", async () => {
-    window.history.pushState({}, "", "/admin");
-    const fetchMock = vi.fn(async (path: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(path);
-      if (url === "/api/v1/admin/config" && init?.method !== "POST") {
-        return jsonResponse(adminResponse());
-      }
-      if (url === "/api/v1/admin/config" && init?.method === "POST") {
-        return jsonResponse(adminResponse("cfg-saved-002", "draft", "Brief partners from admin panel"));
-      }
-      return jsonResponse(adminResponse());
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(<App initialData={demoDashboard} skipApiLoad />);
-
-    await waitFor(() => expect(screen.getByDisplayValue("Preposition supplies and brief partners")).toBeInTheDocument());
-    fireEvent.change(screen.getByLabelText("Warning action"), { target: { value: "Brief partners from admin panel" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save new version" }));
-
-    await waitFor(() => expect(screen.getByText(/Saved append-only version cfg-saved-002/)).toBeInTheDocument());
-    expect(fetchMock).toHaveBeenCalledWith("/api/v1/admin/config", expect.objectContaining({ method: "POST" }));
-    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("authorization");
-    expect(screen.getByText("No refresh, forecast or Earth Engine call is triggered.")).toBeInTheDocument();
-  });
-
-  it("keeps admin history usable in low-bandwidth mode", async () => {
-    window.history.pushState({}, "", "/admin");
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      return jsonResponse(adminResponse());
-    }));
-
-    render(<App initialData={demoDashboard} initialLowBandwidth skipApiLoad />);
-
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Version history" })).toBeInTheDocument());
-    expect(screen.getByRole("columnheader", { name: "Version" })).toBeInTheDocument();
-    expect(screen.getAllByText("cfg-active-001").length).toBeGreaterThan(0);
-  });
-
   it("shows technical readiness and metrics on a separate route", async () => {
     window.history.pushState({}, "", "/technical");
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({
@@ -927,52 +831,5 @@ function refreshSnapshotResponse(dataMode: "cache" | "live") {
       }],
       source_metadata: { source: dataMode === "live" ? "Google Earth Engine live query" : "Materialized observed data" }
     }
-  };
-}
-
-function adminResponse(versionId = "cfg-active-001", status = "active", warningAction = "Preposition supplies and brief partners") {
-  const configuration = {
-    schema_version: "mwangaza.admin.v1",
-    thresholds: {
-      threshold_version: "prototype-thresholds-v1",
-      domain_min: 0,
-      domain_max: 100,
-      bands: [
-        { level: "green", minimum: 0, maximum: 25 },
-        { level: "yellow", minimum: 25, maximum: 50 },
-        { level: "orange", minimum: 50, maximum: 75 },
-        { level: "red", minimum: 75, maximum: 100 }
-      ],
-      is_official: false,
-      label: "prototype-not-igad-official"
-    },
-    actions: {
-      recommendation_version: "actions-v1",
-      templates: {
-        green: { level: "green", action: "Continue routine monitoring", suggested_actor: "Analyst", urgency: "monitoring" },
-        watch: { level: "watch", action: "Prepare early action checklist", suggested_actor: "Program lead", urgency: "preparation" },
-        warning: { level: "warning", action: warningAction, suggested_actor: "Operations lead", urgency: "prepositioning" },
-        emergency: { level: "emergency", action: "Activate urgent coordination review", suggested_actor: "Incident lead", urgency: "urgent_activation" },
-        unknown: { level: "unknown", action: "Review data quality before intervention", suggested_actor: "Data lead", urgency: "data_review" }
-      }
-    }
-  };
-  const version = {
-    version_id: versionId,
-    created_at: "2026-07-17T20:00:00+00:00",
-    created_by: "demo-admin",
-    status,
-    content_hash: "1234567890abcdef",
-    configuration,
-    validation_errors: []
-  };
-  return {
-    schema_version: "mwangaza.api.v1",
-    admin_schema_version: "mwangaza.admin.v1",
-    active_version: status === "active" ? version : { ...version, version_id: "cfg-active-001", status: "active" },
-    saved_version: status === "draft" ? version : null,
-    versions: [version],
-    security: { access: "public", auth: "none", institutional_auth: false },
-    recalculation: { triggered: false, message: "Configuration changes do not refresh indicators, cache, forecasts or alerts." }
   };
 }

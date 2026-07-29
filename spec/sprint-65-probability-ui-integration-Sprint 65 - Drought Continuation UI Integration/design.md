@@ -22,6 +22,10 @@
 - `docs/probabilistic-risk.md`
 - `docs/region-interface.md`
 - `docs/reports-interface.md`
+- `docs/admin-configuration.md`
+- `docs/about-interface.md`
+- `docs/overview-interface.md`
+- `docs/testing.md`
 - `docs/contracts.md`
 - `docs/public-api.md`
 - `docs/ARCHITECTURE.md`
@@ -73,6 +77,10 @@ dias en el tooltip. Cambiar de capa no cambia pais, periodo ni ADM1 seleccionada
 - **overview_episode_layer:** Overview reutiliza la paleta y semantica de episodios. Cada
   pais se colorea por presencia de al menos un episodio ADM1 activo, el tooltip muestra
   activos/evaluados y el enlace regional usa `country` y `layer=episodes`.
+- **public_surface_focus:** La interfaz publica elimina Admin y Reports, incluidos sus
+  enlaces, rutas, cargas de datos y acciones PDF. Overview, Regions y Active alerts
+  conservan sus flujos operativos y las exportaciones CSV/JSON. Los endpoints backend se
+  mantienen como contratos compatibles para no ampliar este cambio a una retirada de API.
 - **tests:** Las pruebas bloqueantes cubren 121 ADM1 y 484 resultados, 47/47 Kenya, estado
 activo/inactivo, probabilidades en cuatro horizontes, fechas y edades por señal, fuentes
 asincrónicas, NDMA solo como validación, FEWS solo como impacto, hashes, API/UI/Reports y

@@ -1,5 +1,10 @@
 # Admin Configuration
 
+> Retired from the public frontend on 2026-07-29. `/admin`, its navigation item,
+> screen, frontend types and frontend API client were removed. Existing backend admin
+> contracts remain unchanged for compatibility; configuration is no longer exposed to
+> judges through the canonical UI. The material below is retained as historical context.
+
 Sprint 41 adds a demo-only admin panel at `/admin` backed by `/api/v1/admin/**`.
 
 The panel versions threshold and early-action configuration. Saves are append-only: a new version is created with `version_id`, timestamp, actor, status, content hash, configuration snapshot and validation result. Invalid configuration is stored as rejected and never replaces the active version.

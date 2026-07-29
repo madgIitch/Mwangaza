@@ -2,14 +2,11 @@ import { demoDashboard } from "./fixtures";
 import type {
   Alert,
   AboutStatusResponse,
-  AdminConfigResponse,
-  AdminConfiguration,
   DashboardData,
   DroughtContinuationResponse,
   Metric,
   PublicAlertsResponse,
   PublicForecastsResponse,
-  PublicReportsResponse,
   PublicSnapshotResponse,
   RegionProfile,
   RegionRisk,
@@ -40,42 +37,6 @@ async function getJson<T>(path: string, headers: Record<string, string> = {}): P
     apiLog("fetch error", { requestId, path, elapsedMs: Math.round(performance.now() - started), error: errorMessage(error) });
     throw error;
   }
-}
-
-async function postJson<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/json", ...headers },
-    body: JSON.stringify(body)
-  });
-  const payload = await response.json() as T;
-  if (!response.ok) {
-    throw new Error(errorDetail(payload) || `Request failed: ${path}`);
-  }
-  return payload;
-}
-
-function errorDetail(payload: unknown): string {
-  if (payload && typeof payload === "object" && "error" in payload) {
-    const error = (payload as { error?: { message?: string; details?: string[] } }).error;
-    if (error?.details?.length) {
-      return error.details.join("; ");
-    }
-    return error?.message ?? "";
-  }
-  return "";
-}
-
-export async function loadAdminConfig(): Promise<AdminConfigResponse> {
-  return getJson<AdminConfigResponse>("/api/v1/admin/config");
-}
-
-export async function saveAdminConfig(configuration: AdminConfiguration): Promise<AdminConfigResponse> {
-  return postJson<AdminConfigResponse>("/api/v1/admin/config", { configuration });
-}
-
-export async function activateAdminConfig(versionId: string): Promise<AdminConfigResponse> {
-  return postJson<AdminConfigResponse>("/api/v1/admin/config/activate", { version_id: versionId });
 }
 
 export async function loadTechnicalStatus(): Promise<TechnicalStatusResponse> {
@@ -154,7 +115,6 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
       profiles: profilesFromApi(period.profiles)
     })),
     exposureNote: exposureNoteFromSnapshot(snapshot),
-    reportFilename: reportFilenameFromSnapshot(snapshot),
     exportFilenames: exportFilenamesFromSnapshot(snapshot),
     forecastDiagnostics: {
       available: false,
@@ -179,10 +139,9 @@ export async function loadApiDashboardDetails(base: DashboardData): Promise<Dash
 
 async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<DashboardData> {
   apiLog("details load start", { baseMode: base.dataMode, selectedRegionId: base.selectedRegionId });
-  const [alertsResult, forecastsResult, reportsResult, continuationResult] = await Promise.allSettled([
+  const [alertsResult, forecastsResult, continuationResult] = await Promise.allSettled([
     getJson<PublicAlertsResponse>("/api/v1/alerts?limit=20"),
     getJson<PublicForecastsResponse>("/api/v1/forecasts"),
-    getJson<PublicReportsResponse>("/api/v1/reports?limit=100"),
     loadAllDroughtContinuation()
   ]);
   apiLog("details load settled", {
@@ -194,12 +153,6 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
   });
   const alerts = alertsResult.status === "fulfilled" ? normalizeAlerts(alertsResult.value) : base.alerts;
   const forecasts = forecastsResult.status === "fulfilled" ? alertsForecastDiagnostics(forecastsResult.value) : base.forecastDiagnostics;
-  const reports = reportsResult.status === "fulfilled" ? reportsResult.value.items.map((item) => ({
-    id: item.id, generatedAt: item.generated_at, updatedAt: item.updated_at, expiresAt: item.expires_at,
-    status: item.status, regionId: item.region_id, region: item.region, periodStart: item.period_start,
-    periodEnd: item.period_end, templateId: item.template_id, language: item.language, author: item.author,
-    snapshotId: item.snapshot_id, formats: item.formats, error: item.error
-  })) : base.reports;
   const continuationCandidate = continuationResult.status === "fulfilled"
     ? continuationResult.value
     : undefined;
@@ -212,7 +165,6 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     alerts,
     recommendations: profiles[0]?.recommendations ?? base.recommendations,
     profiles,
-    reports,
     droughtContinuation,
     forecastDiagnostics: forecasts
   };
@@ -484,10 +436,6 @@ function exposureNoteFromSnapshot(snapshot: PublicSnapshotResponse): string {
   }
   const value = exposure.value === null || exposure.value === undefined ? "No data" : String(exposure.value);
   return `${exposure.name ?? "potentially_exposed"} | ${value} | ${exposure.source ?? "Public API snapshot"}`;
-}
-
-function reportFilenameFromSnapshot(snapshot: PublicSnapshotResponse): string {
-  return `mwangaza-executive-report-${snapshot.snapshot.region_id}-${snapshot.snapshot.period.replaceAll(" ", "_")}.pdf`;
 }
 
 function exportFilenamesFromSnapshot(snapshot: PublicSnapshotResponse): DashboardData["exportFilenames"] {

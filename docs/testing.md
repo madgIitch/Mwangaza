@@ -16,7 +16,7 @@ Shared deterministic helpers live in `tests/fixtures/deterministic.py`: a fixed 
 
 The Make targets force the test profile and clear inherited Earth Engine credential variables before execution. A developer's configured `.env` therefore cannot make unit, contract or coverage runs contact Earth Engine.
 
-The frontend smoke opens `/overview`, `/region`, `/alerts`, `/reports`, `/about`, `/admin` and `/technical`, plus low-bandwidth mode. `app.py` remains covered only as a safe migration shim; React/Vite is the canonical UI.
+The frontend smoke opens `/overview`, `/region`, `/alerts`, `/about` and `/technical`, plus low-bandwidth mode. It also verifies that retired `/reports` and `/admin` URLs canonicalize to `/overview`. `app.py` remains covered only as a safe migration shim; React/Vite is the canonical UI.
 
 Sprint 63 adds offline tests for nested temporal calibration, strict episode separation,
 the pre-2024 sentinel, Platt fitting, Brier/BSS/ECE gates, phase-baseline support,

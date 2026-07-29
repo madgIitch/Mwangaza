@@ -1,6 +1,6 @@
 # Overview Interface Target
 
-`/overview` is the main operational situation screen for Mwangaza. It gives an analyst a fast regional read, connects that read to the selected region, and turns the current snapshot into actions, reports and exports.
+`/overview` is the main operational situation screen for Mwangaza. It gives an analyst a fast regional read, connects that read to the selected region, and turns the current snapshot into actions and portable data exports.
 
 ## Visual Thesis
 
@@ -13,12 +13,12 @@ Bright operational cockpit: map-first, alert-aware, dense enough for repeated sc
 3. Regional comparison layer: all eight IGAD countries, including explicit unassessed states.
 4. Selected-region layer: selected country/pilot drill-down, key indicators, exposure and data quality.
 5. Evolution layer: NDVI and rainfall trends against baseline when payloads exist.
-6. Action layer: early action recommendations, executive PDF report CTA, CSV/JSON export and responsible-use footer.
+6. Action layer: early action recommendations, CSV/JSON export and responsible-use footer.
 
 ## Interaction Thesis
 
 - Selecting a country from the map or selector updates the same already-loaded dashboard/API payload; the browser must not call Earth Engine directly.
-- Sidebar entries are page routes, not hash anchors. `Overview` routes to `/overview`; alerts, reports, regions and about are independent pages.
+- Sidebar entries are page routes, not hash anchors. `Overview` routes to `/overview`; alerts, regions, about and technical status are independent pages.
 - Low-bandwidth mode keeps the same operational information in tables and avoids heavy map/chart surfaces.
 
 ## Required Sections
@@ -43,8 +43,8 @@ Navigation items:
 - Overview, active on `/overview` and `/` compatibility route.
 - Regions, route `/region`.
 - Active alerts, route `/alerts`.
-- Reports and export, route `/reports`.
 - About, route `/about`.
+- Technical status, route `/technical`.
 
 No sidebar label should use `#...` anchors or trigger autoscroll inside Overview.
 
@@ -61,7 +61,7 @@ The toggle simplifies maps/charts into tables while preserving:
 - Key indicators.
 - Active alerts.
 - Recommendations.
-- Report/export references.
+- CSV/JSON export references.
 
 ### Risk Map - IGAD
 
@@ -105,7 +105,7 @@ Shows:
 - Key indicators for the selected profile.
 - Data quality and potential exposure.
 
-Changing the region updates indicator cards, trends, recommendations and report/export context from the loaded payload.
+Changing the region updates indicator cards, trends, recommendations and export context from the loaded payload.
 
 ### Indicator Cards
 
@@ -132,12 +132,6 @@ Recommendations are decision support, not official instructions. They should eve
 
 Current implementation reuses selected-profile recommendations from the loaded payload.
 
-### Executive PDF Report
-
-Target state: generate a PDF for the selected snapshot, including region, period, alert level, map, indicators, trends, quality, recommendations, sources, methodology and limitations.
-
-The CTA downloads a real PDF response for the visible materialized region/period context. The API sets a deterministic filename, PDF MIME type and attachment disposition without running Earth Engine.
-
 ### Export Data
 
 Target state: download CSV and JSON for the current view without secrets, tokens, local paths or unnecessary high-resolution geometries.
@@ -154,11 +148,11 @@ Must state that Mwangaza is a decision-support prototype and should be used with
 - `/` remains a compatibility route for the same screen.
 - Sidebar uses page routes, not hash anchors.
 - Risk map uses processed UI-only boundary geometry and an explicit fallback when the validated atlas cannot load.
-- Active alerts, selected-region indicators, trends, recommendations and report/export references use existing `DashboardData`.
+- Active alerts, selected-region indicators, trends, recommendations and CSV/JSON exports use existing `DashboardData`.
 - Legacy hash URLs are cleaned on mount to prevent autoscroll.
 
 ## Remaining Boundaries
 
 - Notifications and accounts remain intentionally unavailable until their own approved contracts exist.
 - Recommendations remain decision support; actor and time-horizon fields require a future structured action contract.
-- Reports Center workflow changes remain outside this sprint; Overview only links its own context-bound downloads.
+- Admin and Reports are retired from the public product surface; their backend contracts remain available only for compatibility.

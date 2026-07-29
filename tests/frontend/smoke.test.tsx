@@ -7,7 +7,6 @@ const routes = [
   ["/overview", "Risk Map - IGAD"],
   ["/region", "Region Explorer"],
   ["/alerts", "Alerts Center"],
-  ["/reports", "Reports Center"],
   ["/about", "About Mwangaza"]
 ] as const;
 
@@ -24,14 +23,6 @@ describe("canonical React route smoke", () => {
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Demo data");
     expect(screen.getByRole("status")).toHaveTextContent("mwangaza-offline-demo-v1");
-  });
-
-  it("opens admin with a deterministic API fixture", async () => {
-    window.history.pushState({}, "", "/admin");
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(adminFixture())));
-    render(<App initialData={demoDashboard} skipApiLoad />);
-    await waitFor(() => expect(screen.getByText("Public demo mode. Changes are available without credentials.")).toBeInTheDocument());
-    expect(screen.getByRole("status")).toHaveTextContent("Demo data");
   });
 
   it("opens technical status with deterministic metrics", async () => {
@@ -58,14 +49,4 @@ describe("canonical React route smoke", () => {
 
 function jsonResponse(body: unknown): Response {
   return { ok: true, status: 200, json: async () => body } as Response;
-}
-
-function adminFixture() {
-  const configuration = {
-    schema_version: "mwangaza.admin.v1",
-    thresholds: { threshold_version: "v1", domain_min: 0, domain_max: 100, bands: [], is_official: false, label: "smoke" },
-    actions: { recommendation_version: "v1", templates: { warning: { level: "warning", action: "Review", suggested_actor: "Analyst", urgency: "review" } } }
-  };
-  const version = { version_id: "cfg-smoke", created_at: "2026-07-18T12:00:00Z", created_by: "system", status: "active", content_hash: "1234567890abcdef", configuration, validation_errors: [] };
-  return { schema_version: "mwangaza.api.v1", admin_schema_version: "mwangaza.admin.v1", active_version: version, saved_version: null, versions: [version], security: { access: "public", auth: "none", institutional_auth: false }, recalculation: { triggered: false, message: "No recalculation" } };
 }

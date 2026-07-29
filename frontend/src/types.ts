@@ -148,9 +148,7 @@ export interface DashboardData {
   profiles: RegionProfile[];
   periods?: Array<{ key: string; label: string; regions: RegionRisk[]; profiles: RegionProfile[] }>;
   exposureNote: string;
-  reportFilename: string;
   exportFilenames: { csv: string; json: string };
-  reports?: ReportRecord[];
   droughtContinuation?: DroughtContinuationResponse;
   forecastDiagnostics: {
     available: boolean;
@@ -224,35 +222,6 @@ export interface DroughtContinuationResponse {
   total: number;
   snapshot_hash?: string;
   coverage?: { adm1_count?: number; kenya_adm1_count?: number; result_count?: number };
-}
-
-export interface ReportRecord {
-  id: string;
-  generatedAt: string;
-  updatedAt: string;
-  expiresAt: string | null;
-  status: "queued" | "generating" | "ready" | "failed" | "expired";
-  regionId: string;
-  region: string;
-  periodStart: string;
-  periodEnd: string;
-  templateId: string;
-  language: string;
-  author: string;
-  snapshotId: string;
-  formats: Array<"pdf" | "csv" | "json">;
-  error: string | null;
-}
-
-export interface PublicReportsResponse {
-  items: Array<{
-    id: string; generated_at: string; updated_at: string; expires_at: string | null;
-    status: ReportRecord["status"]; region_id: string; region: string;
-    period_start: string; period_end: string; template_id: string; language: string;
-    author: string; snapshot_id: string; formats: ReportRecord["formats"]; error: string | null;
-  }>;
-  summary: { ready: number; generating: number; failed: number; expired: number };
-  limit: number; offset: number; total: number;
 }
 
 export interface PublicSnapshotResponse {
@@ -358,63 +327,6 @@ export interface PublicForecastsResponse {
   available: boolean;
   message: string;
   items: unknown[];
-}
-
-export interface AdminConfiguration {
-  schema_version: "mwangaza.admin.v1";
-  thresholds: {
-    threshold_version: string;
-    domain_min: number;
-    domain_max: number;
-    bands: Array<{ level: string; minimum: number; maximum: number }>;
-    is_official: boolean;
-    label: string;
-  };
-  actions: {
-    recommendation_version: string;
-    templates: Record<string, {
-      level: string;
-      action: string;
-      suggested_actor: string;
-      urgency: string;
-    }>;
-  };
-}
-
-export interface AdminConfigurationVersion {
-  version_id: string;
-  created_at: string;
-  created_by: string;
-  status: string;
-  content_hash: string;
-  configuration: AdminConfiguration;
-  validation_errors: string[];
-}
-
-export interface AdminConfigResponse {
-  schema_version: "mwangaza.api.v1";
-  admin_schema_version: "mwangaza.admin.v1";
-  active_version: AdminConfigurationVersion | null;
-  saved_version: AdminConfigurationVersion | null;
-  versions: AdminConfigurationVersion[];
-  security: {
-    access: "public";
-    auth: string;
-    institutional_auth: boolean;
-  };
-  recalculation: {
-    triggered: boolean;
-    message: string;
-  };
-}
-
-export interface AdminStatusResponse {
-  schema_version: "mwangaza.api.v1";
-  admin: {
-    access: "public";
-    auth: string;
-    institutional_auth: boolean;
-  };
 }
 
 export interface TechnicalStatusResponse {

@@ -44,8 +44,8 @@ Navigation items:
 - Overview.
 - Regions, active on `/region`.
 - Alerts.
-- Reports.
 - About.
+- Technical status.
 
 Controls:
 

@@ -15,3 +15,4 @@
 - [x] Tests que cubren los criterios de aceptacion.
 - [x] (T13) Anadir al mapa ADM1 las capas `Current risk` y `Persistent episodes`, con recuento, leyenda, tooltip y seleccion estable. -> R13
 - [x] (T14) Anadir `Persistent episodes` a Overview con agregacion por pais y deep-link al detalle regional. -> R14
+- [x] (T15) Retirar Admin y Reports de la interfaz publica sin romper Overview, Regions, Active alerts ni las exportaciones CSV/JSON. -> R15

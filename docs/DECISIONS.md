@@ -831,3 +831,11 @@ Contexto: se aprobó el spec `sprint-65-probability-ui-integration` (Sprint 65 -
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-07-29 · La superficie pública se concentra en el flujo diferencial
+
+Admin y Reports se retiran de navegación, rutas, pantallas, cargas frontend y acciones
+PDF. Las URLs históricas `/admin` y `/reports` se canonicalizan a `/overview`. Overview,
+Regions y Active alerts conservan sus flujos, continuidad y exportaciones CSV/JSON.
+Los contratos backend de administración e informes permanecen intactos por compatibilidad,
+pero la interfaz pública deja de consumirlos.

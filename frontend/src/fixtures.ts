@@ -82,7 +82,6 @@ export const demoDashboard: DashboardData = {
   ],
   profiles: [],
   exposureNote: "potentially_exposed | source demo-population-grid | year 2024 | 1 km | demo/synthetic",
-  reportFilename: "mwangaza-executive-report-som-2026-07-15.pdf",
   exportFilenames: {
     csv: "mwangaza-visible-snapshot-som-2026-07-15.csv",
     json: "mwangaza-visible-snapshot-som-2026-07-15.json"

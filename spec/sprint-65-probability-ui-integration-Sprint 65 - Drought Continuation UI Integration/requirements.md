@@ -38,3 +38,9 @@ para ver duracion y continuidad.
 R14. Overview ofrece la misma capa `Persistent episodes` sobre los ocho paises IGAD. La
 capa agrega episodios ADM1 por pais, conserva el pais seleccionado, diferencia activo,
 evaluado sin episodio y no evaluado, y enlaza al detalle regional en la misma capa.
+
+R15. La superficie publica se concentra en Overview, Regions, Active alerts, About y
+Technical status. Admin y Reports desaparecen de navegacion, rutas, pantallas, cargas API
+y acciones PDF especificas; las exportaciones CSV/JSON y el resto de paginas mantienen
+su comportamiento. Los contratos backend de administracion e informes permanecen
+compatibles pero no son consumidos por la interfaz publica.
