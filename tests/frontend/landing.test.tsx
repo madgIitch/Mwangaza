@@ -24,4 +24,10 @@ describe("public landing page", () => {
     expect(container.querySelector(".landing-page")).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/\b\d+(?:\.\d+)?%\b/);
   });
+  it("uses a local documentary image for the coverage panel", () => {
+    const { container } = render(<LandingPage />);
+    const image = container.querySelector<HTMLImageElement>(".landing-terrain img");
+    expect(image).toHaveAttribute("src", "/landing/coverage-igad-aerial.png");
+    expect(image).toHaveAttribute("alt", "");
+  });
 });

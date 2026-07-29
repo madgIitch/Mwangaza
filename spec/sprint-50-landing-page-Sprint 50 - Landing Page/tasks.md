@@ -8,4 +8,5 @@
 - [x] (T6) Mantener cualitativos los claims sin cita. ↔ R6
 - [x] (T7) Omitir CTA con configuración ausente o inválida sin romper el layout. ↔ R7
 - [x] (T8) Preservar las rutas existentes de la PWA. ↔ R8
+- [x] (T9) Sustituir el plano abstracto de cobertura por fotografía documental local, responsive y con contraste suficiente. ↔ R9
 - [x] Tests de aceptación.

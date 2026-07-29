@@ -17,6 +17,7 @@ R5. En un viewport móvil aprobado por spec no aparece scroll horizontal en `bod
 R6. Cualquier claim de impacto cuantitativo mostrado en la landing incluye cita visible o referencia explícita aprobada; si no existe cita, el texto permanece cualitativo y no presenta cifras simuladas como reales.
 R7. Si falta o es inválida la configuración de un CTA, la landing aplica el comportamiento de fallback aprobado por spec de forma consistente y sin romper el layout.
 R8. La introducción de la landing no rompe las rutas existentes de la PWA ni sustituye contenido operativo aprobado salvo decisión explícita del spec.
+R9. La sección de cobertura usa una fotografía documental generada y versionada localmente, sin texto, logos ni dependencias remotas, conservando legibles las dos métricas de cobertura en escritorio y móvil.
 
 ## Restricciones
 

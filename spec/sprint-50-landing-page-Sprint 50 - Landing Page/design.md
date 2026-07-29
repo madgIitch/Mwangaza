@@ -20,6 +20,7 @@
 - **external_contracts:** La landing vive en la ruta pública `/landing` y es estrictamente aditiva. El CTA principal abre `/overview`. La navegación secundaria enlaza `About`, `GitHub` y `demo` desde la configuración pública. `/` y las rutas operativas existentes conservan su comportamiento actual.
 - **edge_cases:** La validación responsive cubre 320 px de ancho mínimo y breakpoints de 375/768/1280. Ningún contenedor puede introducir overflow horizontal; textos largos deben hacer wrapping. Las listas de pilotos y limitaciones crecen verticalmente y cualquier grid colapsa a una sola columna en móvil estrecho.
 - **ui_states:** La landing no tiene estado de carga ni dependencias remotas. El contenido principal es estático/versionado y no depende de la disponibilidad de los CTAs opcionales. Los CTAs no disponibles se omiten sin mensaje de error y sin dejar huecos visuales.
+- **coverage_imagery:** El panel derecho de cobertura usa una fotografía aérea documental generada, almacenada en `frontend/public/landing/`, con recorte diagonal en escritorio y completo en móvil. Un degradado local preserva el contraste de las métricas y el asset no contiene claims, texto ni marcas incrustadas.
 
 ## Decisiones de la entrevista
 
