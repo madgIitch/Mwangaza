@@ -3499,7 +3499,7 @@
     {
       "id": "sprint-51-pitch-deck",
       "name": "Sprint 51 - Pitch Deck",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.9",
       "estimated_hours": 6,
