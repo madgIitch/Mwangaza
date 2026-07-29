@@ -21,6 +21,7 @@ R9. `Refresh status` sólo relee el endpoint ligero, conserva el último estado 
 R10. Demo funciona offline y determinista; live/cache no mezclan fixtures. Tests API/frontend cubren saneado, payload parcial, ausencia de GEE/escrituras, rutas, enlaces, tema persistente/fallback, teclado, low-bandwidth y documentación de implementado, pendiente y futuro.
 R11. El bloque principal de About usa una fotografía editorial profesional, generada y versionada localmente, con descripción accesible, sin marcas ni claims incrustados; la imagen se omite por completo en low-bandwidth.
 R12. El tema oscuro elimina superficies blancas residuales en Overview, Region, Alerts, About, documentos y estado técnico; mapas, tablas, filtros, selecciones y metadatos conservan contraste y jerarquía sin invertir los colores semánticos.
+R13. El shell no muestra placeholders de notificaciones o cuenta, y About no promociona enlaces a Privacy, Terms o Contact; sus rutas directas se preservan por compatibilidad.
 
 ## Restricciones
 

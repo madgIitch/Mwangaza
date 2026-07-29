@@ -210,10 +210,6 @@ export function App({
             <span>{data.dataMode === "live" ? `Observation window: ${data.lastUpdated}` : data.lastUpdated}</span>
             <span>{data.message}</span>
           </div>
-          <div className="topbar-placeholders" aria-label="Unavailable account controls">
-            <span title={t(language, "notificationsUnavailable")}>{t(language, "notificationsUnavailable")}</span>
-            <span title={t(language, "accountUnavailable")}>{t(language, "accountUnavailable")}</span>
-          </div>
         </header>
 
         {(offline || apiFallback) && (
@@ -547,9 +543,6 @@ function AboutScreen({ data, lowBandwidth, autoRefresh }: { data: DashboardData;
       <footer className="about-footer">
         <p>© 2026 Mwangaza Project · {status?.license.name ?? "MIT"} open-source license.</p>
         <nav aria-label="About footer links">
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Use</a>
-          <a href="/contact">Contact</a>
           {status?.repository.url ? <a href={status.repository.url} rel="noreferrer">Source repository</a> : <span>Repository link not configured</span>}
         </nav>
       </footer>

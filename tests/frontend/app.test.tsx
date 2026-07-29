@@ -184,7 +184,7 @@ describe("React PWA dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "SO" }));
     expect(screen.getByRole("link", { name: "Dulmar" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Khariidadda khatarta - IGAD" })).toBeInTheDocument();
-    expect(screen.getByText("Ogeysiisyo lama heli karo")).toBeInTheDocument();
+    expect(screen.queryByText("Ogeysiisyo lama heli karo")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ES" })).toBeInTheDocument();
   });
 
@@ -473,9 +473,9 @@ describe("React PWA dashboard", () => {
     expect(screen.getByText("Google Earth Engine")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "How Mwangaza Works" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Limitations" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: "Terms of Use" })).toHaveAttribute("href", "/terms");
-    expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+    expect(screen.queryByRole("link", { name: "Privacy Policy" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Terms of Use" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Contact" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Risk Map - IGAD" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Data provenance and methodology" })).toHaveAttribute("href", "/about/provenance");
   });

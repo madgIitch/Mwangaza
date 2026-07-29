@@ -15,7 +15,7 @@ Quiet operational transparency: white working surfaces, green drought-action acc
 5. How Mwangaza Works: observe, compare, assess, act.
 6. About This Project: IGAD Hackathon 2026 context, independent development, 29-day cycle, and purpose.
 7. Pilot Coverage, Limitations, and System Status: responsible-use boundaries and current snapshot state.
-8. Footer: copyright/open-source note and placeholders for privacy, terms, and contact.
+8. Footer: copyright/open-source note and optional configured repository destination; legal/contact routes are not promoted in the product navigation.
 
 ## Interaction Thesis
 
@@ -122,7 +122,7 @@ The page must visibly state:
 
 - Light/Dark theme switching persists locally, defaults to the system preference and applies to the full shell. Low-bandwidth keeps content while omitting the decorative illustration and transitions.
 - The logo links to `/overview`. Source rows expose accessible details for dataset/provider, unit, resolution, frequency, baseline, transformations, limitations and approved documentation links.
-- `/methodology` (with `/about/provenance` preserved for compatibility), `/privacy`, `/terms` and `/contact` are real public routes.
+- `/methodology` (with `/about/provenance` preserved for compatibility), `/privacy`, `/terms` and `/contact` remain real public routes, but privacy, terms and contact are not linked from About.
 - `GET /api/v1/about/status` exposes only versioned, public metadata and performs no Earth Engine work, pipeline refresh or write.
 - MIT license metadata is visible. Repository and contact links render only when public destinations are configured; missing destinations remain explicit rather than invented.
 
