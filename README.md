@@ -134,7 +134,12 @@ Treat alerts and recommendations as evidence for human review, not automatic hum
 
 ## Roadmap
 
-Planned work is tracked in the SDD backlog and is not guaranteed as current behavior. It includes deployment hardening, scheduled production refresh, release packaging, deeper completion of Regions/Overview/Alerts/Reports/About, a public landing page, pitch deck and demo video.
+Container packaging is available through two non-root Docker targets and a same-origin web
+proxy. Run `uv run python scripts/smoke_containers.py` with Docker active, or follow the
+[Cloud Run deployment guide](docs/deployment/cloud-run.md). The scripted public deployment is
+explicitly demo mode; live scheduled refresh remains separate planned work.
+
+Other planned work is tracked in the SDD backlog and is not guaranteed as current behavior.
 
 ## Project documentation
 

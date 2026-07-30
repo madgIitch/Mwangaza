@@ -1,0 +1,34 @@
+name: Container images
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          load: true
+          tags: mwangaza-api:local
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: Build web target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          load: true
+          tags: mwangaza-web:local
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+      - name: Smoke Docker Compose
+        run: python scripts/smoke_containers.py --skip-build

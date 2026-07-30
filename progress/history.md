@@ -328,3 +328,10 @@
 - Spec aprobada para una demo de máximo 3:00 y guion objetivo de 2:45.
 - Guion literal, acciones, fallback y checklist creados en `docs/demo-script.md`.
 - Grabación, subtítulos y exportación permanecen pendientes.
+
+## 2026-07-30T02:01:31+02:00 - #sprint-53-container-deployment -> review_pending
+
+- Imágenes API/web no root construidas y verificadas con Docker Compose real.
+- Smoke de health, readiness, SPA profunda y proxy same-origin pasa en modo demo explícito.
+- CI y automatización Cloud Run añadidas; publicación externa pendiente de `gcloud` y proyecto.
+- 60 tests frontend, 248 backend y gates oficiales pasan.

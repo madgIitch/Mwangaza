@@ -1,4 +1,4 @@
-.PHONY: lint typecheck test test-contract test-frontend test-somalia-scenario demo-somalia coverage quality-gate frontend-lint frontend-typecheck frontend-test frontend-build
+.PHONY: lint typecheck test test-contract test-frontend test-somalia-scenario demo-somalia coverage quality-gate frontend-lint frontend-typecheck frontend-test frontend-build container-smoke
 
 ifeq ($(OS),Windows_NT)
 SHELL := powershell.exe
@@ -58,3 +58,6 @@ frontend-test:
 
 frontend-build:
 	npm run build
+
+container-smoke:
+	$(RUNPY) scripts/smoke_containers.py

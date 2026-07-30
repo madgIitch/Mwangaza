@@ -1,0 +1,46 @@
+services:
+  api:
+    image: mwangaza-api:local
+    build:
+      context: .
+      target: api
+    environment:
+      MWANGAZA_ENV: demo
+      MWANGAZA_MODE: demo
+      MWANGAZA_API_DATA_MODE: demo
+      MWANGAZA_CACHE_REQUIRED: "false"
+      PORT: "8080"
+    ports:
+      - "18081:8080"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ready', timeout=3)"
+      interval: 5s
+      timeout: 4s
+      retries: 24
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    image: mwangaza-web:local
+    build:
+      context: .
+      target: web
+    environment:
+      API_UPSTREAM: http://api:8080
+      PORT: "8080"
+    ports:
+      - "18080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-T", "3", "-O", "-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      start_period: 3s
+    restart: unless-stopped

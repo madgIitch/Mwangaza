@@ -26,6 +26,9 @@ app = [
   "streamlit>=1.36",
   "uvicorn>=0.30",
 ]
+api = [
+  "uvicorn>=0.30,<1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

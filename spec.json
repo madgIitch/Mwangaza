@@ -3619,7 +3619,7 @@
       "name": "Sprint 53 - Container Deployment",
       "title": "Despliegue reproducible de frontend y API",
       "description": "Construir dos imágenes no root y desplegables en Cloud Run, con modo demo sin secretos, proxy same-origin, healthchecks y documentación operativa.",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.9.11",
       "estimated_hours": 7,
