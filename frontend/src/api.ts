@@ -80,6 +80,14 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
     throw new Error("Unsupported API schema");
   }
   const dataMode = normalizeMode(snapshot.data_mode);
+  const refresh = snapshot.refresh ?? {
+    kind: "scheduled_materialization" as const,
+    state: "unavailable" as const,
+    gee_triggered: false as const,
+    writes_performed: false as const,
+    last_attempt: null,
+    last_success: null
+  };
   const metrics = metricsFromSnapshot(snapshot) || demoDashboard.metrics;
   const regions = regionsFromSnapshot(snapshot, dataMode);
   const profiles = profilesFromSnapshot(snapshot, metrics, regions, dataMode);
@@ -99,9 +107,8 @@ async function loadApiDashboardSnapshotOnce(): Promise<DashboardData> {
     source: sourceFromSnapshot(snapshot),
     selectedRegionId: snapshot.snapshot.region_id,
     lastUpdated: snapshot.snapshot.period || demoDashboard.lastUpdated,
-    message: dataMode === "cache"
-      ? "Refreshing live data in background; showing the last materialized snapshot"
-      : "Loaded snapshot from /api/v1/snapshots/latest",
+    message: refreshMessage(snapshot, refresh),
+    refresh,
     regions,
     metrics,
     alerts: [],
@@ -168,6 +175,24 @@ async function loadApiDashboardDetailsOnce(base: DashboardData): Promise<Dashboa
     droughtContinuation,
     forecastDiagnostics: forecasts
   };
+}
+
+function refreshMessage(snapshot: PublicSnapshotResponse, refresh: NonNullable<DashboardData["refresh"]>): string {
+  if (refresh.state === "current") {
+    return `Scheduled snapshot current · observed through ${refresh.last_success?.effective_observation_at ?? snapshot.snapshot.period}`;
+  }
+  if (refresh.state === "stale") {
+    return `Scheduled snapshot is stale · ${refresh.last_success?.age_days ?? "unknown"} days old`;
+  }
+  if (refresh.state === "failed" && refresh.last_success) {
+    return `Latest refresh failed · retaining the last valid snapshot from ${refresh.last_success.finished_at ?? "an earlier run"}`;
+  }
+  if (refresh.state === "unavailable") {
+    return "Scheduled refresh metadata unavailable";
+  }
+  return snapshot.data_mode === "demo"
+    ? "Offline demo fixture"
+    : "Loaded snapshot from /api/v1/snapshots/latest";
 }
 
 async function loadAllDroughtContinuation(): Promise<DroughtContinuationResponse> {

@@ -1,0 +1,35 @@
+name: Scheduled refresh contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/mwangaza/data/**"
+      - "src/mwangaza/services/**"
+      - "scripts/refresh.sh"
+      - ".github/workflows/refresh.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/mwangaza/data/**"
+      - "src/mwangaza/services/**"
+      - "scripts/refresh.sh"
+      - ".github/workflows/refresh.yml"
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  verify-refresh-entrypoint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.14"
+      - name: Install locked API environment
+        run: uv sync --frozen --no-dev --extra api
+      - name: Exercise the production entrypoint without GEE or writes
+        run: uv run python -m mwangaza.data.refresh --dry-run --period 2026-07-30
+      - name: Verify lock, atomic publication and freshness behavior
+        run: uv run python -m unittest -v tests.data.test_scheduled_refresh

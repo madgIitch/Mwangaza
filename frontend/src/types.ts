@@ -3,6 +3,30 @@ export type DataMode = "live" | "cache" | "demo" | "offline";
 export type Language = "en" | "es" | "sw" | "so";
 export type ThemePreference = "light" | "dark";
 
+export interface RefreshRunMetadata {
+  run_id?: string;
+  period?: string;
+  status?: string;
+  started_at?: string;
+  finished_at?: string;
+  query_generated_at?: string;
+  effective_observation_at?: string;
+  age_days?: number;
+  freshness?: "current" | "stale";
+  stale_after_days?: number;
+  quality_summary?: Record<string, unknown>;
+  message?: string;
+}
+
+export interface RefreshStatus {
+  kind: "none" | "scheduled_materialization";
+  state: "current" | "stale" | "failed" | "unavailable" | "not_applicable";
+  gee_triggered: false;
+  writes_performed: false;
+  last_attempt: RefreshRunMetadata | null;
+  last_success: RefreshRunMetadata | null;
+}
+
 export interface AboutStatusResponse {
   schema_version: string;
   app_version: string;
@@ -15,7 +39,7 @@ export interface AboutStatusResponse {
   license: { name: string; path: string };
   repository: { label: string; url: string | null };
   contact: { label: string; url: string | null };
-  refresh: { kind: "metadata_only"; gee_triggered: false; writes_performed: false };
+  refresh: RefreshStatus;
 }
 
 export interface Metric {
@@ -140,6 +164,7 @@ export interface DashboardData {
   source: string;
   lastUpdated: string;
   message: string;
+  refresh?: RefreshStatus;
   selectedRegionId: string;
   regions: RegionRisk[];
   metrics: Metric[];
@@ -227,6 +252,7 @@ export interface DroughtContinuationResponse {
 export interface PublicSnapshotResponse {
   schema_version: "mwangaza.api.v1";
   data_mode: string;
+  refresh: RefreshStatus;
   snapshot: {
     region_id: string;
     region_label: string;

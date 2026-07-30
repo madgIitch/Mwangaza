@@ -136,6 +136,13 @@ running, use `uv run python scripts/smoke_containers.py --keep`. For Google Clou
 secrets, deployment, diagnostics and rollback, see the
 [Cloud Run deployment guide](docs/deployment/cloud-run.md).
 
+The production refresh uses the same CLI locally, in CI and in the Cloud Run Job. Verify its
+container without contacting GEE or writing a snapshot with:
+
+```bash
+docker compose --profile refresh run --rm refresh --dry-run
+```
+
 ## Configuration
 
 Use `.env.example` only as a list of supported names and safe placeholders. Keep secrets outside source control. `MWANGAZA_MODE=demo` is the sole explicit demo switch; `MWANGAZA_ENV` remains the application environment profile and is not a substitute for opting into demo data. Full rules: [configuration](docs/configuration.md).
@@ -154,10 +161,12 @@ Use `.env.example` only as a list of supported names and safe placeholders. Keep
 
 Treat alerts and recommendations as evidence for human review, not automatic humanitarian, medical, financial or operational orders. Validate outputs with local expertise, current field information, source terms and institutional procedures. Prototype thresholds are configurable and not official.
 
-## Roadmap
+## Production refresh
 
-Live scheduled refresh and other planned work are tracked in the SDD backlog and are not
-guaranteed as current behavior.
+Scheduled refresh is implemented as an out-of-request job with locking, immutable snapshots,
+atomic last-good promotion and explicit freshness metadata. Deployment still requires an
+authorized GCP project, Earth Engine service credentials and the operator steps in the
+[Cloud Run deployment guide](docs/deployment/cloud-run.md).
 
 ## Project documentation
 

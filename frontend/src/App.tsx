@@ -34,9 +34,6 @@ const IGAD_COUNTRIES: Array<{ id: string; name: string }> = [
   { id: "ssd", name: "South Sudan" },
   { id: "uga", name: "Uganda" }
 ];
-const LIVE_REFRESH_POLL_MS = 3000;
-const LIVE_REFRESH_MAX_ATTEMPTS = 30;
-
 function initialTheme(): ThemePreference {
   try {
     const stored = window.localStorage.getItem("mwangaza-theme");
@@ -75,8 +72,6 @@ export function App({
       return;
     }
     let cancelled = false;
-    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-    let attempt = 0;
     appLog("api load effect start");
     const loadSnapshot = async (): Promise<void> => {
       try {
@@ -101,11 +96,6 @@ export function App({
             setData(next);
             setSelectedRegionId(requestedCountryId(next));
           }
-          if (!cancelled && snapshotData.dataMode === "cache" && attempt < LIVE_REFRESH_MAX_ATTEMPTS) {
-            attempt += 1;
-            appLog("live snapshot retry scheduled", { attempt, delayMs: LIVE_REFRESH_POLL_MS });
-            refreshTimer = setTimeout(() => { void loadSnapshot(); }, LIVE_REFRESH_POLL_MS);
-          }
         } else {
           appLog("snapshot ignored after cancellation", {
             dataMode: snapshotData.dataMode,
@@ -124,7 +114,6 @@ export function App({
     void loadSnapshot();
     return () => {
       cancelled = true;
-      if (refreshTimer !== undefined) clearTimeout(refreshTimer);
       appLog("api load effect cancelled");
     };
   }, [initialData, skipApiLoad]);
@@ -215,6 +204,15 @@ export function App({
         {(offline || apiFallback) && (
           <section className="notice" role="alert">
             {offline ? t(language, "offlineWarning") : t(language, "apiFallback")} Timestamp: {data.lastUpdated}.
+          </section>
+        )}
+
+        {!offline && !apiFallback && data.refresh && ["stale", "failed", "unavailable"].includes(data.refresh.state) && (
+          <section className="notice" data-refresh-state={data.refresh.state} role="alert">
+            <strong>Data freshness: {data.refresh.state}.</strong>{" "}
+            {data.refresh.state === "failed" && data.refresh.last_success
+              ? "The latest refresh failed; the dashboard is preserving the last valid snapshot."
+              : `Effective observation age: ${data.refresh.last_success?.age_days ?? "unknown"} days.`}
           </section>
         )}
 

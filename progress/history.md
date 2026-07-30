@@ -335,3 +335,15 @@
 - Smoke de health, readiness, SPA profunda y proxy same-origin pasa en modo demo explícito.
 - CI y automatización Cloud Run añadidas; publicación externa pendiente de `gcloud` y proyecto.
 - 60 tests frontend, 248 backend y gates oficiales pasan.
+
+## 2026-07-30T02:20:00+02:00 - #sprint-53-container-deployment -> done
+
+- Sprint 53 cerrado formalmente tras la revisión del usuario.
+
+## 2026-07-30T02:58:03+02:00 - #sprint-54-scheduled-production-refresh -> review_pending
+
+- Refresco GEE fuera de HTTP con CLI único, lock distribuido, idempotencia y last-good atómico.
+- Snapshots inmutables, metadatos de frescura y conservación segura ante fallos.
+- Cloud Run Job, Scheduler, IAM mínimo, alerta y rollback documentados.
+- Imagen refresh no root y dry-run Docker pasan sin llamadas remotas ni escrituras.
+- 61 tests frontend, 257 backend, build y gates oficiales pasan.

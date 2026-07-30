@@ -254,6 +254,10 @@ def load_materialized_dashboard_shell_data(
 ) -> DashboardShellData | None:
     """Load local observed payloads without attempting Earth Engine."""
 
+    if cache_dir is None:
+        refresh_cache_dir = os.environ.get("MWANGAZA_REFRESH_CACHE_DIR", "").strip()
+        if refresh_cache_dir:
+            cache_dir = Path(refresh_cache_dir)
     resolved_cache_dir, resolved_data_dir = _resolve_local_paths(cache_dir, data_dir)
     return _load_materialized_dashboard_data(
         resolved_cache_dir,
@@ -528,8 +532,18 @@ def _temporal_period_from_payloads(
 def _read_cached_payloads(cache_dir: Path) -> tuple[dict[str, Any], ...]:
     if not cache_dir.is_dir():
         return ()
+    stable = cache_dir / "live-dashboard-last-good.json"
+    if stable.is_file():
+        try:
+            return _extract_payloads(json.loads(stable.read_text(encoding="utf-8-sig")))
+        except (OSError, json.JSONDecodeError):
+            return ()
     payloads: list[dict[str, Any]] = []
     for path in sorted(cache_dir.rglob("*.json")):
+        if path.name == "refresh-status.json" or any(
+            part in {".refresh-locks", "refresh-snapshots"} for part in path.parts
+        ):
+            continue
         try:
             raw = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):

@@ -1,4 +1,4 @@
-.PHONY: lint typecheck test test-contract test-frontend test-somalia-scenario demo-somalia coverage quality-gate frontend-lint frontend-typecheck frontend-test frontend-build container-smoke
+.PHONY: lint typecheck test test-contract test-frontend test-somalia-scenario demo-somalia coverage quality-gate frontend-lint frontend-typecheck frontend-test frontend-build container-smoke scheduled-refresh-dry-run
 
 ifeq ($(OS),Windows_NT)
 SHELL := powershell.exe
@@ -61,3 +61,6 @@ frontend-build:
 
 container-smoke:
 	$(RUNPY) scripts/smoke_containers.py
+
+scheduled-refresh-dry-run:
+	$(PYTHONPATH_ENV) $(PYCACHE_ENV) $(RUNPY) -m mwangaza.data.refresh --dry-run

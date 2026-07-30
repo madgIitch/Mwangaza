@@ -24,6 +24,21 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  refresh:
+    profiles: ["refresh"]
+    image: mwangaza-refresh:local
+    build:
+      context: .
+      target: refresh
+    environment:
+      MWANGAZA_ENV: local
+      MWANGAZA_MODE: production
+      MWANGAZA_API_DATA_MODE: cache
+      MWANGAZA_CACHE_DIR: /app/.cache/mwangaza
+    volumes:
+      - refresh-cache:/app/.cache/mwangaza
+    command: ["--period", "2026-07-30"]
+
   web:
     image: mwangaza-web:local
     build:
@@ -44,3 +59,6 @@ services:
       retries: 12
       start_period: 3s
     restart: unless-stopped
+
+volumes:
+  refresh-cache:

@@ -1,0 +1,29 @@
+{
+  "displayName": "Mwangaza scheduled refresh failures",
+  "combiner": "OR",
+  "enabled": true,
+  "documentation": {
+    "content": "The scheduled GEE refresh failed. Inspect the Cloud Run Job execution logs and keep serving the last valid snapshot until a successful rerun.",
+    "mimeType": "text/markdown"
+  },
+  "conditions": [
+    {
+      "displayName": "At least one scheduled refresh error",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/mwangaza_refresh_failures\" AND resource.type=\"cloud_run_job\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "60s",
+            "perSeriesAligner": "ALIGN_SUM"
+          }
+        ],
+        "trigger": {
+          "count": 1
+        }
+      }
+    }
+  ]
+}

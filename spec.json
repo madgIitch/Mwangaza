@@ -3687,7 +3687,7 @@
     {
       "id": "sprint-54-scheduled-production-refresh",
       "name": "Sprint 54 - Scheduled Production Refresh",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.9.12",
       "estimated_hours": 5,

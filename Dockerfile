@@ -48,6 +48,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.getenv('PORT','8080')+'/ready', timeout=3)"
 CMD ["sh", "-c", "exec uvicorn mwangaza.api.app:app --host 0.0.0.0 --port ${PORT:-8080}"]
 
+FROM api AS refresh
+
+HEALTHCHECK NONE
+ENTRYPOINT ["python", "-m", "mwangaza.data.refresh"]
+CMD []
+
 FROM node:20-alpine AS web-builder
 
 WORKDIR /build

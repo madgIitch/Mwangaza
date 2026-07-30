@@ -200,14 +200,13 @@ describe("React PWA dashboard", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("polls a materialized snapshot until the background live refresh is available", async () => {
-    vi.useFakeTimers();
+  it("loads the scheduled materialized snapshot once without triggering live refresh polling", async () => {
     let snapshotRequests = 0;
     vi.stubGlobal("fetch", vi.fn(async (path: RequestInfo | URL) => {
       const url = String(path);
       if (url.startsWith("/api/v1/snapshots/latest")) {
         snapshotRequests += 1;
-        return jsonResponse(refreshSnapshotResponse(snapshotRequests === 1 ? "cache" : "live"));
+        return jsonResponse(refreshSnapshotResponse("cache"));
       }
       if (url.startsWith("/api/v1/alerts")) {
         return jsonResponse({ schema_version: "mwangaza.api.v1", items: [], limit: 20, offset: 0, total: 0 });
@@ -218,11 +217,29 @@ describe("React PWA dashboard", () => {
     render(<App skipApiLoad={false} />);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
     expect(screen.getByText("CACHE", { selector: ".status-strip span" })).toBeInTheDocument();
+    expect(snapshotRequests).toBe(1);
+    expect(screen.getByText(/Scheduled snapshot current/)).toBeInTheDocument();
+    expect(screen.queryByText("LIVE QUERY", { selector: ".status-strip span" })).not.toBeInTheDocument();
+  });
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+  it("shows a direct warning when the effective observation is stale", async () => {
+    const stale = refreshSnapshotResponse("cache");
+    stale.refresh.state = "stale";
+    stale.refresh.last_success.age_days = 34;
+    stale.refresh.last_success.freshness = "stale";
+    vi.stubGlobal("fetch", vi.fn(async (path: RequestInfo | URL) => {
+      const url = String(path);
+      if (url.startsWith("/api/v1/snapshots/latest")) return jsonResponse(stale);
+      if (url.startsWith("/api/v1/alerts")) {
+        return jsonResponse({ schema_version: "mwangaza.api.v1", items: [], limit: 20, offset: 0, total: 0 });
+      }
+      return jsonResponse({ schema_version: "mwangaza.api.v1", available: false, message: "Not available", items: [] });
+    }));
 
-    expect(snapshotRequests).toBe(2);
-    expect(screen.getByText("LIVE QUERY", { selector: ".status-strip span" })).toBeInTheDocument();
+    render(<App skipApiLoad={false} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Data freshness: stale");
+    expect(screen.getByRole("alert")).toHaveTextContent("34 days");
   });
 
   it("renders Region Explorer as an internal app screen on /region", async () => {
@@ -817,6 +834,22 @@ function refreshSnapshotResponse(dataMode: "cache" | "live") {
   return {
     schema_version: "mwangaza.api.v1",
     data_mode: dataMode,
+    refresh: {
+      kind: "scheduled_materialization",
+      state: "current",
+      gee_triggered: false,
+      writes_performed: false,
+      last_attempt: { run_id: "refresh-1", period: "2026-06-27", status: "published" },
+      last_success: {
+        run_id: "refresh-1",
+        period: "2026-06-27",
+        status: "published",
+        finished_at: "2026-06-27T01:00:00Z",
+        effective_observation_at: "2026-06-26",
+        age_days: 1,
+        freshness: "current"
+      }
+    },
     snapshot: {
       region_id: "som",
       region_label: "Somalia",

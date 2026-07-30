@@ -30,5 +30,16 @@ jobs:
           tags: mwangaza-web:local
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+      - name: Build scheduled refresh target
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: refresh
+          load: true
+          tags: mwangaza-refresh:local
+          cache-from: type=gha,scope=refresh
+          cache-to: type=gha,mode=max,scope=refresh
+      - name: Verify the same refresh CLI without remote calls
+        run: docker run --rm mwangaza-refresh:local --dry-run --period 2026-07-30
       - name: Smoke Docker Compose
         run: python scripts/smoke_containers.py --skip-build

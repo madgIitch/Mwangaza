@@ -5,7 +5,6 @@ import hashlib
 import csv
 import io
 import os
-import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,7 +19,8 @@ from mwangaza.admin import (
     admin_repository_from_env,
 )
 from mwangaza.audit import AuditRepository
-from mwangaza.config import public_config_status
+from mwangaza.config import ConfigurationError, load_settings, public_config_status
+from mwangaza.data.scheduled_refresh import load_refresh_status
 from mwangaza.exports import (
     build_visible_export,
     export_visible_csv,
@@ -72,8 +72,6 @@ DEMO_SNAPSHOT_ID = "mwangaza-offline-demo-v1"
 MAX_LIMIT = 100
 LIVE_DASHBOARD_CACHE_SECONDS = 120
 _DASHBOARD_CACHE: tuple[float, Any] | None = None
-_DASHBOARD_REFRESH_LOCK = threading.Lock()
-_DASHBOARD_REFRESHING = False
 
 
 @dataclass(frozen=True)
@@ -273,6 +271,7 @@ def _route_v1(
             {
                 "schema_version": API_SCHEMA_VERSION,
                 "data_mode": data.data_status.mode,
+                "refresh": _public_refresh_status(data.data_status.mode),
                 "snapshot": {
                     "region_id": export.region_id,
                     "region_label": export.region_label,
@@ -338,7 +337,7 @@ def _route_v1(
                 "snapshot_updated_at": export.source_metadata.get("generated_at")
                 or export.source_metadata.get("reference_date")
                 or export.period,
-                "documentation_status": "current",
+                "documentation_status": _documentation_status(data.data_status.mode),
                 "documentation_updated_at": "2026-07-23",
                 "license": {"name": "MIT", "path": "/LICENSE"},
                 "repository": {
@@ -349,11 +348,7 @@ def _route_v1(
                     "label": "Project contact",
                     "url": os.environ.get("MWANGAZA_PUBLIC_CONTACT_URL"),
                 },
-                "refresh": {
-                    "kind": "metadata_only",
-                    "gee_triggered": False,
-                    "writes_performed": False,
-                },
+                "refresh": _public_refresh_status(data.data_status.mode),
             },
             HTTPStatus.OK,
             60,
@@ -1072,62 +1067,66 @@ def _cached_live_dashboard_data() -> Any:
             )
             return data
         _log("dashboard cache expired", age_s=round(age_seconds, 2))
-        _start_dashboard_refresh()
-        _log("dashboard stale response served", data_mode=data.data_status.mode)
-        return data
     materialized = load_materialized_dashboard_shell_data()
     if materialized is not None:
         _DASHBOARD_CACHE = (now, materialized)
         METRICS.record_cache(True)
-        _start_dashboard_refresh()
         _log("dashboard materialized response served", data_mode=materialized.data_status.mode)
         return materialized
-    return _load_live_dashboard_now()
-
-
-def _load_live_dashboard_now() -> Any:
-    global _DASHBOARD_CACHE
     METRICS.record_cache(False)
-    started = time.monotonic()
-    _log("dashboard live load start")
-    data = load_dashboard_shell_data()
-    if (
-        os.environ.get("MWANGAZA_MODE", "").strip().lower() == "production"
-        and data.data_status.mode == "demo"
-    ):
-        raise RuntimeError("production data unavailable; implicit demo fallback is disabled")
-    _DASHBOARD_CACHE = (time.monotonic(), data)
-    _log(
-        "dashboard live load complete",
-        elapsed_ms=_elapsed_ms(started),
-        data_mode=data.data_status.mode,
-        source=data.data_status.source,
-    )
-    return data
+    raise RuntimeError("scheduled materialized snapshot unavailable")
 
 
-def _start_dashboard_refresh() -> None:
-    global _DASHBOARD_REFRESHING
-    with _DASHBOARD_REFRESH_LOCK:
-        if _DASHBOARD_REFRESHING:
-            _log("dashboard refresh reused")
-            return
-        _DASHBOARD_REFRESHING = True
-    threading.Thread(
-        target=_refresh_dashboard_in_background, name="mwangaza-dashboard-refresh", daemon=True
-    ).start()
-    _log("dashboard background refresh started")
-
-
-def _refresh_dashboard_in_background() -> None:
-    global _DASHBOARD_REFRESHING
+def _public_refresh_status(data_mode: str) -> dict[str, Any]:
+    if data_mode == "demo":
+        return {
+            "kind": "none",
+            "state": "not_applicable",
+            "gee_triggered": False,
+            "writes_performed": False,
+            "last_attempt": None,
+            "last_success": None,
+        }
     try:
-        _load_live_dashboard_now()
-    except Exception as exc:
-        _log("dashboard background refresh failed", error_type=type(exc).__name__)
-    finally:
-        with _DASHBOARD_REFRESH_LOCK:
-            _DASHBOARD_REFRESHING = False
+        refresh_cache_dir = os.environ.get("MWANGAZA_REFRESH_CACHE_DIR", "").strip()
+        cache_dir = Path(refresh_cache_dir) if refresh_cache_dir else load_settings().cache_dir
+    except ConfigurationError:
+        status: dict[str, Any] = {}
+    else:
+        status = load_refresh_status(cache_dir)
+
+    def public_run(value: Any) -> dict[str, Any] | None:
+        if not isinstance(value, dict):
+            return None
+        allowed = (
+            "run_id",
+            "period",
+            "status",
+            "started_at",
+            "finished_at",
+            "query_generated_at",
+            "effective_observation_at",
+            "age_days",
+            "freshness",
+            "stale_after_days",
+            "quality_summary",
+            "message",
+        )
+        return {key: value[key] for key in allowed if key in value}
+
+    return {
+        "kind": "scheduled_materialization",
+        "state": status.get("state", "unavailable"),
+        "gee_triggered": False,
+        "writes_performed": False,
+        "last_attempt": public_run(status.get("last_attempt")),
+        "last_success": public_run(status.get("last_success")),
+    }
+
+
+def _documentation_status(data_mode: str) -> str:
+    state = _public_refresh_status(data_mode)["state"]
+    return "stale" if state in {"stale", "failed", "unavailable"} else "current"
 
 
 def _pagination(query: dict[str, list[str]]) -> tuple[int, int]:
