@@ -874,3 +874,16 @@ Decisiones registradas:
 - **tests:** CI construye targets y smoke local valida health, readiness y frontend
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-54-scheduled-production-refresh -->
+## 2026-07-30 · sprint-54-scheduled-production-refresh aprobado
+
+Contexto: se aprobó el spec `sprint-54-scheduled-production-refresh` (Sprint 54 - Scheduled Production Refresh).
+
+Decisiones registradas:
+
+- **auth_secrets:** credenciales solo runtime; IAM mínimo para Job, Scheduler y bucket
+- **rollback_compat:** snapshots inmutables y puntero estable recuperable
+- **tests:** dobles filesystem, concurrencia, fallo antes de promover y smoke del mismo CLI
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

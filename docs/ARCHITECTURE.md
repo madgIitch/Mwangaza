@@ -1908,3 +1908,43 @@ baseline. Ningún request importa datos históricos, ajusta modelos, escribe o l
 - **edge_cases:** arranque demo sin secretos, rutas SPA y API same-origin
 - **ui_states:** el frontend conserva rutas profundas y modo visible demo/live
 
+<!-- harness:sprint-54-scheduled-production-refresh -->
+## sprint-54-scheduled-production-refresh · Sprint 54 - Scheduled Production Refresh
+
+
+
+### Scope aprobado
+
+  - `src/mwangaza/data/**`
+  - `src/mwangaza/services/**`
+  - `src/mwangaza/api/**`
+  - `frontend/src/**`
+  - `tests/**`
+  - `infrastructure/scheduler/**`
+  - `scripts/refresh.sh`
+  - `scripts/**`
+  - `.github/workflows/refresh.yml`
+  - `.github/workflows/**`
+  - `Dockerfile`
+  - `docker-compose.yml`
+  - `infrastructure/**`
+  - `docs/deployment/**`
+  - `docs/**`
+  - `pyproject.toml`
+  - `requirements*.txt`
+  - `Makefile`
+  - `.env.example`
+  - `.gitignore`
+  - `.harness/gates.config.json`
+  - `spec/**`
+  - `progress/**`
+  - `spec.json`
+  - `.harness/interviews/**`
+
+### Contexto técnico
+
+- **data_model:** snapshot, manifiesto de run, frescura y resumen de calidad versionados
+- **external_contracts:** CLI único, Cloud Run Job, Cloud Scheduler y backend de almacenamiento
+- **edge_cases:** ejecución repetida, concurrencia, snapshot previo ausente y reloj/edad
+- **ui_states:** current, stale, failed con último snapshot válido, y sin snapshot
+
