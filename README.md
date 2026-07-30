@@ -114,6 +114,28 @@ npm run build
 
 CI additionally runs backend lint/typecheck, contract tests and the configured coverage threshold. The scenario and reset commands in the Offline demo section are exercised by versioned E2E/demo tests; the public API and canonical React routes have automated smoke coverage.
 
+## Docker quick start
+
+With Docker Desktop running, build and start the non-root API and web containers:
+
+```bash
+docker compose up --build -d
+```
+
+Open [http://127.0.0.1:18080](http://127.0.0.1:18080). The API is also exposed locally on
+`http://127.0.0.1:18081`, while browser API requests use the web container's same-origin proxy.
+This local stack starts explicitly in demo mode and does not require Google Earth Engine
+credentials. Stop it with:
+
+```bash
+docker compose down --remove-orphans
+```
+
+To build and verify all health, readiness, proxy and SPA routes before leaving the containers
+running, use `uv run python scripts/smoke_containers.py --keep`. For Google Cloud setup,
+secrets, deployment, diagnostics and rollback, see the
+[Cloud Run deployment guide](docs/deployment/cloud-run.md).
+
 ## Configuration
 
 Use `.env.example` only as a list of supported names and safe placeholders. Keep secrets outside source control. `MWANGAZA_MODE=demo` is the sole explicit demo switch; `MWANGAZA_ENV` remains the application environment profile and is not a substitute for opting into demo data. Full rules: [configuration](docs/configuration.md).
@@ -134,12 +156,8 @@ Treat alerts and recommendations as evidence for human review, not automatic hum
 
 ## Roadmap
 
-Container packaging is available through two non-root Docker targets and a same-origin web
-proxy. Run `uv run python scripts/smoke_containers.py` with Docker active, or follow the
-[Cloud Run deployment guide](docs/deployment/cloud-run.md). The scripted public deployment is
-explicitly demo mode; live scheduled refresh remains separate planned work.
-
-Other planned work is tracked in the SDD backlog and is not guaranteed as current behavior.
+Live scheduled refresh and other planned work are tracked in the SDD backlog and are not
+guaranteed as current behavior.
 
 ## Project documentation
 
