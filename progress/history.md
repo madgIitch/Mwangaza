@@ -355,3 +355,10 @@
 - Primer refresco GEE real publicado, API en modo cache y frescura current con edad 0.
 - Job y Scheduler diario a las 03:00 UTC habilitados; política de alerta activa.
 - 258 tests backend, lint, typecheck y gates oficiales pasan tras los ajustes de despliegue.
+
+## 2026-07-30 - #sprint-54-scheduled-production-refresh -> done
+
+- Smoke humano aceptado y cierre formal registrado en `8de7fe3`.
+- Web, API, refresco diario, bucket privado, secreto y observabilidad quedan operativos para el jurado.
+- Cierre total de `mwangaza-502413` programado para el 2026-08-19 a las 23:00 Europe/Madrid mediante Cloud Tasks.
+- La tarea usa una identidad dedicada con `roles/resourcemanager.projectDeleter` y cinco intentos durante una hora.

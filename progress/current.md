@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-54-scheduled-production-refresh - Sprint 54 - Scheduled Production Refresh** - estado: `review_pending`.
+Feature: **sprint-54-scheduled-production-refresh - Sprint 54 - Scheduled Production Refresh** - estado: `done`.
 
 ## Resultado
 
@@ -13,9 +13,10 @@ Feature: **sprint-54-scheduled-production-refresh - Sprint 54 - Scheduled Produc
 - 257 tests backend, 61 frontend, build de producción y gates oficiales pasan.
 - Despliegue público operativo en `https://mwangaza-web-fmelcovcda-ew.a.run.app`.
 - Primer snapshot GEE publicado con frescura `current`; Scheduler diario habilitado a las 03:00 UTC.
+- Smoke humano aceptado y sprint cerrado formalmente el 2026-07-30.
+- Cierre total del proyecto `mwangaza-502413` programado para el 2026-08-19 a las 23:00 Europe/Madrid mediante una Cloud Task de ejecución única.
 
 ## Siguiente acción
 
-- Revisar el estado de frescura visible con un snapshot materializado o ejecutar el dry-run Docker documentado.
-- Vigilar la primera ejecución automática de Scheduler y la política de alerta ya habilitada.
-- Cerrar Sprint 54 tras el smoke humano; el ZIP local del deck permanece intacto y fuera del commit.
+- Mantener el despliegue disponible para el jurado y vigilar el refresco diario hasta el cierre programado.
+- Si fuera necesario conservar el proyecto, cancelar antes del 2026-08-19 la tarea `mwangaza-project-close-20260819` de la cola `mwangaza-project-closure` en `europe-west1`.
