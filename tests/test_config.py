@@ -51,6 +51,15 @@ class SettingsTests(unittest.TestCase):
         self.assertNotIn(SECRET_ACCOUNT, message)
         self.assertNotIn("private_key", message)
 
+    def test_production_cache_reader_does_not_require_gee_credentials(self) -> None:
+        settings = load_settings(
+            {"MWANGAZA_ENV": "production", "MWANGAZA_API_DATA_MODE": "cache"}
+        )
+
+        self.assertEqual(settings.environment, "production")
+        self.assertIsNone(settings.gee_project)
+        self.assertIsNone(settings.gee_private_key_json)
+
     def test_production_rejects_placeholders(self) -> None:
         with self.assertRaises(ConfigurationError):
             load_settings(

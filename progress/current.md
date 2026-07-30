@@ -11,9 +11,11 @@ Feature: **sprint-54-scheduled-production-refresh - Sprint 54 - Scheduled Produc
 - Cloud Run Job, Cloud Scheduler, IAM mínimo y alerta de fallos quedan automatizados.
 - Imagen refresh no root y dry-run Docker verificados sin llamadas remotas ni escrituras.
 - 257 tests backend, 61 frontend, build de producción y gates oficiales pasan.
+- Despliegue público operativo en `https://mwangaza-web-fmelcovcda-ew.a.run.app`.
+- Primer snapshot GEE publicado con frescura `current`; Scheduler diario habilitado a las 03:00 UTC.
 
 ## Siguiente acción
 
 - Revisar el estado de frescura visible con un snapshot materializado o ejecutar el dry-run Docker documentado.
-- El despliegue real requiere `gcloud`, un proyecto GCP autorizado, bucket y secreto GEE.
+- Vigilar la primera ejecución automática de Scheduler y la política de alerta ya habilitada.
 - Cerrar Sprint 54 tras el smoke humano; el ZIP local del deck permanece intacto y fuera del commit.

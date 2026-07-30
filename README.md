@@ -4,6 +4,8 @@
 
 The current pilots demonstrate national Somalia analysis and subnational comparison across Turkana, Marsabit and Isiolo in Northern Kenya. Mwangaza supports anticipatory review; it does not issue official warnings or replace local knowledge.
 
+Public dashboard: [mwangaza-web-fmelcovcda-ew.a.run.app](https://mwangaza-web-fmelcovcda-ew.a.run.app)
+
 ## Requirements
 
 - Python 3.11+
@@ -167,6 +169,12 @@ Scheduled refresh is implemented as an out-of-request job with locking, immutabl
 atomic last-good promotion and explicit freshness metadata. Deployment still requires an
 authorized GCP project, Earth Engine service credentials and the operator steps in the
 [Cloud Run deployment guide](docs/deployment/cloud-run.md).
+
+## Roadmap
+
+The production refresh path is operational. Remaining roadmap work focuses on longer-term
+model validation, additional independent labels and operator notification channels; these do
+not change the current public snapshot contract.
 
 ## Project documentation
 

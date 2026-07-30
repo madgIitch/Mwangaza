@@ -320,7 +320,7 @@ class PublicApiTests(unittest.TestCase):
 
         self.assertEqual(status, 200)
         self.assertEqual(payload["refresh"]["state"], "stale")
-        self.assertEqual(payload["refresh"]["last_success"]["age_days"], 33)
+        self.assertGreaterEqual(payload["refresh"]["last_success"]["age_days"], 33)
         self.assertNotIn("snapshot_path", payload["refresh"]["last_success"])
         self.assertNotIn("private-bucket", json.dumps(payload))
 

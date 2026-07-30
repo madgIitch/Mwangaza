@@ -13,7 +13,9 @@ environment variables and secret managers.
 - `local`: default developer profile; no external credentials required.
 - `test`: test profile; must run without real credentials.
 - `demo`: local fixture profile; uses `MWANGAZA_DEMO_FIXTURE_DIR` and does not call remote services.
-- `production`: requires `MWANGAZA_GEE_PROJECT`, `MWANGAZA_GEE_SERVICE_ACCOUNT` and `MWANGAZA_GEE_PRIVATE_KEY_JSON`.
+- `production`: remote workers require `MWANGAZA_GEE_PROJECT`, `MWANGAZA_GEE_SERVICE_ACCOUNT`
+  and `MWANGAZA_GEE_PRIVATE_KEY_JSON`. A read-only API with
+  `MWANGAZA_API_DATA_MODE=cache` intentionally runs without GEE credentials.
 
 ## Public Variables
 
@@ -21,6 +23,8 @@ environment variables and secret managers.
 - `MWANGAZA_LOG_LEVEL`
 - `MWANGAZA_DATA_DIR`
 - `MWANGAZA_CACHE_DIR`
+- `MWANGAZA_REFRESH_CACHE_DIR`
+- `MWANGAZA_API_DATA_MODE`
 - `MWANGAZA_DEMO_FIXTURE_DIR`
 - `MWANGAZA_ENABLED_COUNTRIES`
 - `MWANGAZA_CLIMATOLOGY_START_YEAR`

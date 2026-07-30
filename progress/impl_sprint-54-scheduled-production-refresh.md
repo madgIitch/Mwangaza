@@ -13,4 +13,7 @@ Estado: implementación completa, pendiente de revisión humana.
 - Imagen refresh verificada como UID/GID `10001:10001`; dry-run sin red ni escrituras: PASS.
 - Smoke Docker API/web de Sprint 53 sigue pasando tras la integración.
 - 257/257 tests backend, 61/61 frontend, build y gates oficiales: PASS.
-- `gcloud` no está instalado; el despliegue externo no se ejecutó y requiere proyecto/credenciales.
+- Despliegue externo completado posteriormente en `mwangaza-502413`, región `europe-west1`.
+- Web pública, API, bucket privado, Secret Manager, Job, Scheduler y política de alerta: operativos.
+- Primer run real `mwangaza-refresh-x6fjv`: éxito en 1m40s; segundo run idempotente: éxito.
+- Snapshot público en modo cache, frescura current, fecha efectiva 2026-07-30 y edad 0.

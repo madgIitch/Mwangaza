@@ -17,6 +17,8 @@ PUBLIC_VARIABLES = (
     "MWANGAZA_LOG_LEVEL",
     "MWANGAZA_DATA_DIR",
     "MWANGAZA_CACHE_DIR",
+    "MWANGAZA_REFRESH_CACHE_DIR",
+    "MWANGAZA_API_DATA_MODE",
     "MWANGAZA_DEMO_FIXTURE_DIR",
     "MWANGAZA_ENABLED_COUNTRIES",
     "MWANGAZA_CLIMATOLOGY_START_YEAR",
@@ -297,5 +299,7 @@ def _countries(source: Mapping[str, str], invalid_fields: list[str]) -> tuple[st
 
 def _missing_required(source: Mapping[str, str], environment: str) -> list[str]:
     if environment != "production":
+        return []
+    if _optional(source, "MWANGAZA_API_DATA_MODE") == "cache":
         return []
     return [name for name in PRODUCTION_REQUIRED_VARIABLES if _optional(source, name) is None]

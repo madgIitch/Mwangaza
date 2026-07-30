@@ -18,6 +18,18 @@ function Invoke-Gcloud {
     }
 }
 
+function Test-Gcloud {
+    param([Parameter(Mandatory = $true)][string[]]$CommandArgs)
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "SilentlyContinue"
+        & gcloud @CommandArgs *> $null
+        return $LASTEXITCODE -eq 0
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) {
     throw "gcloud CLI is required. Install it and run 'gcloud auth login' first."
 }
@@ -33,8 +45,7 @@ Invoke-Gcloud @("config", "set", "project", $ProjectId)
 Invoke-Gcloud @("services", "enable", "run.googleapis.com", "artifactregistry.googleapis.com", "cloudbuild.googleapis.com")
 
 Write-Host "[2/6] Ensuring Artifact Registry repository exists"
-& gcloud artifacts repositories describe $Repository --location $Region *> $null
-if ($LASTEXITCODE -ne 0) {
+if (-not (Test-Gcloud @("artifacts", "repositories", "describe", $Repository, "--location=$Region"))) {
     Invoke-Gcloud @("artifacts", "repositories", "create", $Repository, "--repository-format=docker", "--location=$Region", "--description=Mwangaza container images")
 }
 
@@ -56,7 +67,7 @@ Invoke-Gcloud @(
     "--startup-probe=httpGet.path=/ready,initialDelaySeconds=0,timeoutSeconds=3,periodSeconds=5,failureThreshold=12",
     "--liveness-probe=httpGet.path=/health,initialDelaySeconds=10,timeoutSeconds=3,periodSeconds=30,failureThreshold=3"
 )
-$apiUrl = (& gcloud run services describe $apiService --region $Region --format="value(status.url)").Trim()
+$apiUrl = (& gcloud run services describe $apiService --region $Region --format="value(status.address.url)").Trim()
 if (-not $apiUrl) { throw "Cloud Run did not return the API URL" }
 
 Write-Host "[5/6] Deploying public web service"
@@ -69,11 +80,11 @@ Invoke-Gcloud @(
     "--startup-probe=httpGet.path=/healthz,initialDelaySeconds=0,timeoutSeconds=3,periodSeconds=5,failureThreshold=12",
     "--liveness-probe=httpGet.path=/healthz,initialDelaySeconds=5,timeoutSeconds=3,periodSeconds=30,failureThreshold=3"
 )
-$webUrl = (& gcloud run services describe $webService --region $Region --format="value(status.url)").Trim()
+$webUrl = (& gcloud run services describe $webService --region $Region --format="value(status.address.url)").Trim()
 if (-not $webUrl) { throw "Cloud Run did not return the web URL" }
 
 Write-Host "[6/6] Verifying public endpoints"
-$webHealth = Invoke-WebRequest -UseBasicParsing -Uri "$webUrl/healthz" -TimeoutSec 30
+$webHealth = Invoke-WebRequest -UseBasicParsing -Uri "$webUrl/" -TimeoutSec 30
 $apiHealth = Invoke-RestMethod -Uri "$webUrl/health" -TimeoutSec 30
 $snapshot = Invoke-RestMethod -Uri "$webUrl/api/v1/snapshots/latest" -TimeoutSec 60
 if ($webHealth.StatusCode -ne 200 -or $apiHealth.status -ne "ok" -or -not $snapshot.is_demo) {

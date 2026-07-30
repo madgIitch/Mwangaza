@@ -12,6 +12,7 @@ Estado: `review_pending`.
 - [x] Contenedor refresh no root y dry-run real de Docker pasan.
 - [x] Suites completas y gates oficiales pasan.
 - [ ] Smoke humano del aviso de frescura con un snapshot materializado.
-- [ ] Despliegue GCP pendiente de proyecto, secreto GEE y `gcloud`.
+- [x] Despliegue GCP con bucket, secreto GEE, Job, Scheduler, alerta y URL pública.
+- [x] Smoke público: root, API, readiness, proxy, snapshot real y acceso anónimo.
 
-Veredicto: listo para revisión local; la ejecución externa queda explícitamente condicionada a la infraestructura del operador.
+Veredicto: listo para revisión humana en la URL pública; ejecución y actualización externa verificadas.

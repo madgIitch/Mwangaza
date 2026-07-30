@@ -11,7 +11,8 @@ param(
     [string]$Tag = "manual",
     [string]$Schedule = "0 3 * * *",
     [string]$TimeZone = "Etc/UTC",
-    [string]$NotificationChannel = ""
+    [string]$NotificationChannel = "",
+    [switch]$SkipBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,10 +25,21 @@ function Invoke-Gcloud {
     }
 }
 
+function Test-Gcloud {
+    param([Parameter(Mandatory = $true)][string[]]$CommandArgs)
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "SilentlyContinue"
+        & gcloud @CommandArgs *> $null
+        return $LASTEXITCODE -eq 0
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 function Ensure-ServiceAccount {
     param([Parameter(Mandatory = $true)][string]$Name, [Parameter(Mandatory = $true)][string]$DisplayName)
-    & gcloud iam service-accounts describe "$Name@$ProjectId.iam.gserviceaccount.com" *> $null
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Test-Gcloud @("iam", "service-accounts", "describe", "$Name@$ProjectId.iam.gserviceaccount.com"))) {
         Invoke-Gcloud @("iam", "service-accounts", "create", $Name, "--display-name=$DisplayName")
     }
 }
@@ -56,8 +68,7 @@ Invoke-Gcloud @(
 
 Write-Host "[2/9] Checking the runtime secret and storage bucket"
 Invoke-Gcloud @("secrets", "describe", $GeePrivateKeySecret)
-& gcloud storage buckets describe "gs://$BucketName" *> $null
-if ($LASTEXITCODE -ne 0) {
+if (-not (Test-Gcloud @("storage", "buckets", "describe", "gs://$BucketName"))) {
     Invoke-Gcloud @("storage", "buckets", "create", "gs://$BucketName", "--location=$Region", "--uniform-bucket-level-access")
 }
 
@@ -69,11 +80,16 @@ Invoke-Gcloud @("secrets", "add-iam-policy-binding", $GeePrivateKeySecret, "--me
 Invoke-Gcloud @("projects", "add-iam-policy-binding", $ProjectId, "--member=serviceAccount:$schedulerIdentity", "--role=roles/run.invoker")
 
 Write-Host "[4/9] Building the locked refresh image"
-Invoke-Gcloud @(
-    "builds", "submit", ".", "--config=infrastructure/cloudbuild.yaml",
-    "--ignore-file=.dockerignore",
-    "--substitutions=_REGION=$Region,_REPOSITORY=$Repository,_TAG=$Tag"
-)
+if ($SkipBuild) {
+    Invoke-Gcloud @("artifacts", "docker", "images", "describe", "$refreshImage")
+    Write-Host "Using existing image: $refreshImage"
+} else {
+    Invoke-Gcloud @(
+        "builds", "submit", ".", "--config=infrastructure/cloudbuild.yaml",
+        "--ignore-file=.dockerignore",
+        "--substitutions=_REGION=$Region,_REPOSITORY=$Repository,_TAG=$Tag"
+    )
+}
 
 Write-Host "[5/9] Deploying the single-task Cloud Run Job"
 Invoke-Gcloud @(
@@ -96,14 +112,15 @@ if (-not $apiIdentity) {
 Invoke-Gcloud @("storage", "buckets", "add-iam-policy-binding", "gs://$BucketName", "--member=serviceAccount:$apiIdentity", "--role=roles/storage.objectViewer")
 Invoke-Gcloud @(
     "run", "services", "update", $apiService, "--region=$Region", "--execution-environment=gen2",
-    "--add-volume=mount-path=/mnt/mwangaza-refresh,type=cloud-storage,bucket=$BucketName,readonly=true,mount-options=only-dir=mwangaza-refresh;uid=10001;gid=10001",
+    "--add-volume=name=mwangaza-refresh,type=cloud-storage,bucket=$BucketName,readonly=true,mount-options=only-dir=mwangaza-refresh;uid=10001;gid=10001",
+    "--add-volume-mount=volume=mwangaza-refresh,mount-path=/mnt/mwangaza-refresh",
     "--update-env-vars=MWANGAZA_ENV=production,MWANGAZA_MODE=production,MWANGAZA_API_DATA_MODE=cache,MWANGAZA_REFRESH_CACHE_DIR=/mnt/mwangaza-refresh"
 )
 
 Write-Host "[8/9] Creating or updating the daily Cloud Scheduler trigger"
 $runUri = "https://run.googleapis.com/v2/projects/$ProjectId/locations/$Region/jobs/$refreshJob`:run"
-& gcloud scheduler jobs describe $schedulerJob --location $Region *> $null
-$schedulerVerb = if ($LASTEXITCODE -eq 0) { "update" } else { "create" }
+$schedulerExists = Test-Gcloud @("scheduler", "jobs", "describe", $schedulerJob, "--location=$Region")
+$schedulerVerb = if ($schedulerExists) { "update" } else { "create" }
 Invoke-Gcloud @(
     "scheduler", "jobs", $schedulerVerb, "http", $schedulerJob, "--location=$Region",
     "--schedule=$Schedule", "--time-zone=$TimeZone", "--uri=$runUri", "--http-method=POST",
@@ -113,13 +130,13 @@ Invoke-Gcloud @(
 
 Write-Host "[9/9] Installing failure metric and alert policy"
 $logFilter = "resource.type=`"cloud_run_job`" AND resource.labels.job_name=`"$refreshJob`" AND jsonPayload.component=`"scheduled_refresh`" AND jsonPayload.severity=`"ERROR`""
-& gcloud logging metrics describe mwangaza_refresh_failures *> $null
-if ($LASTEXITCODE -eq 0) {
+if (Test-Gcloud @("logging", "metrics", "describe", "mwangaza_refresh_failures")) {
     Invoke-Gcloud @("logging", "metrics", "update", "mwangaza_refresh_failures", "--description=Failed scheduled Mwangaza refresh runs", "--log-filter=$logFilter")
 } else {
     Invoke-Gcloud @("logging", "metrics", "create", "mwangaza_refresh_failures", "--description=Failed scheduled Mwangaza refresh runs", "--log-filter=$logFilter")
 }
-$existingPolicy = (& gcloud monitoring policies list --filter="displayName='Mwangaza scheduled refresh failures'" --format="value(name)" --limit=1).Trim()
+$existingPolicy = [string](& gcloud monitoring policies list --filter="displayName='Mwangaza scheduled refresh failures'" --format="value(name)" --limit=1)
+$existingPolicy = $existingPolicy.Trim()
 if (-not $existingPolicy) {
     $policyArgs = @("monitoring", "policies", "create", "--policy-from-file=infrastructure/scheduler/refresh-failure-policy.json")
     if ($NotificationChannel) { $policyArgs += "--notification-channels=$NotificationChannel" }

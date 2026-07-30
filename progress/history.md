@@ -347,3 +347,11 @@
 - Cloud Run Job, Scheduler, IAM mínimo, alerta y rollback documentados.
 - Imagen refresh no root y dry-run Docker pasan sin llamadas remotas ni escrituras.
 - 61 tests frontend, 257 backend, build y gates oficiales pasan.
+
+## 2026-07-30T03:46:23+02:00 - #sprint-54-scheduled-production-refresh -> deployed
+
+- Dashboard público: `https://mwangaza-web-fmelcovcda-ew.a.run.app`.
+- API y web Cloud Run públicas; bucket y secreto permanecen privados.
+- Primer refresco GEE real publicado, API en modo cache y frescura current con edad 0.
+- Job y Scheduler diario a las 03:00 UTC habilitados; política de alerta activa.
+- 258 tests backend, lint, typecheck y gates oficiales pasan tras los ajustes de despliegue.

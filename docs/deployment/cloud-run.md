@@ -125,6 +125,9 @@ executes it once, and only then switches the API to production cache mode. Cloud
 invokes the Cloud Run Jobs API daily at `03:00 UTC` by default. Change this with `-Schedule`
 and `-TimeZone`.
 
+If the requested tag is already present in Artifact Registry, pass `-SkipBuild` to verify and
+reuse that immutable image instead of starting another Cloud Build.
+
 The Job calls exactly:
 
 ```text
